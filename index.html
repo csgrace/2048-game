@@ -133,6 +133,9 @@ body::before{
 .tool-box p{color:rgba(255,255,255,.72);font-size:13px;line-height:1.5;text-align:center}
 .tool-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0 12px}
 .tool-actions .btn{padding:12px;font-size:14px}
+.tool-actions .btn.wide{grid-column:1/-1}
+.tool-divider{border:0;border-top:1px solid rgba(255,255,255,.16);margin:18px 0 0}
+.ai-note{margin-top:8px!important;font-size:12px!important;color:rgba(255,255,255,.55)!important}
 .tool-status{min-height:20px;color:#ffd985;font-size:13px;text-align:center}
 #board.tool-selecting .cell{cursor:pointer;box-shadow:0 0 0 2px rgba(255,255,255,.42)}
 #board.tool-selecting .cell:hover{filter:brightness(1.15);transform:scale(1.04)}
@@ -325,6 +328,13 @@ body::before{
       <button class="btn" id="tool-swap">⇄ Swap two tiles</button>
       <button class="btn" id="tool-delete">⌫ Delete a tile</button>
     </div>
+    <hr class="tool-divider">
+    <p class="ai-note">Local 4×4 AI · no external model or API</p>
+    <div class="tool-actions">
+      <button class="btn" id="ai-suggest">💡 AI Suggest</button>
+      <button class="btn" id="ai-auto">🤖 AI Auto Play</button>
+      <button class="btn wide" id="ai-stop" hidden>■ Stop Auto Play</button>
+    </div>
     <div class="tool-status" id="tool-status"></div>
     <button class="modal-close" id="tools-close">Close</button>
   </div>
@@ -420,7 +430,9 @@ let board,score,steps,elapsedMs,startTime,won,over,countDownSec,countDownTotal;
 let timerMode='up';
 let cheated=false;
 let toolMode=null;
-let selectedToolTileId=null; // 'up' | 'down-60' | 'down-120' | 'down-300'
+let selectedToolTileId=null;
+let aiAutoPlay=false;
+let aiTimer=null; // 'up' | 'down-60' | 'down-120' | 'down-300'
 const undoStack=[];
 const MAX_UNDO=30;
 let currentUser=null;     // null = guest
@@ -587,6 +599,7 @@ function addRandom(){
 }
 
 function init(size){
+  stopAiAutoPlay();
   SIZE=size||boardSize;boardSize=SIZE;
   board=Array.from({length:SIZE},()=>Array(SIZE).fill(0));
   score=0;steps=0;won=false;over=false;cheated=false;
@@ -649,7 +662,8 @@ function rowSet(r,res){for(let c=0;c<SIZE;c++){board[r][c]=res.line[c];tileId[r]
 function colLine(c){const l=[],ids=[];for(let r=0;r<SIZE;r++){l.push(board[r][c]);ids.push(tileId[r][c])}return{line:l,ids}}
 function colSet(c,res){for(let r=0;r<SIZE;r++){board[r][c]=res.line[r];tileId[r][c]=res.ids[r]}}
 
-function move(dir){
+function move(dir,fromAI=false){
+  if(aiAutoPlay&&!fromAI)stopAiAutoPlay();
   if(over||inputLocked)return;
   const before=JSON.stringify(board);
   undoStack.push(snapshot());
@@ -727,6 +741,103 @@ function undo(){
   tileMap={};
   syncTiles();
   render();SFX.move();startTimer(elapsedMs);
+}
+
+/* ------------------------------------------------------------------ local 4×4 AI: Expectimax with a board-quality heuristic */
+const AI_DIRECTIONS=['up','left','down','right'];
+function aiClone(grid){return grid.map(row=>row.slice())}
+function aiSlide(values){
+  const tiles=values.filter(Boolean);const result=[];let gained=0;
+  for(let i=0;i<tiles.length;i++){
+    if(tiles[i]===tiles[i+1]){const value=tiles[i]*2;result.push(value);gained+=value;i++;}
+    else result.push(tiles[i]);
+  }
+  while(result.length<4)result.push(0);
+  return {line:result,gained};
+}
+function aiMoveBoard(grid,direction){
+  const next=aiClone(grid);let changed=false,gained=0;
+  for(let index=0;index<4;index++){
+    let line=direction==='left'||direction==='right'?next[index].slice():next.map(row=>row[index]);
+    if(direction==='right'||direction==='down')line.reverse();
+    const result=aiSlide(line);line=result.line;
+    if(direction==='right'||direction==='down')line.reverse();
+    const original=direction==='left'||direction==='right'?next[index].slice():next.map(row=>row[index]);
+    if(line.some((value,i)=>value!==original[i]))changed=true;
+    gained+=result.gained;
+    if(direction==='left'||direction==='right')next[index]=line;
+    else for(let row=0;row<4;row++)next[row][index]=line[row];
+  }
+  return {board:next,changed,gained};
+}
+function aiEmptyCells(grid){const cells=[];for(let row=0;row<4;row++)for(let col=0;col<4;col++)if(!grid[row][col])cells.push([row,col]);return cells}
+function aiEvaluate(grid){
+  const empty=aiEmptyCells(grid).length;let smooth=0,merges=0,max=0;
+  for(let row=0;row<4;row++)for(let col=0;col<4;col++){
+    const value=grid[row][col];max=Math.max(max,value);
+    if(!value)continue;
+    for(const [dr,dc] of [[0,1],[1,0]]){
+      const other=grid[row+dr]?.[col+dc]||0;
+      if(other){smooth-=Math.abs(Math.log2(value)-Math.log2(other));if(value===other)merges++;}
+    }
+  }
+  // Keep the largest tile in a corner and follow a descending snake pattern.
+  const snake=[[16,15,14,13],[9,10,11,12],[8,7,6,5],[1,2,3,4]];
+  let structure=0;for(let row=0;row<4;row++)for(let col=0;col<4;col++)structure+=(grid[row][col]?Math.log2(grid[row][col]):0)*snake[row][col];
+  const corner=Math.max(grid[0][0],grid[0][3],grid[3][0],grid[3][3])===max?1:0;
+  return empty*280+smooth*12+merges*80+structure*5+Math.log2(max||1)*18+corner*180;
+}
+function aiExpectimax(grid,depth,isChance){
+  if(depth<=0)return aiEvaluate(grid);
+  if(!isChance){
+    let best=-Infinity;
+    for(const direction of AI_DIRECTIONS){const result=aiMoveBoard(grid,direction);if(result.changed)best=Math.max(best,result.gained+aiExpectimax(result.board,depth-1,true));}
+    return best===-Infinity?-100000:best;
+  }
+  const empty=aiEmptyCells(grid);if(!empty.length)return aiExpectimax(grid,depth-1,false);
+  // Sampling at most six empty cells keeps the browser responsive late in a game.
+  const sampled=empty.length>6?empty.filter((_,index)=>index%Math.ceil(empty.length/6)===0):empty;
+  let total=0;for(const [row,col] of sampled){
+    const two=aiClone(grid);two[row][col]=2;const four=aiClone(grid);four[row][col]=4;
+    total+=.9*aiExpectimax(two,depth-1,false)+.1*aiExpectimax(four,depth-1,false);
+  }
+  return total/sampled.length;
+}
+function aiBestMove(){
+  if(SIZE!==4)return null;
+  let bestDirection=null,bestScore=-Infinity;
+  for(const direction of AI_DIRECTIONS){
+    const result=aiMoveBoard(board,direction);if(!result.changed)continue;
+    const value=result.gained+aiExpectimax(result.board,3,true);
+    if(value>bestScore){bestScore=value;bestDirection=direction;}
+  }
+  return bestDirection;
+}
+function aiDirectionLabel(direction){return({up:'↑ Up',down:'↓ Down',left:'← Left',right:'→ Right'})[direction]||''}
+function aiSuggest(){
+  if(SIZE!==4){$('tool-status').textContent='AI currently supports 4×4 only.';return}
+  const direction=aiBestMove();
+  $('tool-status').textContent=direction?`Suggestion: ${aiDirectionLabel(direction)}`:'No legal move remains.';
+}
+function updateAiControls(){
+  $('ai-auto').hidden=aiAutoPlay;$('ai-stop').hidden=!aiAutoPlay;
+}
+function scheduleAiMove(){
+  if(!aiAutoPlay)return;
+  if(over){stopAiAutoPlay();return}
+  if(inputLocked){aiTimer=setTimeout(scheduleAiMove,120);return}
+  const direction=aiBestMove();
+  if(!direction){stopAiAutoPlay();return}
+  move(direction,true);
+  aiTimer=setTimeout(scheduleAiMove,360);
+}
+function startAiAutoPlay(){
+  if(SIZE!==4){$('tool-status').textContent='AI Auto Play is available on 4×4 only.';return}
+  cancelToolSelection();$('tools-modal').classList.remove('show');
+  cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
+}
+function stopAiAutoPlay(){
+  aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}if($('ai-auto'))updateAiControls();
 }
 
 /* ------------------------------------------------------------------ practice tools */
@@ -869,6 +980,7 @@ function exitGame(){
   stopTimer();
   $('lb-modal').classList.remove('show');
   $('tools-modal').classList.remove('show');
+  stopAiAutoPlay();
   cancelToolSelection();
   hideOverlay();
   currentUser=null;
@@ -949,6 +1061,9 @@ $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
 $('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
 $('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
+$('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};
+$('ai-auto').onclick=()=>{SFX.button();startAiAutoPlay()};
+$('ai-stop').onclick=()=>{SFX.button();stopAiAutoPlay();$('tool-status').textContent='AI Auto Play stopped.'};
 $('tools-close').onclick=()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')};
 $('b-restart').onclick=()=>{SFX.button();init(boardSize)};
 $('b-save').onclick=()=>{SFX.button();doSave()};
