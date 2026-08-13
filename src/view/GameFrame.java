@@ -1,100 +1,119 @@
 package view;
 
-import controller.GameController;
-import util.ColorMap;
+import model.User;
+import util.DatabaseManager;
+import util.SaveManager;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * Top-level frame: panel (board) + control buttons (restart, save, load,
- * undo) + status labels (step, score).
+ * Single window that transitions through three panels:
  *
- * Layout is intentionally kept simple (absolute positions) so the code is
- * easy to follow – useful for a teaching / demo project.
+ *   1. Entry   – choose User Mode or Guest Mode
+ *   2. Auth    – login / register (only in User Mode)
+ *   3. Game    – the actual 2048 board with keyboard, leaderboard, etc.
+ *
+ * Layout is {@link CardLayout} over a backdrop panel that paints a gradient,
+ * giving the whole app a cohesive look without needing external images.
  */
 public class GameFrame extends JFrame {
 
-    private final GameController controller;
+    private static final String P_ENTRY = "entry";
+    private static final String P_AUTH  = "auth";
+    private static final String P_GAME  = "game";
 
-    public GameFrame(int width, int height) {
-        this.setTitle("2024 CS109 Project Demo – 2048");
-        this.setLayout(null);
-        this.setSize(width, height);
-        ColorMap.InitialColorMap();
+    private final CardLayout cl;
+    private final JPanel     deck;
 
-        // --- Board panel (occupies most of the window) ---
-        int boardSize = (int) (height * 0.8);
-        GamePanel gamePanel = new GamePanel(boardSize);
-        gamePanel.setLocation(20, 20);
-        this.add(gamePanel);
+    private final DatabaseManager db;
+    private final SaveManager     fileSave;
+    private final AuthPanel       authPanel;
+    private       User            loggedInUser;
 
-        // --- Controller needs a fully-built model + view ---
-        this.controller = new GameController(gamePanel, gamePanel.getModel());
+    /** If PostgreSQL couldn't be contacted we flip this and use file-only mode. */
+    private final boolean dbAvailable;
 
-        // --- Labels ---
-        JLabel stepLabel  = createLabel("Step: 0",
-                new Font("SansSerif", Font.BOLD, 16),
-                new Point(480, 30), 180, 30);
-        JLabel scoreLabel = createLabel("Score: 0",
-                new Font("SansSerif", Font.BOLD, 16),
-                new Point(480, 60), 180, 30);
-        gamePanel.setStepLabel(stepLabel);
-        gamePanel.setScoreLabel(scoreLabel);
+    public GameFrame(DatabaseManager db, SaveManager fileSave, boolean dbAvailable) {
+        super("2048");
+        this.db           = db;
+        this.fileSave     = fileSave;
+        this.dbAvailable  = dbAvailable;
+        this.authPanel    = dbAvailable ? new AuthPanel(db) : null;
 
-        // --- Buttons ---
-        createButton("Restart", new Point(480, 110), 120, 40,
-                e -> controller.restartGame());
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setResizable(false);
 
-        createButton("Undo", new Point(480, 160), 120, 40,
-                e -> controller.undoGame());
+        // backdrop with gradient
+        cl   = new CardLayout();
+        deck = new JPanel(cl) {
+            @Override protected void paintComponent(Graphics g0) {
+                super.paintComponent(g0);
+                Graphics2D g = (Graphics2D) g0.create();
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                    RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(
+                    0, 0, new Color(15, 20, 40),
+                    getWidth(), getHeight(), new Color(50, 30, 80)
+                );
+                g.setPaint(gp);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                // decorative dots
+                g.setColor(new Color(255,255,255,14));
+                for (int i = 0; i < 100; i++) {
+                    int x = (i * 113 + 50) % getWidth();
+                    int y = (i * 67  + 20) % getHeight();
+                    g.fillOval(x, y, 2 + (i % 3), 2 + (i % 3));
+                }
+                g.dispose();
+            }
+        };
+        deck.setLayout(cl);
 
-        createButton("Save", new Point(480, 210), 120, 40,
-                e -> controller.saveGame());
+        deck.add(buildEntry(), P_ENTRY);
+        if (dbAvailable) {
+            deck.add(authPanel,  P_AUTH);
+        }
 
-        createButton("Load", new Point(480, 260), 120, 40,
-                e -> controller.loadGame());
+        setContentPane(deck);
+        setSize(520, 400);
+        setLocationRelativeTo(null);
 
-        createButton("↑", new Point(520, 320), 50, 40,
-                e -> { gamePanel.doMoveUp();    gamePanel.requestFocusInWindow(); });
-
-        createButton("←", new Point(460, 370), 50, 40,
-                e -> { gamePanel.doMoveLeft();  gamePanel.requestFocusInWindow(); });
-
-        createButton("↓", new Point(520, 370), 50, 40,
-                e -> { gamePanel.doMoveDown();  gamePanel.requestFocusInWindow(); });
-
-        createButton("→", new Point(580, 370), 50, 40,
-                e -> { gamePanel.doMoveRight(); gamePanel.requestFocusInWindow(); });
-
-        // --- Final frame setup ---
-        this.setLocationRelativeTo(null);
-        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        gamePanel.requestFocusInWindow();
+        wireUp();
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
+    /* --------------------------------------------------------------- wiring */
 
-    private JButton createButton(String name, Point loc, int w, int h,
-                                 java.awt.event.ActionListener al) {
-        JButton button = new JButton(name);
-        button.setLocation(loc);
-        button.setSize(w, h);
-        button.setFocusable(false);
-        button.setFont(new Font("SansSerif", Font.BOLD, 16));
-        button.addActionListener(al);
-        this.add(button);
-        return button;
+    private void wireUp() {
+        // Entry screen
+        EntryPanel entry = (EntryPanel) deck.getComponent(0);
+        entry.onUserMode  = () -> {
+            if (dbAvailable) cl.show(deck, P_AUTH);
+            else             startGame(null);
+        };
+        entry.onGuestMode = () -> startGame(null);
+
+        // Auth screen
+        if (dbAvailable) {
+            authPanel.onAuthenticated = () -> startGame(authPanel.getAuthenticatedUser());
+            authPanel.onBack          = () -> cl.show(deck, P_ENTRY);
+        }
     }
 
-    private JLabel createLabel(String text, Font font, Point loc, int w, int h) {
-        JLabel label = new JLabel(text);
-        label.setFont(font);
-        label.setLocation(loc);
-        label.setSize(w, h);
-        this.add(label);
-        return label;
+    private void startGame(User user) {
+        loggedInUser = user;
+        GamePanel gp = new GamePanel(user, dbAvailable ? db : null, fileSave);
+        deck.add(gp, P_GAME);
+        cl.show(deck, P_GAME);
+        pack();
+        setSize(720, 680);
+        setLocationRelativeTo(null);
+        gp.requestFocusInWindow();
+    }
+
+    /* --------------------------------------------------------------- entry */
+
+    private JPanel buildEntry() {
+        return new EntryPanel();
     }
 }
