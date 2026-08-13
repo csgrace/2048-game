@@ -269,6 +269,7 @@ body::before{
       <button class="btn" id="b-undo">↩ Undo</button>
       <button class="btn" id="b-restart">↺ Restart</button>
       <button class="btn" id="b-leaderboard">🏆 Boards</button>
+      <button class="btn ghost" id="b-exit">↩ Exit Game</button>
     </div>
     <div class="arrows">
       <button class="btn" id="b-up">↑</button>
@@ -750,6 +751,14 @@ function show(s){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
   $(s).classList.add('active');
 }
+function exitGame(){
+  clearPendingGameTimers();
+  stopTimer();
+  $('lb-modal').classList.remove('show');
+  hideOverlay();
+  currentUser=null;
+  show('entry-screen');
+}
 
 /* ====================================================================
    Flow
@@ -825,6 +834,7 @@ $('b-restart').onclick=()=>{SFX.button();init(boardSize)};
 $('b-save').onclick=()=>{SFX.button();doSave()};
 $('b-load').onclick=()=>{SFX.button();doLoad()};
 $('b-leaderboard').onclick=()=>{SFX.button();showLeaderboard()};
+$('b-exit').onclick=()=>{SFX.button();exitGame()};
 $('lb-close').onclick=()=>{SFX.button();$('lb-modal').classList.remove('show')};
 $('ov-btn').onclick=()=>{SFX.button();init(boardSize)};
 
