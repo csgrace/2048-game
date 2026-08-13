@@ -3,7 +3,6 @@ package view;
 import model.GameModel;
 import model.GameState;
 import model.User;
-import util.ColorMap;
 import util.DatabaseManager;
 import util.SaveManager;
 import util.SoundManager;
@@ -17,82 +16,79 @@ import java.util.List;
  * The main game screen (Task 1 + Task 4 + Task 5 + Task 6).
  *
  *   • Top       : score / steps / time
- *   • Centre    : 4x4 animated board
+ *   • Centre    : NxN animated board (size picked in SettingsPanel)
  *   • Right bar : undo / save / load / restart / leaderboard buttons + arrow pad
- *   • Keyboard  : arrows + WASD (User Mode only)
+ *   • Keyboard  : arrows + WASD (all modes)
  *
- * Friends of the class:
- *   • Record best score in PostgreSQL on game over (only User Mode)
+ * Guest Mode: Save + Load are disabled entirely – the user only sees Undo / Restart.
+ * User Mode : every grid size has its own save slot and leaderboard page.
  */
 public class GamePanel extends JPanel {
 
-    /* ------------------------------------------------------------------ constants */
-
-    private static final int TILE = 104;
-    private static final int GAP  = 12;
-    private static final int PAD  = 14;
-    private static final int BOARD_PX = TILE * 4 + GAP * 3;
-
-    /* ------------------------------------------------------------------ fields */
+    private static final int TILE    = 104;
+    private static final int GAP     = 12;
+    private static final int PAD     = 14;
 
     private User              user;             // null = guest
     private GameModel         model;
     private DatabaseManager   db;               // null = no DB connected
-    private SaveManager       fileSave;         // always available as fallback
+    private SaveManager       fileSave;
     private boolean           keyboardEnabled;
+    private int               gridSize;
+    private String            timerMode;        // "up" | "down-60" | "down-120" | "down-300"
+    private int               countdownTotal;   // seconds, only when timerMode starts with "down"
+    private long              deadlineEpoch;    // System millis at which countdown hits 0
 
     private TileView[][] tiles;
     private JLabel       scoreLabel;
     private JLabel       stepLabel;
     private JLabel       timeLabel;
+    private JLabel       modeLabel;
     private JButton       saveBtn;
+    private JButton       loadBtn;
     private Timer         clock;
+    private Timer         countdownTimer;
 
-    /** Pre-load save from DB (used when authenticating). */
+    /** Pre-load save from DB. */
     public static DatabaseManager.SaveData dbPreload;
-    public static GameState               filePreload;
 
     /* ------------------------------------------------------------------ ctor */
 
-    public GamePanel(User user, DatabaseManager db, SaveManager fileSave) {
-        this.db       = db;
-        this.fileSave = fileSave;
+    public GamePanel(User user, DatabaseManager db, SaveManager fileSave,
+                     int gridSize, String timerMode) {
+        this.db         = db;
+        this.fileSave   = fileSave;
+        this.user       = user;
+        this.keyboardEnabled = true;
+        this.gridSize   = gridSize;
+        this.timerMode  = timerMode;
 
-        if (user != null) {
-            this.user = user;
-            this.keyboardEnabled = true;
-        } else {
-            this.user = null;
-            this.keyboardEnabled = true;   // keyboard works in guest too, just no save
+        // countdown setup
+        if (timerMode.startsWith("down-")) {
+            this.countdownTotal = Integer.parseInt(timerMode.substring(5));
+            this.deadlineEpoch  = System.currentTimeMillis() + countdownTotal * 1000L;
         }
 
-        this.model = new GameModel(4);
+        this.model = new GameModel(gridSize);
 
         // load anything that was pre-fetched for us
         if (user != null && db != null && dbPreload != null) {
             model.loadBoard(dbPreload.board(), dbPreload.score(), dbPreload.steps(), dbPreload.elapsedMs());
             dbPreload = null;
-        } else if (filePreload != null) {
-            model.loadState(filePreload);
-            filePreload = null;
         } else {
             model.init();
         }
 
         buildUI();
-        setPreferredSize(new Dimension(640, 600));
         setOpaque(false);
 
         // keyboard controls
         bindKeys();
 
-        // animation timer for smooth-ish transitions (~30 fps)
-        Timer animTimer = new Timer(16, e -> repaint());
-        animTimer.start();
-
-        // clock label
-        clock = new Timer(500, e -> timeLabel.setText("⏱ " + model.getElapsedFormatted()));
+        // clock label tick (every 100 ms for smooth countdown)
+        clock = new Timer(100, e -> updateTimerLabel());
         clock.start();
+        updateTimerLabel();
     }
 
     /* ------------------------------------------------------------------ UI build */
@@ -107,7 +103,7 @@ public class GamePanel extends JPanel {
     }
 
     private JPanel buildTopBar() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.CENTER, 24, 8));
+        JPanel bar = new JPanel(new FlowLayout(FlowLayout.CENTER, 18, 8));
         bar.setOpaque(false);
 
         String who = (user == null) ? "Guest Mode" : user.username();
@@ -115,11 +111,13 @@ public class GamePanel extends JPanel {
         nameLabel.setFont(new Font("SansSerif", Font.BOLD, 15));
         nameLabel.setForeground(Color.WHITE);
 
-        scoreLabel = statLabel("Score", 0);
-        stepLabel  = statLabel("Steps", 0);
-        timeLabel  = statLabel("Time",  0);
+        modeLabel  = statLabel(gridSize + "×" + gridSize, 0);
+        scoreLabel = statLabel("🏆 Score", 0);
+        stepLabel  = statLabel("👣 Steps", 0);
+        timeLabel  = statLabel("⏱ Time", 0);
 
         bar.add(nameLabel);
+        bar.add(modeLabel);
         bar.add(scoreLabel);
         bar.add(stepLabel);
         bar.add(timeLabel);
@@ -128,27 +126,28 @@ public class GamePanel extends JPanel {
 
     private JLabel statLabel(String title, int val) {
         JLabel l = new JLabel(title + ": " + val, SwingConstants.CENTER);
-        l.setFont(new Font("SansSerif", Font.BOLD, 15));
+        l.setFont(new Font("SansSerif", Font.BOLD, 14));
         l.setForeground(new Color(220, 210, 200));
         l.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(255, 255, 255, 60), 1, true),
-            BorderFactory.createEmptyBorder(6, 12, 6, 12)
+            BorderFactory.createLineBorder(new Color(255, 255, 255, 50), 1, true),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
         return l;
     }
 
     private JPanel buildBoard() {
-        JPanel board = new JPanel(new GridLayout(4, 4, GAP, GAP)) {
+        int boardPx = TILE * gridSize + GAP * (gridSize - 1);
+        JPanel board = new JPanel(new GridLayout(gridSize, gridSize, GAP, GAP)) {
             @Override public Dimension getPreferredSize() {
-                return new Dimension(BOARD_PX + PAD * 2, BOARD_PX + PAD * 2);
+                return new Dimension(boardPx + PAD * 2, boardPx + PAD * 2);
             }
         };
         board.setBackground(new Color(187, 173, 160));
         board.setBorder(BorderFactory.createEmptyBorder(PAD, PAD, PAD, PAD));
 
-        tiles = new TileView[4][4];
-        for (int r = 0; r < 4; r++) {
-            for (int c = 0; c < 4; c++) {
+        tiles = new TileView[gridSize][gridSize];
+        for (int r = 0; r < gridSize; r++) {
+            for (int c = 0; c < gridSize; c++) {
                 tiles[r][c] = new TileView();
                 tiles[r][c].setPreferredSize(new Dimension(TILE, TILE));
                 board.add(tiles[r][c]);
@@ -164,14 +163,17 @@ public class GamePanel extends JPanel {
         bar.setBorder(BorderFactory.createEmptyBorder(PAD, 6, PAD, 0));
 
         saveBtn    = newBtn("💾 Save",   e -> doSave());
-        JButton loadBtn    = newBtn("📂 Load",   e -> doLoad());
+        loadBtn    = newBtn("📂 Load",   e -> doLoad());
         JButton undoBtn    = newBtn("↩ Undo",    e -> doUndo());
         JButton restartBtn = newBtn("↺ Restart", e -> doRestart());
         JButton boardBtn   = newBtn("🏆 Boards", e -> showLeaderboard());
 
-        if (user == null || db == null) {
+        // Guest Mode: completely disable save and load
+        if (user == null) {
             saveBtn.setEnabled(false);
-            saveBtn.setToolTipText("Login to enable saving");
+            saveBtn.setToolTipText("Not available in Guest Mode");
+            loadBtn.setEnabled(false);
+            loadBtn.setToolTipText("Not available in Guest Mode");
         }
 
         bar.add(saveBtn);      bar.add(Box.createVerticalStrut(6));
@@ -244,11 +246,13 @@ public class GamePanel extends JPanel {
     /* ------------------------------------------------------------------ game actions */
 
     private void move(String direction) {
+        if (model.isOver() || isTimedOut()) return;
         boolean changed = model.move(direction);
         if (!changed) return;
         SoundManager.move();
         refreshAll();
 
+        int winTarget = gridSize * gridSize * 2;  // e.g. 4×4→32, 6×6→72, 8×8→128 → we use 2048 always
         if (model.isWon()) {
             SoundManager.win();
             maybeSaveScore();
@@ -258,17 +262,41 @@ public class GamePanel extends JPanel {
         } else if (model.isOver()) {
             SoundManager.lose();
             maybeSaveScore();
+            stopClock();
             int ok = JOptionPane.showConfirmDialog(this,
                 "Game Over – score " + model.getScore() + "\nPlay again?",
                 "Game Over", JOptionPane.YES_NO_OPTION);
-            if (ok == JOptionPane.YES_OPTION) { model.init(); refreshAll(); }
+            if (ok == JOptionPane.YES_OPTION) { model.init(); refreshAll(); startClock(); }
         }
     }
 
-    /** If we have a user + db, push the score to the leaderboard. */
+    private boolean isTimedOut() {
+        if (!timerMode.startsWith("down-")) return false;
+        return System.currentTimeMillis() >= deadlineEpoch;
+    }
+
+    private void stopClock()  { if (clock != null) clock.stop(); }
+    private void startClock() { if (clock != null) clock.start(); updateTimerLabel(); }
+
+    private void updateTimerLabel() {
+        if (timerMode.equals("up")) {
+            timeLabel.setText("⏱ " + model.getElapsedFormatted());
+        } else {
+            long remain = Math.max(0, deadlineEpoch - System.currentTimeMillis());
+            long s = remain / 1000;
+            timeLabel.setText("⏱ %02d:%02d".formatted(s / 60, s % 60));
+            if (remain == 0 && !model.isOver()) {
+                model = model; // no-op
+                timeLabel.setText("⏱ 00:00");
+            }
+        }
+    }
+
+    /** If we have a user + db, push the score to the leaderboard (per-grid-size). */
     private void maybeSaveScore() {
         if (user != null && db != null) {
-            db.recordScore(user.id(), model.getScore(), model.getSteps(), model.getElapsedMillis());
+            db.recordScore(user.id(), model.getScore(), model.getSteps(),
+                           model.getElapsedMillis(), gridSize);
         }
     }
 
@@ -278,19 +306,28 @@ public class GamePanel extends JPanel {
     }
 
     private void doSave() {
-        if (user == null || db == null) {
-            JOptionPane.showMessageDialog(this, "Saving is only available in User Mode (with DB).");
+        if (user == null) {
+            JOptionPane.showMessageDialog(this, "Saving is only available in User Mode.");
             return;
         }
-        db.saveGame(user.id(), currentBoard(), model.getScore(), model.getSteps(), model.getElapsedMillis());
+        if (db == null) {
+            JOptionPane.showMessageDialog(this, "No database connected.");
+            return;
+        }
+        db.saveGame(user.id(), currentBoard(), model.getScore(), model.getSteps(),
+                    model.getElapsedMillis());
         SoundManager.merge();
         JOptionPane.showMessageDialog(this, "✅ Game saved!");
     }
 
     private void doLoad() {
-        if (user == null || db == null) return;
-        DatabaseManager.SaveData s = db.loadGame(user.id(), 4);
-        if (s == null) { JOptionPane.showMessageDialog(this, "No save found."); return; }
+        if (user == null) {
+            JOptionPane.showMessageDialog(this, "Loading is only available in User Mode.");
+            return;
+        }
+        if (db == null) return;
+        DatabaseManager.SaveData s = db.loadGame(user.id(), gridSize);
+        if (s == null) { JOptionPane.showMessageDialog(this, "No save found for " + gridSize + "×" + gridSize + "."); return; }
         model.loadBoard(s.board(), s.score(), s.steps(), s.elapsedMs());
         SoundManager.merge();
         refreshAll();
@@ -301,12 +338,17 @@ public class GamePanel extends JPanel {
         model.init();
         SoundManager.move();
         refreshAll();
+        // reset clock
+        if (timerMode.startsWith("down-")) {
+            deadlineEpoch = System.currentTimeMillis() + countdownTotal * 1000L;
+        }
+        startClock();
     }
 
     private int[][] currentBoard() {
-        int[][] b = new int[4][4];
-        for (int r = 0; r < 4; r++)
-            for (int c = 0; c < 4; c++)
+        int[][] b = new int[gridSize][gridSize];
+        for (int r = 0; r < gridSize; r++)
+            for (int c = 0; c < gridSize; c++)
                 b[r][c] = model.get(r, c);
         return b;
     }
@@ -318,9 +360,10 @@ public class GamePanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Connect to PostgreSQL to view the leaderboard.");
             return;
         }
-        List<DatabaseManager.ScoreRow> rows = db.leaderboard(20);
+        List<DatabaseManager.ScoreRow> rows = db.leaderboard(gridSize, 20);
         if (rows.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No scores yet. Be the first!");
+            JOptionPane.showMessageDialog(this,
+                "No scores yet for " + gridSize + "×" + gridSize + ". Be the first!");
             return;
         }
         String[] cols = {"#", "User", "Score", "Steps", "Time"};
@@ -337,8 +380,9 @@ public class GamePanel extends JPanel {
         tbl.setEnabled(false);
         tbl.setBackground(new Color(250, 248, 239));
         JScrollPane sp = new JScrollPane(tbl);
-        sp.setPreferredSize(new Dimension(440, 320));
-        JOptionPane.showMessageDialog(this, sp, "🏆 High Scores", JOptionPane.PLAIN_MESSAGE);
+        sp.setPreferredSize(new Dimension(460, 320));
+        JOptionPane.showMessageDialog(this, sp,
+            "🏆 High Scores – " + gridSize + "×" + gridSize, JOptionPane.PLAIN_MESSAGE);
     }
 
     /* ------------------------------------------------------------------ keyboard */
@@ -373,11 +417,11 @@ public class GamePanel extends JPanel {
     /* ------------------------------------------------------------------ rendering */
 
     private void refreshAll() {
-        for (int r = 0; r < 4; r++)
-            for (int c = 0; c < 4; c++)
+        for (int r = 0; r < gridSize; r++)
+            for (int c = 0; c < gridSize; c++)
                 tiles[r][c].setValue(model.get(r, c));
-        scoreLabel.setText("🏆 Score: " + model.getScore());
-        stepLabel.setText("👣 Steps: " + model.getSteps());
+        scoreLabel.setText("🏆 " + model.getScore());
+        stepLabel.setText("👣 " + model.getSteps());
     }
 
     /** Gradient backdrop. */
@@ -406,6 +450,6 @@ public class GamePanel extends JPanel {
     @Override
     public void removeNotify() {
         super.removeNotify();
-        if (clock != null) clock.stop();
+        stopClock();
     }
 }

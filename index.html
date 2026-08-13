@@ -5,153 +5,179 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>2048 – CS109 Project</title>
 <style>
-/* ------------------------------------------------------------------ reset */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ================================================================== reset */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c-empty:#cdc1b4;--c-board:#bbada0;
+  --c-bg-top:#0f1428;--c-bg-bot:#321e50;
+  --c-text-dark:#776e65;--c-text-light:#f9f6f2;
+  --c-accent:#8f7a66;--c-accent-h:#a59178;
+  --c-glow:rgba(143,122,102,.35);
+  --radius:14px;
+}
+html,body{height:100%}
+body{font-family:'Segoe UI','Helvetica Neue',sans-serif;color:var(--c-text-light);overflow-x:hidden;position:relative}
 
-:root {
-  --c-empty:      #cdc1b4;
-  --c-board:      #bbada0;
-  --c-bg-top:     #0f1428;
-  --c-bg-bot:     #321e50;
-  --c-text-dark:  #776e65;
-  --c-text-light: #f9f6f2;
-  --c-accent:     #8f7a66;
-  --c-accent-h:   #a59178;
-  --radius:       14px;
+/* ================================================================== animated background */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+body::before{
+  content:'';position:fixed;inset:-50%;z-index:0;
+  background:conic-gradient(from 0deg at 50% 50%,
+    rgba(143,122,102,.08) 0deg,rgba(237,194,46,.04) 60deg,
+    rgba(246,94,59,.04) 120deg,rgba(143,122,102,.06) 180deg,
+    rgba(237,207,114,.04) 240deg,rgba(242,177,121,.05) 300deg,
+    rgba(143,122,102,.08) 360deg);
+  animation:bgspin 20s linear infinite;
+}
+@keyframes bgspin{to{transform:rotate(360deg)}}
+
+/* ================================================================== app */
+.app{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:24px 16px}
+
+/* ================================================================== screens */
+.screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:620px;animation:fadeIn .4s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ================================================================== glass card */
+.glass{
+  background:rgba(255,255,255,.07);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.15);border-radius:18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08);
+  padding:32px 28px;
 }
 
-html, body { height: 100%; }
+/* ================================================================== entry */
+.title-big{font-size:clamp(48px,10vw,72px);font-weight:800;color:#f9f6f2;letter-spacing:4px;text-shadow:0 0 30px var(--c-glow)}
+.subtitle{font-size:16px;color:rgba(255,255,255,.7);margin:8px 0 32px}
 
-body {
-  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
-  color: var(--c-text-light);
-  background: linear-gradient(135deg, var(--c-bg-top), var(--c-bg-bot));
-  overflow-x: hidden;
-  position: relative;
+.card-pick{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.pick{
+  width:210px;padding:28px 16px;text-align:center;
+  background:rgba(143,122,102,.2);backdrop-filter:blur(10px);
+  color:#fff;border-radius:var(--radius);cursor:pointer;
+  border:1px solid rgba(255,255,255,.12);font-size:18px;font-weight:700;
+  transition:all .25s ease;
 }
+.pick .icon{font-size:40px;display:block;margin-bottom:8px}
+.pick small{display:block;font-weight:400;opacity:.75;font-size:13px;margin-top:6px}
+.pick:hover{background:rgba(143,122,102,.35);transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
 
-/* floating decorative dots */
-body::before {
-  content: ''; position: fixed; inset: 0; z-index: 0;
-  background-image:
-    radial-gradient(circle at 12% 20%, rgba(255,255,255,.08) 0 3px, transparent 4px),
-    radial-gradient(circle at 78% 60%, rgba(255,255,255,.05) 0 2px, transparent 3px),
-    radial-gradient(circle at 40% 85%, rgba(255,255,255,.06) 0 2.5px, transparent 3.5px),
-    radial-gradient(circle at 90% 10%, rgba(255,255,255,.07) 0 2px, transparent 3px);
-  pointer-events: none;
+/* ================================================================== settings grid */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px;margin:12px 0}
+.setting-group{display:flex;flex-direction:column;gap:6px}
+.setting-group label{font-size:13px;font-weight:700;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:1px}
+.setting-group select,.setting-group input{
+  width:100%;padding:10px 14px;font-size:15px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08);color:#fff;outline:none;transition:border .2s;
 }
+.setting-group select:focus,.setting-group input:focus{border-color:rgba(143,122,102,.6)}
+.setting-group select option{background:#1a1a2e;color:#fff}
 
-.app { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 24px 16px; }
-
-/* ---------------------------------------------------------------- screens */
-.screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 560px; }
-.screen.active { display: flex; }
-
-/* ---------------------------------------------------------------- entry */
-.title-big { font-size: clamp(48px, 10vw, 72px); font-weight: 800; color: #f9f6f2; letter-spacing: 2px; }
-.subtitle  { font-size: 16px; color: rgba(255,255,255,.75); margin: 8px 0 36px; }
-
-.card-pick {
-  display: flex; gap: 18px; flex-wrap: wrap; justify-content: center;
+/* ================================================================== auth */
+.auth-box{width:100%;max-width:360px}
+.auth-box label{display:block;margin:10px 0 4px;font-size:13px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:1px}
+.auth-box input{
+  width:100%;padding:10px 14px;font-size:15px;border-radius:8px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.06);color:#fff;outline:none;transition:border .2s;
 }
-.pick {
-  width: 200px; padding: 28px 16px; text-align: center;
-  background: var(--c-accent); color: #fff; border-radius: var(--radius);
-  cursor: pointer; transition: all .18s ease;
-  border: none; font-size: 18px; font-weight: 700;
+.auth-box input:focus{border-color:rgba(143,122,102,.6)}
+.auth-box input::placeholder{color:rgba(255,255,255,.35)}
+.btn-row{display:flex;gap:8px;margin-top:18px}
+.btn{
+  flex:1;padding:10px;border:none;border-radius:8px;
+  background:var(--c-accent);color:#fff;font-weight:700;cursor:pointer;
+  font-size:14px;transition:all .2s;
 }
-.pick .icon { font-size: 38px; display: block; margin-bottom: 8px; }
-.pick small  { display: block; font-weight: 400; opacity: .85; font-size: 13px; margin-top: 6px; }
-.pick:hover { background: var(--c-accent-h); transform: translateY(-3px); }
+.btn:hover{background:var(--c-accent-h);transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15)}
+.btn.ghost:hover{background:rgba(255,255,255,.22)}
+.status-msg{margin-top:12px;font-size:13px;color:#ffaaaa;min-height:18px;text-align:center}
 
-/* ---------------------------------------------------------------- auth */
-.auth-box { width: 100%; max-width: 360px; }
-.auth-box label { display: block; margin: 10px 0 4px; font-size: 14px; color: rgba(255,255,255,.85); }
-.auth-box input {
-  width: 100%; padding: 10px 14px; font-size: 15px; border-radius: 8px; border: none;
-  outline: none;
+/* ================================================================== game */
+#game-screen{max-width:760px}
+.top-bar{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+.who{font-weight:700;font-size:15px}
+.stat{
+  background:rgba(255,255,255,.1);backdrop-filter:blur(8px);
+  padding:6px 14px;border-radius:20px;font-weight:700;font-size:13px;
+  min-width:80px;text-align:center;border:1px solid rgba(255,255,255,.08);
 }
-.btn-row { display: flex; gap: 8px; margin-top: 18px; }
-.btn {
-  flex: 1; padding: 10px; border: none; border-radius: 8px;
-  background: var(--c-accent); color: #fff; font-weight: 700; cursor: pointer;
-  font-size: 14px; transition: background .15s;
-}
-.btn:hover  { background: var(--c-accent-h); }
-.btn.ghost  { background: rgba(255,255,255,.15); }
-.btn.ghost:hover { background: rgba(255,255,255,.25); }
-.status-msg { margin-top: 12px; font-size: 13px; color: #ffaaaa; min-height: 18px; }
+.stat.timer-warn{animation:pulse .6s ease infinite alternate}
+@keyframes pulse{to{background:rgba(246,94,59,.3)}}
 
-/* ---------------------------------------------------------------- game */
-#game-screen { max-width: 620px; }
-.top-bar { display: flex; align-items: center; gap: 16px; width: 100%; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
-.who  { font-weight: 700; font-size: 15px; }
-.stat {
-  background: rgba(255,255,255,.12); padding: 6px 14px; border-radius: 20px;
-  font-weight: 700; font-size: 14px; min-width: 90px; text-align: center;
+.board-wrap{position:relative}
+#board{display:gap;background:var(--c-board);border-radius:12px;padding:10px}
+#board .cell{
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;border-radius:8px;transition:transform .12s ease;
 }
+#board .cell.pop{animation:pop .25s ease}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+#board .cell.merge-anim{animation:mg .3s ease}
+@keyframes mg{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
 
-.board-wrap { position: relative; }
-#board {
-  display: grid;
-  grid-template-columns: repeat(4, var(--tile-size, 100px));
-  grid-template-rows:    repeat(4, var(--tile-size, 100px));
-  gap: 10px; padding: 12px;
-  background: var(--c-board); border-radius: 12px;
-}
-#board .cell {
-  width: var(--tile-size,100px); height: var(--tile-size,100px);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: clamp(28px, 5vw, 40px);
-  border-radius: 8px; transition: transform .12s ease;
-}
+.sides{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.sides .btn{min-width:72px;padding:8px 10px;font-size:13px}
 
-.sides { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
-.sides .btn { min-width: 80px; }
-
-.arrows {
-  display: grid; grid-template-columns: repeat(3, 46px);
-  grid-template-rows: repeat(2, 42px); gap: 4px;
-  margin-top: 12px; justify-content: center;
-}
-.arrows .btn { min-width: 46px; font-size: 18px; padding: 6px; }
-.arrows .btn:nth-child(1) { grid-column: 2; grid-row: 1; }
-.arrows .btn:nth-child(2) { grid-column: 1; grid-row: 2; }
-.arrows .btn:nth-child(3) { grid-column: 2; grid-row: 2; }
-.arrows .btn:nth-child(4) { grid-column: 3; grid-row: 2; }
+.arrows{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,44px);gap:4px;margin-top:12px;justify-content:center}
+.arrows .btn{min-width:48px;font-size:18px;padding:6px}
+.arrows .btn:nth-child(1){grid-column:2;grid-row:1}
+.arrows .btn:nth-child(2){grid-column:1;grid-row:2}
+.arrows .btn:nth-child(3){grid-column:2;grid-row:2}
+.arrows .btn:nth-child(4){grid-column:3;grid-row:2}
 
 /* overlay */
-#overlay {
-  display: none; position: absolute; inset: 0;
-  background: rgba(0,0,0,.6); border-radius: 12px; z-index: 5;
-  align-items: center; justify-content: center; flex-direction: column;
-  gap: 16px;
+#overlay{
+  display:none;position:absolute;inset:0;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);border-radius:12px;z-index:5;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;
 }
-#overlay.show { display: flex; }
-#overlay h2 { color: #fff; font-size: 32px; }
+#overlay.show{display:flex}
+#overlay h2{color:#fff;font-size:32px}
 
 /* leaderboard modal */
-.modal {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
-  z-index: 100; align-items: center; justify-content: center;
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{
+  background:linear-gradient(135deg,#faf8ef,#f5efe0);color:#333;padding:28px 32px;border-radius:16px;
+  min-width:360px;max-width:92vw;max-height:80vh;overflow-y:auto;
+  box-shadow:0 16px 48px rgba(0,0,0,.4);
 }
-.modal.show { display: flex; }
-.modal-box { background: #faf8ef; color: #333; padding: 24px 28px; border-radius: 12px; min-width: 340px; max-width: 90vw; }
-.modal-box h2 { margin-bottom: 12px; text-align: center; color: #776e65; }
-.lb-table { width: 100%; border-collapse: collapse; }
-.lb-table th, .lb-table td { padding: 6px 10px; text-align: left; font-size: 14px; }
-.lb-table th { border-bottom: 2px solid #ccc; }
-.lb-table tr:nth-child(even) { background: rgba(0,0,0,.04); }
-.modal-close { margin-top: 16px; display: block; width: 100%; padding: 8px; border: none; background: var(--c-accent); color: #fff; font-weight: 700; border-radius: 6px; cursor: pointer; }
+.modal-box h2{margin-bottom:14px;text-align:center;color:#776e65;font-size:22px}
+.lb-table{width:100%;border-collapse:collapse}
+.lb-table th,.lb-table td{padding:7px 10px;text-align:left;font-size:14px}
+.lb-table th{border-bottom:2px solid #ccc;color:#776e65}
+.lb-table tr:nth-child(even){background:rgba(0,0,0,.03)}
+.modal-close{margin-top:16px;display:block;width:100%;padding:10px;border:none;background:var(--c-accent);color:#fff;font-weight:700;border-radius:8px;cursor:pointer;transition:background .2s}
+.modal-close:hover{background:var(--c-accent-h)}
 
-@media (max-width: 480px) {
-  :root { --tile-size: 80px; }
-  .stat { font-size: 12px; min-width: 70px; padding: 5px 10px; }
+/* back button */
+.back-btn{
+  align-self:flex-start;margin-bottom:12px;padding:6px 14px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;transition:all .2s;
+}
+.back-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+
+/* mode badge */
+.mode-badge{
+  display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;
+  background:rgba(143,122,102,.25);color:rgba(255,255,255,.8);margin-left:8px;
+}
+
+@media(max-width:520px){
+  .settings-grid{grid-template-columns:1fr}
+  .stat{font-size:11px;min-width:68px;padding:5px 8px}
+  .pick{width:170px;font-size:16px}
+  .sides .btn{min-width:60px;font-size:12px;padding:7px 6px}
 }
 </style>
 </head>
 <body>
 
+<canvas id="bg-canvas"></canvas>
 <div class="app">
 
   <!-- ============ ENTRY ============ -->
@@ -161,20 +187,21 @@ body::before {
     <div class="card-pick">
       <button class="pick" id="btn-user">
         <span class="icon">👤</span>User Mode
-        <small>Save · Compete · Continue later</small>
+        <small>Save · Leaderboard · Resume</small>
       </button>
       <button class="pick" id="btn-guest">
         <span class="icon">🎮</span>Guest Mode
-        <small>Jump straight in · no sign-up</small>
+        <small>Jump in · No saves · Free play</small>
       </button>
     </div>
   </div>
 
   <!-- ============ AUTH ============ -->
   <div class="screen" id="auth-screen">
-    <div class="title-big" style="font-size:36px;margin-bottom:6px">User Mode</div>
-    <div class="subtitle">Log in or register</div>
-    <div class="auth-box">
+    <button class="back-btn" id="btn-auth-back">← Back</button>
+    <div class="glass auth-box">
+      <div class="title-big" style="font-size:32px;text-align:center;margin-bottom:4px">User Mode</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:16px">Log in or register</div>
       <label for="auth-user">Username</label>
       <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" />
       <label for="auth-pass">Password</label>
@@ -182,9 +209,39 @@ body::before {
       <div class="btn-row">
         <button class="btn" id="btn-login">Login</button>
         <button class="btn" id="btn-register">Register</button>
-        <button class="btn ghost" id="btn-auth-back">← Back</button>
       </div>
       <div class="status-msg" id="auth-status"></div>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="screen" id="settings-screen">
+    <button class="back-btn" id="btn-settings-back">← Back</button>
+    <div class="glass" style="width:100%;max-width:480px">
+      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">Game Settings</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:20px">Configure your board</div>
+      <div class="settings-grid">
+        <div class="setting-group">
+          <label>Grid Size</label>
+          <select id="sel-grid">
+            <option value="4">4 × 4  (Classic)</option>
+            <option value="6">6 × 6  (Extended)</option>
+            <option value="8">8 × 8  (Mega)</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>Timer Mode</label>
+          <select id="sel-timer">
+            <option value="up">⏱ Count Up (Stopwatch)</option>
+            <option value="down-60">⏳ Count Down 60s</option>
+            <option value="down-120">⏳ Count Down 2 min</option>
+            <option value="down-300">⏳ Count Down 5 min</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:24px">
+        <button class="btn" id="btn-start-game" style="padding:14px;font-size:16px">Start Game →</button>
+      </div>
     </div>
   </div>
 
@@ -192,6 +249,7 @@ body::before {
   <div class="screen" id="game-screen">
     <div class="top-bar">
       <span class="who" id="who-label"></span>
+      <span class="stat" id="stat-mode"></span>
       <span class="stat" id="stat-score">🏆 0</span>
       <span class="stat" id="stat-steps">👣 0</span>
       <span class="stat" id="stat-time">⏱ 00:00</span>
@@ -221,7 +279,8 @@ body::before {
 <div class="modal" id="lb-modal">
   <div class="modal-box">
     <h2>🏆 High Scores</h2>
-    <table class="lb-table">
+    <div class="mode-badge" id="lb-mode-label"></div>
+    <table class="lb-table" style="margin-top:12px">
       <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Steps</th><th>Time</th></tr></thead>
       <tbody id="lb-body"></tbody>
     </table>
@@ -231,363 +290,396 @@ body::before {
 
 <script>
 /* ====================================================================
-   Persistent key helpers (localStorage)
+   Animated background
    ==================================================================== */
-const LS_USERS     = 'g2048_users';      // { username: passwordHash }
-const LS_COOKIES   = 'g2048_cookies';    // { username: authToken }
-const LS_SAVES     = 'g2048_saves';      // { username: GameState }
-const LS_LEADER    = 'g2048_leader';     // [{user, score, steps, duration, date}]
+(function(){
+  const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
+  let W,H,stars=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;initStars()}
+  function initStars(){stars=[];for(let i=0;i<80;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.4,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28})}
+  function frame(){
+    x.clearRect(0,0,W,H);
+    // gradient bg
+    const g=x.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,'#0f1428');g.addColorStop(1,'#321e50');
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+    // stars
+    for(const s of stars){
+      s.ph+=s.a;
+      const alpha=.3+.7*Math.sin(s.ph)*Math.sin(s.ph);
+      x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fillStyle=`rgba(255,255,255,${alpha*.5})`;x.fill();
+      s.y-=s.s;if(s.y<-5){s.y=H+5;s.x=Math.random()*W}
+    }
+    requestAnimationFrame(frame)
+  }
+  addEventListener('resize',resize);resize();frame()
+})();
 
-const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+/* ====================================================================
+   Persistent helpers (localStorage)
+   ==================================================================== */
+const LS_USERS   ='g2048_users_v2';
+const LS_SAVES   ='g2048_saves_v2';   // { username: { grid: snapshot } }
+const LS_LEADER  ='g2048_leader_v2';  // { "4":[...], "6":[...], "8":[...] }
 
-/* tiny hash for demo purposes */
-async function sha256(text) {
-  const buf = new TextEncoder().encode(text);
-  const h   = await crypto.subtle.digest('SHA-256', buf);
-  return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2,'0')).join('');
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+async function sha256(t){
+  const buf=new TextEncoder().encode(t);
+  const h=await crypto.subtle.digest('SHA-256',buf);
+  return[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
 /* ====================================================================
-   Sound (Web Audio API – no external files needed)
+   Sound
    ==================================================================== */
-let audioCtx = null;
-function snd(freq, dur = .08, type = 'sine', vol = .15) {
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + dur);
-    o.connect(g).connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + dur);
-  } catch {}
+let audioCtx=null;
+function snd(freq,dur=.08,type='sine',vol=.15){
+  try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
+    o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur);
+  }catch{}
 }
-const SFX = {
-    move:   () => snd(330, .05, 'square', .06),
-    merge:  () => snd(660, .12, 'sine',  .18),
-    win:    () => { snd(880,.2); setTimeout(()=>snd(1100,.3),120); },
-    lose:   () => { snd(220,.2); setTimeout(()=>snd(165,.3),120); },
-    button: () => snd(500, .03, 'square', .05),
+const SFX={
+  move:()=>snd(330,.05,'square',.06),
+  merge:()=>snd(660,.12,'sine',.18),
+  win:()=>{snd(880,.2);setTimeout(()=>snd(1100,.3),120)},
+  lose:()=>{snd(220,.2);setTimeout(()=>snd(165,.3),120)},
+  button:()=>snd(500,.03,'square',.05),
 };
 
 /* ====================================================================
-   Tile colours – matches classic 2048 palette
+   Colours
    ==================================================================== */
-const BG = {
+const BG={
   0:[205,193,180],2:[238,228,218],4:[237,224,200],8:[242,177,121],
   16:[245,149,99],32:[246,124,95],64:[246,94,59],128:[237,207,114],
-  256:[237,204,97],512:[237,200,80],1024:[237,197,63],2048:[237,194,46]
+  256:[237,204,97],512:[237,200,80],1024:[237,197,63],2048:[237,194,46],
+  4096:[80,78,70],8192:[50,48,42]
 };
-function bg(v){ const c = BG[v] || [60,58,50]; return `rgb(${c[0]},${c[1]},${c[2]})`; }
-function fg(v){ return v <= 4 ? '#776e65' : '#f9f6f2'; }
+function bg(v){const c=BG[v]||[40,38,32];return`rgb(${c[0]},${c[1]},${c[2]})`}
+function fg(v){return v<=4?'#776e65':'#f9f6f2'}
 
 /* ====================================================================
    Game state
    ==================================================================== */
-const SIZE = 4;
-let board       = Array.from({length:SIZE}, () => Array(SIZE).fill(0));
-let score       = 0;
-let steps       = 0;
-let elapsedMs   = 0;
-let startTime   = Date.now();
-let won         = false;
-let over        = false;
-const undoStack = [];
-const MAX_UNDO  = 30;
+let SIZE=4;
+let board,score,steps,elapsedMs,startTime,won,over,countDownSec,countDownTotal;
+let timerMode='up'; // 'up' | 'down-60' | 'down-120' | 'down-300'
+const undoStack=[];
+const MAX_UNDO=30;
+let currentUser=null;     // null = guest
+let cells=[];
+let gameTimerInterval=null;
+let boardSize=4;          // current board dimension
 
-let currentUser = null;     // username or null
+const $=id=>document.getElementById(id);
 
-const $  = id => document.getElementById(id);
-const cells = [];
-
-/* ------------------------------------------------------------------ DOM setup (game screen) */
-
-(function buildBoard() {
-  const board = $('board');
-  for (let r = 0; r < SIZE; r++) { cells[r] = []; for (let c = 0; c < SIZE; c++) {
-    const div = document.createElement('div');
-    div.className = 'cell';
-    board.appendChild(div);
-    cells[r][c] = div;
+/* ------------------------------------------------------------------ build board DOM */
+function buildBoardDOM(){
+  const b=$('board');b.innerHTML='';
+  const tilePx = SIZE<=4?100:SIZE<=6?74:56;
+  const gap = SIZE<=4?10:SIZE<=6?8:6;
+  const pad = SIZE<=4?12:SIZE<=6?10:8;
+  b.style.gridTemplateColumns=`repeat(${SIZE},${tilePx}px)`;
+  b.style.gridTemplateRows=`repeat(${SIZE},${tilePx}px)`;
+  b.style.gap=gap+'px';b.style.padding=pad+'px';
+  cells=[];
+  for(let r=0;r<SIZE;r++){cells[r]=[];for(let c=0;c<SIZE;c++){
+    const d=document.createElement('div');d.className='cell';
+    d.style.width=tilePx+'px';d.style.height=tilePx+'px';
+    d.style.fontSize=(tilePx*.38)+'px';
+    b.appendChild(d);cells[r][c]=d;
   }}
-})();
+}
 
 /* ------------------------------------------------------------------ rendering */
-
-function render() {
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
-    const v = board[r][c];
-    const d = cells[r][c];
-    d.textContent = v || '';
-    d.style.background = bg(v);
-    d.style.color = fg(v);
-    d.style.transform = v ? 'scale(1)' : 'scale(0.9)';
+function render(animateCells){
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const v=board[r][c],d=cells[r][c];
+    d.textContent=v||'';d.style.background=bg(v);d.style.color=fg(v);
+    d.style.transform=v?'scale(1)':'scale(.9)';
   }
-  $('stat-score').textContent = '🏆 ' + score;
-  $('stat-steps').textContent = '👣 ' + steps;
+  $('stat-score').textContent='🏆 '+score;
+  $('stat-steps').textContent='👣 '+steps;
 }
 
-function fmtTime(ms) {
-  const s = Math.floor(ms / 1000);
-  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+function updateTimer(){
+  const el=$('stat-time');
+  if(timerMode==='up'){
+    el.textContent='⏱ '+fmtTime(elapsedMs);
+    el.classList.remove('timer-warn');
+  }else{
+    const remain=Math.max(0,countDownTotal-Math.floor(elapsedMs/1000));
+    el.textContent='⏳ '+fmtTime(remain*1000);
+    if(remain<=10)el.classList.add('timer-warn');
+    else el.classList.remove('timer-warn');
+  }
 }
-setInterval(() => {
-  if (!over) elapsedMs = Date.now() - startTime;
-  $('stat-time').textContent = '⏱ ' + fmtTime(elapsedMs);
-}, 500);
+
+function fmtTime(ms){
+  const s=Math.floor(ms/1000);
+  return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+function startTimer(){
+  stopTimer();
+  startTime=Date.now();
+  elapsedMs=0;
+  if(timerMode!=='up'){
+    const m=timerMode.match(/down-(\d+)/);
+    countDownTotal=m?parseInt(m[1]):60;
+  }
+  gameTimerInterval=setInterval(()=>{
+    if(over)return;
+    elapsedMs=Date.now()-startTime;
+    updateTimer();
+    // check countdown expiry
+    if(timerMode!=='up'){
+      const remain=countDownTotal-Math.floor(elapsedMs/1000);
+      if(remain<=0){stopTimer();gameOverByTime();}
+    }
+  },100);
+}
+function stopTimer(){if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null}}
 
 /* ------------------------------------------------------------------ game logic */
+function emptyCells(){const o=[];for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(!board[r][c])o.push([r,c]);return o}
 
-function emptyCells() {
-  const out = [];
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++)
-    if (!board[r][c]) out.push([r, c]);
-  return out;
+function addRandom(){
+  const e=emptyCells();if(!e.length)return;
+  const [r,c]=e[Math.floor(Math.random()*e.length)];
+  board[r][c]=Math.random()<.9?2:4;
 }
 
-function addRandom() {
-  const e = emptyCells();
-  if (!e.length) return;
-  const [r, c] = e[Math.floor(Math.random() * e.length)];
-  board[r][c] = Math.random() < 0.9 ? 2 : 4;
+function init(size){
+  SIZE=size||boardSize;boardSize=SIZE;
+  board=Array.from({length:SIZE},()=>Array(SIZE).fill(0));
+  score=0;steps=0;won=false;over=false;
+  elapsedMs=0;undoStack.length=0;
+  buildBoardDOM();
+  addRandom();addRandom();render();
+  hideOverlay();startTimer();
 }
 
-function init() {
-  board = Array.from({length:SIZE}, () => Array(SIZE).fill(0));
-  score = 0; steps = 0; won = false; over = false;
-  elapsedMs = 0; startTime = Date.now();
-  undoStack.length = 0;
-  addRandom(); addRandom(); render();
-  hideOverlay();
-}
+function snapshot(){return{board:board.map(r=>[...r]),score,steps,elapsedMs}}
 
-function snapshot() {
-  return { board: board.map(r=>[...r]), score, steps, elapsedMs };
-}
-
-function slide(line) {
-  // compact + merge
-  const nz = line.filter(v => v);
-  const out = [];
-  for (let i = 0; i < nz.length; i++) {
-    if (i + 1 < nz.length && nz[i] === nz[i + 1]) {
-      out.push(nz[i] * 2);
-      score += out[out.length - 1];
-      i++;
-    } else out.push(nz[i]);
+function slide(line){
+  const nz=line.filter(v=>v);const out=[];
+  for(let i=0;i<nz.length;i++){
+    if(i+1<nz.length&&nz[i]===nz[i+1]){out.push(nz[i]*2);score+=out[out.length-1];i++}
+    else out.push(nz[i]);
   }
-  while (out.length < SIZE) out.push(0);
+  while(out.length<SIZE)out.push(0);
   return out;
 }
+function col(c){return board.map(r=>r[c])}
+function setCol(c,arr){for(let r=0;r<SIZE;r++)board[r][c]=arr[r]}
 
-function col(c) { return board.map(r => r[c]); }
-function setCol(c, arr) { for (let r = 0; r < SIZE; r++) board[r][c] = arr[r]; }
-
-function move(dir) {
-  if (over) return;
-  const before = JSON.stringify(board);
+function move(dir){
+  if(over)return;
+  const before=JSON.stringify(board);
   undoStack.push(snapshot());
-  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  if(undoStack.length>MAX_UNDO)undoStack.shift();
+  if(dir==='left')for(let r=0;r<SIZE;r++)board[r]=slide(board[r]);
+  if(dir==='right')for(let r=0;r<SIZE;r++)board[r]=slide(board[r].slice().reverse()).reverse();
+  if(dir==='up')for(let c=0;c<SIZE;c++)setCol(c,slide(col(c)));
+  if(dir==='down')for(let c=0;c<SIZE;c++)setCol(c,slide(col(c).slice().reverse()).reverse());
 
-  if (dir === 'left')  for (let r = 0; r < SIZE; r++) board[r] = slide(board[r]);
-  if (dir === 'right') for (let r = 0; r < SIZE; r++) board[r] = slide(board[r].slice().reverse()).reverse();
-  if (dir === 'up')    for (let c = 0; c < SIZE; c++) setCol(c, slide(col(c)));
-  if (dir === 'down')  for (let c = 0; c < SIZE; c++) setCol(c, slide(col(c).slice().reverse()).reverse());
-
-  if (JSON.stringify(board) !== before) {
-    steps++;
-    SFX.move();
-    addRandom();
-    if (!won && board.flat().includes(2048)) {
-      won = true; SFX.win();
-      setTimeout(() => showOverlay('🎉 You Win!'), 120);
-    } else if (!hasMoves()) {
-      over = true; SFX.lose();
+  if(JSON.stringify(board)!==before){
+    steps++;SFX.move();addRandom();
+    render();
+    if(!won&&board.flat().includes(SIZE*SIZE*2)){
+      won=true;SFX.win();
+      setTimeout(()=>showOverlay('🎉 You Win!'),120);
+    }else if(!hasMoves()){
+      over=true;SFX.lose();stopTimer();
       recordScore();
-      setTimeout(() => showOverlay('💀 Game Over'), 120);
+      setTimeout(()=>showOverlay('💀 Game Over'),120);
     }
-  } else {
-    undoStack.pop();  // nothing changed
+  }else{
+    undoStack.pop();
   }
-  render();
 }
 
-function hasMoves() {
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
-    if (!board[r][c]) return true;
-    if (c < SIZE - 1 && board[r][c] === board[r][c + 1]) return true;
-    if (r < SIZE - 1 && board[r][c] === board[r + 1][c]) return true;
+function hasMoves(){
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    if(!board[r][c])return true;
+    if(c<SIZE-1&&board[r][c]===board[r][c+1])return true;
+    if(r<SIZE-1&&board[r][c]===board[r+1][c])return true;
   }
   return false;
 }
 
-function undo() {
-  if (!undoStack.length) { SFX.lose(); return; }
-  const s = undoStack.pop();
-  board = s.board.map(r=>[...r]);
-  score = s.score; steps = s.steps; elapsedMs = s.elapsedMs;
-  over = false; won = false;
-  SFX.move(); render(); hideOverlay();
+function gameOverByTime(){
+  if(over)return;
+  over=true;SFX.lose();
+  recordScore();
+  // Only win if target reached on count-down end
+  showOverlay('⏰ Time\'s Up!');
 }
 
-/* ------------------------------------------------------------------ leaderboard */
-
-function recordScore() {
-  if (!currentUser) return;
-  const lb = load(LS_LEADER, []);
-  lb.push({ user: currentUser, score, steps, duration: elapsedMs, date: Date.now() });
-  lb.sort((a,b) => b.score - a.score || a.duration - b.duration);
-  save(LS_LEADER, lb.slice(0, 50));
+function undo(){
+  if(!undoStack.length){SFX.lose();return}
+  const s=undoStack.pop();
+  board=s.board.map(r=>[...r]);
+  score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
+  over=false;won=false;
+  render();SFX.move();startTimer();
 }
 
-function showLeaderboard() {
-  const lb = load(LS_LEADER, []);
-  const body = $('lb-body');
-  if (!lb.length) {
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px">No scores yet – be the first!</td></tr>';
-  } else {
-    body.innerHTML = lb.slice(0, 15).map((e, i) =>
+/* ------------------------------------------------------------------ per-grid leaderboard */
+
+function recordScore(){
+  if(!currentUser)return;
+  const all=load(LS_LEADER,{});
+  const key=String(SIZE);
+  if(!all[key])all[key]=[];
+  all[key].push({user:currentUser,score,steps,duration:elapsedMs,date:Date.now()});
+  all[key].sort((a,b)=>b.score-a.score||a.duration-b.duration);
+  save(LS_LEADER,all[key].slice(0,50));
+}
+
+function showLeaderboard(){
+  const all=load(LS_LEADER,{})||{};
+  const key=String(SIZE);
+  const lb=all[key]||[];
+  $('lb-mode-label').textContent=`${SIZE}×${SIZE} Grid · ${timerMode==='up'?'Stopwatch':'Countdown'}`;
+  const body=$('lb-body');
+  if(!lb.length){
+    body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px">No scores yet – be the first!</td></tr>';
+  }else{
+    body.innerHTML=lb.slice(0,15).map((e,i)=>
       `<tr><td>${i+1}</td><td>${escapeHtml(e.user)}</td><td>${e.score}</td><td>${e.steps}</td><td>${fmtTime(e.duration)}</td></tr>`
     ).join('');
   }
   $('lb-modal').classList.add('show');
 }
-function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
 /* ------------------------------------------------------------------ save / load */
 
-function doSave() {
-  if (!currentUser) { alert('Saving is only available in User Mode.'); return; }
-  const saves = load(LS_SAVES, {});
-  saves[currentUser] = snapshot();
-  save(LS_SAVES, saves);
-  SFX.merge(); alert('✅ Game saved!');
+function doSave(){
+  if(!currentUser){alert('Saving is only available in User Mode.');return}
+  const saves=load(LS_SAVES,{});
+  saves[currentUser]=saves[currentUser]||{};
+  saves[currentUser][String(SIZE)]={board:board.map(r=>[...r]),score,steps,elapsedMs,timerMode};
+  save(LS_SAVES,saves);
+  SFX.merge();alert('✅ Game saved!');
 }
-function doLoad() {
-  if (!currentUser) return;
-  const saves = load(LS_SAVES, {});
-  if (!saves[currentUser]) { alert('No save found.'); return; }
-  const s = saves[currentUser];
-  board = s.board.map(r=>[...r]);
-  score = s.score; steps = s.steps; elapsedMs = s.elapsedMs;
-  startTime = Date.now() - elapsedMs;
-  over = false; won = false;
-  undoStack.length = 0;
-  SFX.merge(); render(); hideOverlay();
-  alert('📂 Game loaded!');
+function doLoad(){
+  if(!currentUser)return;
+  const saves=load(LS_SAVES,{})||{};
+  const uSaves=saves[currentUser]||{};
+  const key=String(SIZE);
+  if(!uSaves[key]){alert('No save found for '+SIZE+'×'+SIZE+'.');return}
+  const s=uSaves[key];
+  board=s.board.map(r=>[...r]);
+  score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
+  startTime=Date.now()-elapsedMs;over=false;won=false;undoStack.length=0;
+  render();SFX.merge();startTimer();alert('📂 Game loaded!');
 }
 
 /* ------------------------------------------------------------------ overlay */
 
-function showOverlay(title) { $('ov-title').textContent = title; $('overlay').classList.add('show'); }
-function hideOverlay()      { $('overlay').classList.remove('show');               }
+function showOverlay(t){$('ov-title').textContent=t;$('overlay').classList.add('show')}
+function hideOverlay(){$('overlay').classList.remove('show')}
 
 /* ------------------------------------------------------------------ screen switching */
 
-function show(s) {
-  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+function show(s){
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
   $(s).classList.add('active');
 }
 
 /* ====================================================================
-   Entry flow
+   Flow
    ==================================================================== */
-$('btn-user').onclick  = () => { SFX.button(); show('auth-screen'); };
-$('btn-guest').onclick = () => {
-  SFX.button(); currentUser = null;
-  $('who-label').textContent = '🎮 Guest Mode';
-  $('b-save').disabled = true;
-  $('b-save').style.opacity = 0.5;
-  show('game-screen'); init();
+$('btn-user').onclick=()=>{SFX.button();show('auth-screen')};
+$('btn-guest').onclick=()=>{SFX.button();currentUser=null;showSettings()};
+$('btn-auth-back').onclick=()=>{SFX.button();show('entry-screen')};
+
+$('btn-settings-back').onclick=()=>{SFX.button();
+  if(currentUser)show('auth-screen');else show('entry-screen');
+};
+
+function showSettings(){
+  // restore defaults from storage if any
+  const last=load('g2048_last_settings',{grid:4,timer:'up'});
+  $('sel-grid').value=String(last.grid||4);
+  $('sel-timer').value=last.timer||'up';
+  show('settings-screen');
+}
+
+$('btn-start-game').onclick=()=>{
+  SFX.button();
+  const g=parseInt($('sel-grid').value);
+  const t=$('sel-timer').value;
+  boardSize=g;timerMode=t;
+  save('g2048_last_settings',{grid:g,timer:t});
+  // set up game screen labels
+  $('who-label').textContent=currentUser?('👤 '+currentUser):'🎮 Guest';
+  $('stat-mode').textContent=`${g}×${g}`;
+  // disable save/load for guest
+  $('b-save').disabled=!currentUser;
+  $('b-save').style.opacity=currentUser?'1':'.35';
+  $('b-save').style.pointerEvents=currentUser?'auto':'none';
+  $('b-load').disabled=!currentUser;
+  $('b-load').style.opacity=currentUser?'1':'.35';
+  $('b-load').style.pointerEvents=currentUser?'auto':'none';
+  show('game-screen');init(g);
 };
 
 /* ====================================================================
    Auth
    ==================================================================== */
-$('btn-login').onclick = async () => {
+$('btn-login').onclick=async()=>{
   SFX.button();
-  const u = $('auth-user').value.trim();
-  const p = $('auth-pass').value;
-  if (!u || !p) { $('auth-status').textContent = 'Enter username and password'; return; }
-  const users = load(LS_USERS, {});
-  const hash  = await sha256(p);
-  if (users[u] && users[u] === hash) {
-    currentUser = u; SFX.merge();
-    enterGame();
-  } else {
-    $('auth-status').textContent = 'Invalid username or password';
-  }
+  const u=$('auth-user').value.trim(),p=$('auth-pass').value;
+  if(!u||!p){$('auth-status').textContent='Enter username and password';return}
+  const users=load(LS_USERS,{});
+  const hash=await sha256(p);
+  if(users[u]&&users[u]===hash){
+    currentUser=u;SFX.merge();showSettings();
+  }else{$('auth-status').textContent='Invalid username or password'}
 };
 
-$('btn-register').onclick = async () => {
+$('btn-register').onclick=async()=>{
   SFX.button();
-  const u = $('auth-user').value.trim();
-  const p = $('auth-pass').value;
-  if (!u || !p) { $('auth-status').textContent = 'Enter username and password'; return; }
-  const users = load(LS_USERS, {});
-  if (users[u]) { $('auth-status').textContent = 'Username already taken'; return; }
-  users[u] = await sha256(p);
-  save(LS_USERS, users);
-  SFX.merge();
-  $('auth-status').textContent = '✅ Registered! You can log in now.';
+  const u=$('auth-user').value.trim(),p=$('auth-pass').value;
+  if(!u||!p){$('auth-status').textContent='Enter username and password';return}
+  const users=load(LS_USERS,{});
+  if(users[u]){$('auth-status').textContent='Username already taken';return}
+  users[u]=await sha256(p);save(LS_USERS,users);
+  SFX.merge();$('auth-status').textContent='✅ Registered! You can log in now.';
 };
-
-$('btn-auth-back').onclick = () => { SFX.button(); show('entry-screen'); };
-
-function enterGame() {
-  $('who-label').textContent = '👤 ' + currentUser;
-  $('b-save').disabled = false;
-  $('b-save').style.opacity = 1;
-  show('game-screen');
-  // check for saved game
-  const saves = load(LS_SAVES, {});
-  if (saves[currentUser]) {
-    if (load(`g2048_ask_${currentUser}`, true)) {
-      const ok = confirm('Found a saved game. Load it?');
-      if (ok) { doLoad(); }
-      else { init(); }
-    } else init();
-  } else init();
-}
 
 /* ====================================================================
    Game buttons
    ==================================================================== */
-$('b-up').onclick     = () => { SFX.button(); move('up');    };
-$('b-down').onclick   = () => { SFX.button(); move('down');  };
-$('b-left').onclick   = () => { SFX.button(); move('left');  };
-$('b-right').onclick  = () => { SFX.button(); move('right'); };
-$('b-undo').onclick   = () => { SFX.button(); undo(); };
-$('b-restart').onclick= () => { SFX.button(); init(); };
-$('b-save').onclick   = () => { SFX.button(); doSave(); };
-$('b-load').onclick   = () => { SFX.button(); doLoad(); };
-$('b-leaderboard').onclick = () => { SFX.button(); showLeaderboard(); };
-$('lb-close').onclick = () => { SFX.button(); $('lb-modal').classList.remove('show'); };
-$('ov-btn').onclick   = () => { SFX.button(); init(); };
+$('b-up').onclick=()=>{SFX.button();move('up')};
+$('b-down').onclick=()=>{SFX.button();move('down')};
+$('b-left').onclick=()=>{SFX.button();move('left')};
+$('b-right').onclick=()=>{SFX.button();move('right')};
+$('b-undo').onclick=()=>{SFX.button();undo()};
+$('b-restart').onclick=()=>{SFX.button();init(boardSize)};
+$('b-save').onclick=()=>{SFX.button();doSave()};
+$('b-load').onclick=()=>{SFX.button();doLoad()};
+$('b-leaderboard').onclick=()=>{SFX.button();showLeaderboard()};
+$('lb-close').onclick=()=>{SFX.button();$('lb-modal').classList.remove('show')};
+$('ov-btn').onclick=()=>{SFX.button();init(boardSize)};
 
 /* keyboard */
-document.addEventListener('keydown', e => {
-  if (!$('game-screen').classList.contains('active')) return;
-  const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
-                w:'up', s:'down', a:'left', d:'right',
-                W:'up', S:'down', A:'left', D:'right' };
-  if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
+document.addEventListener('keydown',e=>{
+  if(!$('game-screen').classList.contains('active'))return;
+  const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',
+    w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
+  if(map[e.key]){e.preventDefault();move(map[e.key])}
 });
-
-/* boot: auto-login if cookie exists */
-(function boot() {
-  const cookies = load(LS_COOKIES, {});
-  const token   = sessionStorage.getItem('g2048_session');
-  if (token && cookies[token]) {
-    currentUser = token;
-    $('who-label').textContent = '👤 ' + currentUser;
-    show('game-screen'); init();
-    return;
-  }
-  init();  // render initial board even on entry screen (behind it)
-})();
 </script>
 </body>
 </html>

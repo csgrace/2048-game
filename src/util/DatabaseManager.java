@@ -117,25 +117,28 @@ public class DatabaseManager {
     //  Leaderboard
     // ======================================================================
 
-    public record ScoreRow(String username, int score, int steps, int durationS, Timestamp at) {}
+    public record ScoreRow(String username, int score, int steps, int durationS, int gridSize, Timestamp at) {}
 
-    /** Top-N leaderboard rows. */
-    public List<ScoreRow> leaderboard(int limit) {
+    /** Top-N leaderboard rows for a specific grid size. */
+    public List<ScoreRow> leaderboard(int gridSize, int limit) {
         List<ScoreRow> rows = new ArrayList<>();
         String sql = """
-            SELECT u.username, s.score, s.steps, s.duration_s, s.achieved
+            SELECT u.username, s.score, s.steps, s.duration_s, s.grid_size, s.achieved
               FROM scores s JOIN users u ON u.id = s.user_id
+             WHERE s.grid_size = ?
              ORDER BY s.score DESC, s.duration_s ASC
              LIMIT ?
             """;
         try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, limit);
+            ps.setInt(1, gridSize);
+            ps.setInt(2, limit);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) rows.add(new ScoreRow(
                 rs.getString("username"),
                 rs.getInt("score"),
                 rs.getInt("steps"),
                 rs.getInt("duration_s"),
+                rs.getInt("grid_size"),
                 rs.getTimestamp("achieved")
             ));
         } catch (SQLException ignored) {}
@@ -143,15 +146,16 @@ public class DatabaseManager {
     }
 
     /**
-     * Record a new score.
+     * Record a new score for a specific grid size.
      */
-    public void recordScore(int userId, int score, int steps, long elapsedMillis) {
-        String sql = "INSERT INTO scores(user_id, score, steps, duration_s) VALUES(?,?,?,?)";
+    public void recordScore(int userId, int score, int steps, long elapsedMillis, int gridSize) {
+        String sql = "INSERT INTO scores(user_id, score, steps, duration_s, grid_size) VALUES(?,?,?,?,?)";
         try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setInt(2, score);
             ps.setInt(3, steps);
             ps.setInt(4, (int)(elapsedMillis / 1000));
+            ps.setInt(5, gridSize);
             ps.executeUpdate();
         } catch (SQLException ignored) {}
     }
@@ -171,36 +175,38 @@ public class DatabaseManager {
         sb.append('}');
 
         String upsert = """
-            INSERT INTO saves(user_id, board, score, steps, elapsed_ms)
-            VALUES (?, ?::integer[], ?, ?, ?)
-            ON CONFLICT (user_id)
+            INSERT INTO saves(user_id, grid_size, board, score, steps, elapsed_ms)
+            VALUES (?, ?, ?::integer[], ?, ?, ?)
+            ON CONFLICT (user_id, grid_size)
             DO UPDATE SET board = EXCLUDED.board, score = EXCLUDED.score,
                           steps = EXCLUDED.steps, elapsed_ms = EXCLUDED.elapsed_ms,
                           saved_at = now()
             """;
         try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(upsert)) {
             ps.setInt(1, userId);
-            ps.setString(2, sb.toString());
-            ps.setInt(3, score);
-            ps.setInt(4, steps);
-            ps.setLong(5, elapsedMs);
+            ps.setInt(2, board.length);
+            ps.setString(3, sb.toString());
+            ps.setInt(4, score);
+            ps.setInt(5, steps);
+            ps.setLong(6, elapsedMs);
             ps.executeUpdate();
         } catch (SQLException ignored) {}
     }
 
     public record SaveData(int[][] board, int score, int steps, long elapsedMs) {}
 
-    public SaveData loadGame(int userId, int defaultSize) {
-        String sql = "SELECT board, score, steps, elapsed_ms FROM saves WHERE user_id = ?";
+    public SaveData loadGame(int userId, int gridSize) {
+        String sql = "SELECT board, score, steps, elapsed_ms FROM saves WHERE user_id = ? AND grid_size = ?";
         try (Connection c = conn(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, userId);
+            ps.setInt(2, gridSize);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 String arr = rs.getString("board");             // "{0,2,4,...}"
                 int score = rs.getInt("score");
                 int steps = rs.getInt("steps");
                 long ms   = rs.getLong("elapsed_ms");
-                int[][] board = parseBoard(arr, defaultSize);
+                int[][] board = parseBoard(arr, gridSize);
                 return new SaveData(board, score, steps, ms);
             }
         } catch (SQLException ignored) {}
@@ -242,15 +248,18 @@ public class DatabaseManager {
             + "score INTEGER NOT NULL,"
             + "steps INTEGER NOT NULL,"
             + "duration_s INTEGER NOT NULL,"
+            + "grid_size INTEGER NOT NULL DEFAULT 4,"
             + "achieved TIMESTAMP DEFAULT now())",
 
             "CREATE TABLE IF NOT EXISTS saves ("
-            + "user_id INTEGER PRIMARY KEY REFERENCES users(id),"
+            + "user_id INTEGER REFERENCES users(id),"
+            + "grid_size INTEGER NOT NULL DEFAULT 4,"
             + "board INTEGER[] NOT NULL,"
             + "score INTEGER NOT NULL,"
             + "steps INTEGER NOT NULL,"
             + "elapsed_ms BIGINT NOT NULL,"
-            + "saved_at TIMESTAMP DEFAULT now())"
+            + "saved_at TIMESTAMP DEFAULT now(),"
+            + "PRIMARY KEY(user_id, grid_size))"
         };
         try (Connection c = conn(); Statement st = c.createStatement()) {
             for (String s : ddl) st.executeUpdate(s);
