@@ -1,8 +1,8 @@
 # 2048 – CS109 Spring 2026 Project
 
 A complete implementation of the 2048 number-puzzle game in **Java (Swing)**
-with optional **PostgreSQL** backing for user accounts, leaderboards and
-game saves.  A pure-HTML5 front-end is also provided for deployment to
+with optional **PostgreSQL** backing for user accounts, per-grid leaderboards,
+and per-grid saves.  A pure-HTML5 front-end is also provided for deployment to
 GitHub Pages / any static host.
 
 ---
@@ -11,21 +11,23 @@ GitHub Pages / any static host.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **1 – Game init & classic 4×4** | ✅ | Restart, random seeding, colours per tile |
+| **1 – Game init & NxN grids** | ✅ | 4×4 (Classic), 6×6 (Extended), 8×8 (Mega); restart, random seeding, colours per tile |
 | **2 – Multi-user login** | ✅ | `User Mode` ↔ `Guest Mode`; users persist across launches |
-| **3 – Save & load** | ✅ | One slot per user; corrupt saves fail gracefully |
-| **4 – Gameplay** | ✅ | Keyboard **and** button controls, win/lose detection, undo |
-| **5 – Swing GUI** | ✅ | Gradient backdrop, animated tiles, arrow pad |
-| **6 – Advanced** | ✅ | WebAudio sound effects, leaderboard, undo stack, timed mode ready |
+| **3 – Save & load** | ✅ | One slot per user per grid size (Guest Mode has **no save/load**); corrupt saves fail gracefully |
+| **4 – Gameplay** | ✅ | Keyboard **and** button controls, win/lose detection, undo (30-step) |
+| **5 – Swing GUI** | ✅ | Gradient backdrop + glass-morphism cards, arrow pad |
+| **6 – Advanced** | ✅ | WebAudio sound, **per-grid leaderboards**, **count-up / count-down timers**, settings panel |
 
 Additional niceties:
 
 * Self-connecting **PostgreSQL** layer (`DatabaseManager`) – plug in your
-  connection details via system properties.
+  connection details via system properties (`-Ddb.host=…`).
 * Fallback to file-based persistence when no database is available.
-* `Entry Screen → Auth Screen → Game Screen` user flow driven by
-  `CardLayout`.
-* Leaderboard displaying top scores across all players.
+* User flow: `Entry Screen → Auth Screen (User) → Settings Screen → Game Screen`
+  driven by `CardLayout`.
+* Leaderboard **separate per grid size** — 4×4, 6×6, and 8×8 each have their own
+  score board.
+* Two timer modes: **count-up** (stopwatch) and **count-down** (60s / 2 min / 5 min).
 * Sound generated programmatically – no external audio files required.
 
 ---
@@ -33,26 +35,26 @@ Additional niceties:
 ## Project layout
 
 ```
-csgrace-website (individual site)
 2048-game-repo/
 ├── src/
 │   ├── Main.java                # entry point
 │   ├── model/
 │   │   ├── User.java            # (int id, String username)
 │   │   ├── GameState.java       # immutable snapshot
-│   │   └── GameModel.java       # slide/merge/undo/win/lose logic
+│   │   └── GameModel.java       # slide/merge/undo/win/lose logic (NxN)
 │   ├── view/
 │   │   ├── EntryPanel.java      # User / Guest pick
 │   │   ├── AuthPanel.java       # Login / Register
-│   │   ├── GamePanel.java       # Main game screen
+│   │   ├── SettingsPanel.java   # Grid size + timer mode picker
+│   │   ├── GamePanel.java       # Main game screen (NxN + timer)
 │   │   ├── GameFrame.java       # CardLayout host window
 │   │   └── TileView.java        # Rounded-colour tile renderer
 │   └── util/
 │       ├── ColorMap.java        # Tile colours
-│       ├── SoundManager.java    # WebAudio-like beep engine
+│       ├── SoundManager.java    # Beep engine
 │       ├── SaveManager.java     # File-based fallback persistence
-│       └── DatabaseManager.java # PostgreSQL: users, scores, saves
-├── sql/init.sql                 # Schema bootstrap script
+│       └── DatabaseManager.java # PostgreSQL: users, scores (per-grid), saves (per-grid)
+├── sql/init.sql                 # Schema bootstrap script (v2: grid_size column)
 ├── index.html                   # Static HTML5 version (GitHub Pages)
 └── data/                        # Runtime saves (created on first launch)
 ```
@@ -71,12 +73,12 @@ To supply connection details different from the defaults
 (`localhost:5432/game2048`, user `postgres`, pass `postgres`):
 
 ```bash
-java -Ddb.host=10.0.0.5 -Ddb.port=5432 -dDb.name=cs109 \
+java -Ddb.host=10.0.0.5 -Ddb.port=5432 -Ddb.name=cs109 \
      -Ddb.user=app -Ddb.pass=secret -cp out Main
 ```
 
 If no PostgreSQL is reachable the program transparently falls back to
-file-based storage – the full game still works in Guest & User modes.
+file-based storage – the full game still works in both modes.
 
 ---
 
@@ -90,6 +92,13 @@ psql -U postgres -c "CREATE DATABASE game2048;"
 psql -U postgres -d game2048 -f sql/init.sql
 ```
 
+> **Upgrading from v1 schema?** The `scores` and `saves` tables now have a
+> `grid_size` column. Drop and re-create them:
+> ```sql
+> DROP TABLE IF EXISTS scores, saves CASCADE;
+> -- then re-run init.sql
+> ```
+
 ---
 
 ## HTML5 version
@@ -98,8 +107,21 @@ psql -U postgres -d game2048 -f sql/init.sql
 in the browser.  Deploy it to **GitHub Pages** (enable Pages → source
 `main` branch → `/`) or open it locally – no server needed.
 
-Greats saved to `localStorage`; users & leaderboard live in the same
-origin-scoped storage.
+All data (users, saves, per-grid leaderboards) lives in `localStorage`,
+scoped to the origin.
+
+---
+
+## Flow
+
+```
+┌─────────────┐      ┌──────────────┐      ┌──────────────┐      ┌────────────┐
+│ Entry       │──┬──▶│ Auth (User)  │──┬──▶│ Settings     │─────▶│ Game       │
+│ User / Guest│  │   │ login/regs   │  │   │ grid + timer │      │ NxN + sim  │
+└─────────────┘  │   └──────────────┘  │   └──────────────┘      └────────────┘
+                 │                      │
+                 └──────────────────────┘  (Guest skips Auth)
+```
 
 ---
 
@@ -107,9 +129,9 @@ origin-scoped storage.
 
 | Section | PDF spec | Implementation |
 |---------|----------|----------------|
-| Task 1 – Init | 4×4, one 2 + one 4, restart, colours | `GameModel.init()` + `ColorMap` |
+| Task 1 – Init | 4×4+, one 2 + one 4, restart, colours | `GameModel.init()` + `ColorMap` |
 | Task 2 – Login | Guest / registered; persistence | `EntryPanel`, `AuthPanel`, `DatabaseManager` |
-| Task 3 – Save/Load | 1 slot per user, overwrite, graceful corruption | `DatabaseManager.saveGame/loadGame` + `fileSave` |
+| Task 3 – Save/Load | 1 slot per user per grid; overwrite, graceful | `DatabaseManager.saveGame/loadGame` |
 | Task 4 – Game | Slide/merge, buttons + keyboard, win/over | `GameModel.move`, `GamePanel.bindKeys` |
-| Task 5 – GUI | Swing or JavaFX | Swing with custom `paintComponent` |
-| Task 6 – Advance | Animation, sound, timer, leaderboard, props | `SoundManager`, `Timer`, leaderboard SQL |
+| Task 5 – GUI | Swing or JavaFX | Swing with custom `paintComponent`, glass cards |
+| Task 6 – Advance | Animation, sound, timer, leaderboard | `SoundManager`, count-up/down timer, per-grid leaderboard |
