@@ -516,7 +516,7 @@ function addRandom(){
   board[r][c]=v;
   const id=nextTileId++;
   tileId[r][c]=id;
-  tileMap[id]={el:makeTile(r,c,true),value:v,row:r,col:c};
+  tileMap[id]={el:makeTile(v,r,c,true),value:v,row:r,col:c};
 }
 
 function init(size){
@@ -533,7 +533,7 @@ function init(size){
     board[r][c]=v;
     const id=nextTileId++;
     tileId[r][c]=id;
-    tileMap[id]={el:makeTile(r,c,true),value:v,row:r,col:c};
+    tileMap[id]={el:makeTile(v,r,c,true),value:v,row:r,col:c};
   }
   render();
   hideOverlay();startTimer();
