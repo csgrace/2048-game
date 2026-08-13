@@ -4,7 +4,10 @@ import { Pool } from 'pg';
 
 const port = Number(process.env.PORT || 3000);
 const allowedOrigin = process.env.CORS_ORIGIN || 'https://csgrace.github.io';
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false }
+});
 
 function json(res, status, body) {
   res.writeHead(status, {
