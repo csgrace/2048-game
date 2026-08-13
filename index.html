@@ -125,6 +125,18 @@ body::before{
 
 .sides{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
 .sides .btn{min-width:72px;padding:8px 10px;font-size:13px}
+.sides .tool-trigger{min-width:38px;width:38px;padding:8px;font-size:18px}
+
+/* Practice tools stay behind one compact menu so the game controls do not crowd the screen. */
+.tool-box{background:linear-gradient(135deg,#252b4a,#171b31);color:#f9f6f2;min-width:min(360px,92vw);padding:26px 28px;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.45)}
+.tool-box h2{margin-bottom:8px;text-align:center;font-size:22px}
+.tool-box p{color:rgba(255,255,255,.72);font-size:13px;line-height:1.5;text-align:center}
+.tool-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0 12px}
+.tool-actions .btn{padding:12px;font-size:14px}
+.tool-status{min-height:20px;color:#ffd985;font-size:13px;text-align:center}
+#board.tool-selecting .cell{cursor:pointer;box-shadow:0 0 0 2px rgba(255,255,255,.42)}
+#board.tool-selecting .cell:hover{filter:brightness(1.15);transform:scale(1.04)}
+#board .cell.tool-selected{box-shadow:0 0 0 4px #ffd166,0 0 18px rgba(255,209,102,.9);z-index:4}
 
 .arrows{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,44px);gap:4px;margin-top:12px;justify-content:center}
 .arrows .btn{min-width:48px;font-size:18px;padding:6px}
@@ -270,6 +282,7 @@ body::before{
       <button class="btn" id="b-save">💾 Save</button>
       <button class="btn" id="b-load">📂 Load</button>
       <button class="btn" id="b-undo">↩ Undo</button>
+      <button class="btn tool-trigger" id="b-tools" aria-label="Open practice tools" title="Practice tools">⋯</button>
       <button class="btn" id="b-restart">↺ Restart</button>
       <button class="btn" id="b-leaderboard">🏆 Boards</button>
     </div>
@@ -300,6 +313,20 @@ body::before{
       <tbody id="lb-personal-body"></tbody>
     </table>
     <button class="modal-close" id="lb-close">Close</button>
+  </div>
+</div>
+
+<!-- compact practice-tools menu; scores after using a tool are not submitted to the public board -->
+<div class="modal" id="tools-modal" role="dialog" aria-modal="true" aria-labelledby="tools-title">
+  <div class="tool-box">
+    <h2 id="tools-title">Practice Tools</h2>
+    <p>Choose an action, then click tiles on the board. Using a tool makes this game practice-only, so it will not be added to the public leaderboard.</p>
+    <div class="tool-actions">
+      <button class="btn" id="tool-swap">⇄ Swap two tiles</button>
+      <button class="btn" id="tool-delete">⌫ Delete a tile</button>
+    </div>
+    <div class="tool-status" id="tool-status"></div>
+    <button class="modal-close" id="tools-close">Close</button>
   </div>
 </div>
 
@@ -390,7 +417,10 @@ function fg(v){return v<=4?'#776e65':'#f9f6f2'}
    ==================================================================== */
 let SIZE=4;
 let board,score,steps,elapsedMs,startTime,won,over,countDownSec,countDownTotal;
-let timerMode='up'; // 'up' | 'down-60' | 'down-120' | 'down-300'
+let timerMode='up';
+let cheated=false;
+let toolMode=null;
+let selectedToolTileId=null; // 'up' | 'down-60' | 'down-120' | 'down-300'
 const undoStack=[];
 const MAX_UNDO=30;
 let currentUser=null;     // null = guest
@@ -442,10 +472,11 @@ function buildBoardDOM(){
   for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++)tileId[r][c]=0;}
 }
 
-function makeTile(value,r,c,isNew){
+function makeTile(value,r,c,isNew,id){
   const {tilePx}=geom();
   const d=document.createElement('div');
   d.className='cell'+(isNew?' new':'');
+  d.dataset.tileId=String(id);
   d.style.width=tilePx+'px';d.style.height=tilePx+'px';
   d.style.fontSize=(tilePx*.38)+'px';
   applyTileStyle(d,value);
@@ -552,13 +583,14 @@ function addRandom(){
   board[r][c]=v;
   const id=nextTileId++;
   tileId[r][c]=id;
-  tileMap[id]={el:makeTile(v,r,c,true),value:v,row:r,col:c};
+  tileMap[id]={el:makeTile(v,r,c,true,id),value:v,row:r,col:c};
 }
 
 function init(size){
   SIZE=size||boardSize;boardSize=SIZE;
   board=Array.from({length:SIZE},()=>Array(SIZE).fill(0));
-  score=0;steps=0;won=false;over=false;
+  score=0;steps=0;won=false;over=false;cheated=false;
+  cancelToolSelection();
   elapsedMs=0;undoStack.length=0;
   clearPendingGameTimers();
   buildBoardDOM();
@@ -569,13 +601,13 @@ function init(size){
     board[r][c]=v;
     const id=nextTileId++;
     tileId[r][c]=id;
-    tileMap[id]={el:makeTile(v,r,c,true),value:v,row:r,col:c};
+    tileMap[id]={el:makeTile(v,r,c,true,id),value:v,row:r,col:c};
   }
   render();
   hideOverlay();startTimer();
 }
 
-function snapshot(){return{board:board.map(r=>[...r]),tileId:tileId.map(r=>[...r]),score,steps,elapsedMs}}
+function snapshot(){return{board:board.map(r=>[...r]),tileId:tileId.map(r=>[...r]),score,steps,elapsedMs,cheated}}
 
 /* slide a single row-left, tracking tile IDs + merges. returns {line,ids,merged} */
 function slideLine(line,ids){
@@ -605,7 +637,7 @@ function syncTiles(){
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
     const id=tileId[r][c];
     if(id){
-      if(!tileMap[id]){tileMap[id]={el:makeTile(board[r][c],r,c,false),value:board[r][c],row:r,col:c}}
+      if(!tileMap[id]){tileMap[id]={el:makeTile(board[r][c],r,c,false,id),value:board[r][c],row:r,col:c}}
       else{tileMap[id].row=r;tileMap[id].col=c;}
     }
   }
@@ -687,20 +719,91 @@ function undo(){
   const s=undoStack.pop();
   board=s.board.map(r=>[...r]);
   tileId=s.tileId.map(r=>[...r]);
-  score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
+  score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;cheated=Boolean(s.cheated);
+  cancelToolSelection();
   over=false;won=false;
   // rebuild tiles from scratch for undo (no animation needed)
-  const b=$('board');
   for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
   tileMap={};
   syncTiles();
   render();SFX.move();startTimer(elapsedMs);
 }
 
+/* ------------------------------------------------------------------ practice tools */
+function openTools(){
+  if(over||inputLocked)return;
+  $('tool-status').textContent='';
+  $('tools-modal').classList.add('show');
+}
+function cancelToolSelection(){
+  toolMode=null;selectedToolTileId=null;
+  if($('board'))$('board').classList.remove('tool-selecting');
+  document.querySelectorAll('#board .cell.tool-selected').forEach(cell=>cell.classList.remove('tool-selected'));
+}
+function beginTool(mode){
+  if(over||inputLocked)return;
+  cancelToolSelection();
+  toolMode=mode;
+  $('tools-modal').classList.remove('show');
+  $('board').classList.add('tool-selecting');
+  $('tool-status').textContent=mode==='swap'?'Select the first tile to swap.':'Select a tile to delete.';
+}
+function saveUndoSnapshot(){
+  undoStack.push(snapshot());
+  if(undoStack.length>MAX_UNDO)undoStack.shift();
+}
+function finishToolAction(){
+  cheated=true;
+  cancelToolSelection();
+  syncTiles();
+  for(const id in tileMap){
+    const tile=tileMap[id];
+    const value=board[tile.row][tile.col];
+    tile.value=value;applyTileStyle(tile.el,value);
+  }
+  render();SFX.merge();
+}
+function useToolOnTile(id){
+  if(!toolMode||over||inputLocked)return;
+  const tile=tileMap[id];
+  if(!tile)return;
+  if(toolMode==='delete'){
+    saveUndoSnapshot();
+    board[tile.row][tile.col]=0;
+    tileId[tile.row][tile.col]=0;
+    tile.el.remove();delete tileMap[id];
+    finishToolAction();
+    return;
+  }
+  if(selectedToolTileId===null){
+    selectedToolTileId=id;
+    tile.el.classList.add('tool-selected');
+    $('tool-status').textContent='Select the second tile to swap.';
+    return;
+  }
+  if(selectedToolTileId===id){
+    tile.el.classList.remove('tool-selected');
+    selectedToolTileId=null;
+    $('tool-status').textContent='Select the first tile to swap.';
+    return;
+  }
+  const first=tileMap[selectedToolTileId];
+  if(!first){cancelToolSelection();return}
+  saveUndoSnapshot();
+  const firstRow=first.row,firstCol=first.col,secondRow=tile.row,secondCol=tile.col;
+  [board[firstRow][firstCol],board[secondRow][secondCol]]=[board[secondRow][secondCol],board[firstRow][firstCol]];
+  [tileId[firstRow][firstCol],tileId[secondRow][secondCol]]=[tileId[secondRow][secondCol],tileId[firstRow][firstCol]];
+  finishToolAction();
+}
+$('board').addEventListener('click',event=>{
+  const cell=event.target.closest('.cell');
+  if(cell&&toolMode){event.stopPropagation();useToolOnTile(Number(cell.dataset.tileId));}
+});
+
 /* ------------------------------------------------------------------ per-grid leaderboard */
 
 async function recordScore(){
-  if(!currentUser)return;
+  if(!currentUser||cheated)return;
   try{await api(`/records/${SIZE}`,{method:'POST',body:JSON.stringify({board,score,steps,durationMs:elapsedMs})});}
   catch(error){console.error('Could not submit game record:',error);}
 }
@@ -723,6 +826,7 @@ function escapeHtml(s){const d=document.createElement('div');d.textContent=s;ret
 
 async function doSave(){
   if(!currentUser){alert('Saving is only available in User Mode.');return}
+  if(cheated){alert('Practice-tool games cannot be saved to your cloud slot. Undo the tool action or start a new game first.');return}
   try{
     await api(`/saves/${SIZE}`,{method:'PUT',body:JSON.stringify({board,score,steps,elapsedMs,timerMode})});
     SFX.merge();alert('✅ Game saved!');
@@ -736,7 +840,8 @@ async function doLoad(){
     board=s.board.map(r=>[...r]);
     score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
     timerMode=s.timerMode||timerMode;
-    over=false;won=false;undoStack.length=0;
+    over=false;won=false;cheated=false;undoStack.length=0;
+    cancelToolSelection();
     for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
     tileMap={};nextTileId=1;
     tileId=[];for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++){tileId[r][c]=board[r][c]?nextTileId++:0}}
@@ -763,6 +868,8 @@ function exitGame(){
   clearPendingGameTimers();
   stopTimer();
   $('lb-modal').classList.remove('show');
+  $('tools-modal').classList.remove('show');
+  cancelToolSelection();
   hideOverlay();
   currentUser=null;
   authToken=null;
@@ -839,6 +946,10 @@ $('b-down').onclick=()=>{SFX.button();move('down')};
 $('b-left').onclick=()=>{SFX.button();move('left')};
 $('b-right').onclick=()=>{SFX.button();move('right')};
 $('b-undo').onclick=()=>{SFX.button();undo()};
+$('b-tools').onclick=()=>{SFX.button();openTools()};
+$('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
+$('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
+$('tools-close').onclick=()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')};
 $('b-restart').onclick=()=>{SFX.button();init(boardSize)};
 $('b-save').onclick=()=>{SFX.button();doSave()};
 $('b-load').onclick=()=>{SFX.button();doLoad()};
