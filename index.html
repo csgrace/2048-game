@@ -108,15 +108,20 @@ body::before{
 @keyframes pulse{to{background:rgba(246,94,59,.3)}}
 
 .board-wrap{position:relative}
-#board{display:grid;background:var(--c-board);border-radius:12px;padding:10px}
-#board .cell{
-  display:flex;align-items:center;justify-content:center;
-  font-weight:800;border-radius:8px;transition:transform .12s ease;
+#board{position:relative;background:var(--c-board);border-radius:12px}
+#board .bg-cell{
+  position:absolute;background:rgba(238,228,218,.35);border-radius:8px;z-index:1;
 }
-#board .cell.pop{animation:pop .25s ease}
-@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
-#board .cell.merge-anim{animation:mg .3s ease}
-@keyframes mg{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+#board .cell{
+  position:absolute;display:flex;align-items:center;justify-content:center;
+  font-weight:800;border-radius:8px;z-index:2;
+  transition:transform .15s cubic-bezier(.2,.6,.3,1);
+  will-change:transform;
+}
+#board .cell.new{animation:appear .2s ease}
+@keyframes appear{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+#board .cell.merging{animation:pop .2s ease .15s both;z-index:3}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
 
 .sides{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
 .sides .btn{min-width:72px;padding:8px 10px;font-size:13px}
@@ -379,33 +384,87 @@ let boardSize=4;          // current board dimension
 
 const $=id=>document.getElementById(id);
 
-/* ------------------------------------------------------------------ build board DOM */
-function buildBoardDOM(){
-  const b=$('board');b.innerHTML='';
+/* ------------------------------------------------------------------ tile geometry helpers */
+function geom(){
   const tilePx = SIZE<=4?100:SIZE<=6?74:56;
-  const gap = SIZE<=4?10:SIZE<=6?8:6;
-  const pad = SIZE<=4?12:SIZE<=6?10:8;
-  b.style.gridTemplateColumns=`repeat(${SIZE},${tilePx}px)`;
-  b.style.gridTemplateRows=`repeat(${SIZE},${tilePx}px)`;
-  b.style.gap=gap+'px';b.style.padding=pad+'px';
-  cells=[];
-  for(let r=0;r<SIZE;r++){cells[r]=[];for(let c=0;c<SIZE;c++){
-    const d=document.createElement('div');d.className='cell';
-    d.style.width=tilePx+'px';d.style.height=tilePx+'px';
-    d.style.fontSize=(tilePx*.38)+'px';
-    b.appendChild(d);cells[r][c]=d;
-  }}
+  const gap    = SIZE<=4?10:SIZE<=6?8:6;
+  const pad    = SIZE<=4?12:SIZE<=6?10:8;
+  const boardPx= tilePx*SIZE + gap*(SIZE-1) + pad*2;
+  return {tilePx,gap,pad,boardPx};
+}
+function pos(r,c){
+  const {tilePx,gap,pad}=geom();
+  return { x: pad + c*(tilePx+gap), y: pad + r*(tilePx+gap) };
 }
 
-/* ------------------------------------------------------------------ rendering */
-function render(animateCells){
+/* ------------------------------------------------------------------ build board DOM */
+let nextTileId=1;
+let tileMap={};   // id → {el,value,row,col}
+let tileId=[];    // tileId[r][c] = id or 0
+
+function buildBoardDOM(){
+  const b=$('board');b.innerHTML='';
+  const {tilePx,boardPx}=geom();
+  b.style.width=boardPx+'px';b.style.height=boardPx+'px';
+  // background cells
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    const v=board[r][c],d=cells[r][c];
-    d.textContent=v||'';d.style.background=bg(v);d.style.color=fg(v);
-    d.style.transform=v?'scale(1)':'scale(.9)';
+    const d=document.createElement('div');d.className='bg-cell';
+    const p=pos(r,c);const {tilePx:g}=geom();
+    d.style.left=p.x+'px';d.style.top=p.y+'px';
+    d.style.width=tilePx+'px';d.style.height=tilePx+'px';
+    b.appendChild(d);
+  }
+  // reset tracking
+  tileMap={};tileId=[];nextTileId=1;
+  for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++)tileId[r][c]=0;}
+}
+
+function makeTile(value,r,c,isNew){
+  const {tilePx}=geom();
+  const d=document.createElement('div');
+  d.className='cell'+(isNew?' new':'');
+  d.style.width=tilePx+'px';d.style.height=tilePx+'px';
+  d.style.fontSize=(tilePx*.38)+'px';
+  applyTileStyle(d,value);
+  const p=pos(r,c);
+  d.style.transform=`translate(${p.x}px,${p.y}px)`;
+  $('board').appendChild(d);
+  return d;
+}
+function applyTileStyle(d,v){
+  d.textContent=v||'';
+  d.style.background=bg(v);d.style.color=fg(v);
+}
+
+/* ------------------------------------------------------------------ rendering: moves tiles to new positions with slide animation */
+function render(){
+  const b=$('board');
+  // position each tracked tile
+  for(const id in tileMap){
+    const t=tileMap[id];
+    const p=pos(t.row,t.col);
+    t.el.style.transform=`translate(${p.x}px,${p.y}px)`;
   }
   $('stat-score').textContent='🏆 '+score;
   $('stat-steps').textContent='👣 '+steps;
+}
+
+/* called after slide calcs — updates value/cleanup, triggers merge pop */
+function finalizeRender(mergedIds){
+  // remove tiles that were merged into others (slide-finished)
+  for(const id of mergedIds){
+    const t=tileMap[id];
+    if(t){t.el.remove();delete tileMap[id];}
+  }
+  // update merged tile values + pop anim
+  for(const id in tileMap){
+    const t=tileMap[id];
+    const v=board[t.row][t.col];
+    if(t.value!==v){
+      t.value=v;applyTileStyle(t.el,v);
+      t.el.classList.remove('merging');void t.el.offsetWidth;t.el.classList.add('merging');
+    }
+  }
 }
 
 function updateTimer(){
@@ -453,7 +512,11 @@ function emptyCells(){const o=[];for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)i
 function addRandom(){
   const e=emptyCells();if(!e.length)return;
   const [r,c]=e[Math.floor(Math.random()*e.length)];
-  board[r][c]=Math.random()<.9?2:4;
+  const v=Math.random()<.9?2:4;
+  board[r][c]=v;
+  const id=nextTileId++;
+  tileId[r][c]=id;
+  tileMap[id]={el:makeTile(r,c,true),value:v,row:r,col:c};
 }
 
 function init(size){
@@ -462,44 +525,100 @@ function init(size){
   score=0;steps=0;won=false;over=false;
   elapsedMs=0;undoStack.length=0;
   buildBoardDOM();
-  addRandom();addRandom();render();
+  // create initial 2 tiles
+  for(let i=0;i<2;i++){
+    const e=emptyCells();if(!e.length)break;
+    const [r,c]=e[Math.floor(Math.random()*e.length)];
+    const v=Math.random()<.9?2:4;
+    board[r][c]=v;
+    const id=nextTileId++;
+    tileId[r][c]=id;
+    tileMap[id]={el:makeTile(r,c,true),value:v,row:r,col:c};
+  }
+  render();
   hideOverlay();startTimer();
 }
 
-function snapshot(){return{board:board.map(r=>[...r]),score,steps,elapsedMs}}
+function snapshot(){return{board:board.map(r=>[...r]),tileId:tileId.map(r=>[...r]),score,steps,elapsedMs}}
 
-function slide(line){
-  const nz=line.filter(v=>v);const out=[];
-  for(let i=0;i<nz.length;i++){
-    if(i+1<nz.length&&nz[i]===nz[i+1]){out.push(nz[i]*2);score+=out[out.length-1];i++}
-    else out.push(nz[i]);
+/* slide a single row-left, tracking tile IDs + merges. returns {line,ids,merged} */
+function slideLine(line,ids){
+  const nz=[];for(let i=0;i<line.length;i++)if(line[i])nz.push({v:line[i],id:ids[i]});
+  const out=[];const outIds=[];const merged=[];
+  let i=0;
+  while(i<nz.length){
+    if(i+1<nz.length&&nz[i].v===nz[i+1].v){
+      const newV=nz[i].v*2;
+      out.push(newV);
+      outIds.push(nz[i].id);          // survivor keeps its id
+      merged.push(nz[i+1].id);        // merged-away tile id
+      score+=newV;
+      i+=2;
+    }else{
+      out.push(nz[i].v);
+      outIds.push(nz[i].id);
+      i++;
+    }
   }
-  while(out.length<SIZE)out.push(0);
-  return out;
+  while(out.length<SIZE){out.push(0);outIds.push(0);}
+  return {line:out,ids:outIds,merged};
 }
-function col(c){return board.map(r=>r[c])}
-function setCol(c,arr){for(let r=0;r<SIZE;r++)board[r][c]=arr[r]}
+
+/* rebuild tileMap row/col from tileId + board, creating el for any new id */
+function syncTiles(){
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const id=tileId[r][c];
+    if(id){
+      if(!tileMap[id]){tileMap[id]={el:makeTile(r,c,false),value:board[r][c],row:r,col:c}}
+      else{tileMap[id].row=r;tileMap[id].col=c;}
+    }
+  }
+}
+
+/* helper to get row */
+function rowLine(r){return{line:[...board[r]],ids:[...tileId[r]]}}
+function rowSet(r,res){for(let c=0;c<SIZE;c++){board[r][c]=res.line[c];tileId[r][c]=res.ids[c]}}
+function colLine(c){const l=[],ids=[];for(let r=0;r<SIZE;r++){l.push(board[r][c]);ids.push(tileId[r][c])}return{line:l,ids}}
+function colSet(c,res){for(let r=0;r<SIZE;r++){board[r][c]=res.line[r];tileId[r][c]=res.ids[r]}}
 
 function move(dir){
   if(over)return;
   const before=JSON.stringify(board);
   undoStack.push(snapshot());
   if(undoStack.length>MAX_UNDO)undoStack.shift();
-  if(dir==='left')for(let r=0;r<SIZE;r++)board[r]=slide(board[r]);
-  if(dir==='right')for(let r=0;r<SIZE;r++)board[r]=slide(board[r].slice().reverse()).reverse();
-  if(dir==='up')for(let c=0;c<SIZE;c++)setCol(c,slide(col(c)));
-  if(dir==='down')for(let c=0;c<SIZE;c++)setCol(c,slide(col(c).slice().reverse()).reverse());
+  let allMerged=[];
+  if(dir==='left')for(let r=0;r<SIZE;r++){const res=slideLine(rowLine(r).line,rowLine(r).ids);allMerged=allMerged.concat(res.merged);rowSet(r,res)}
+  if(dir==='right'){
+    for(let r=0;r<SIZE;r++){
+      const f=rowLine(r);const res=slideLine(f.line.slice().reverse(),f.ids.slice().reverse());
+      const rl=res.line.reverse();const ri=res.ids.reverse();rowSet(r,{line:rl,ids:ri});
+      allMerged=allMerged.concat(res.merged);
+    }
+  }
+  if(dir==='up')for(let c=0;c<SIZE;c++){const res=slideLine(colLine(c).line,colLine(c).ids);allMerged=allMerged.concat(res.merged);colSet(c,res)}
+  if(dir==='down'){
+    for(let c=0;c<SIZE;c++){
+      const f=colLine(c);const res=slideLine(f.line.slice().reverse(),f.ids.slice().reverse());
+      const cl=res.line.reverse();const ci=res.ids.reverse();colSet(c,{line:cl,ids:ci});
+      allMerged=allMerged.concat(res.merged);
+    }
+  }
 
   if(JSON.stringify(board)!==before){
-    steps++;SFX.move();addRandom();
-    render();
+    steps++;SFX.move();
+    syncTiles();          // create any missing tile els, update row/col refs
+    render();             // trigger CSS slide
+    const mergedCopy=allMerged.slice();
+    setTimeout(()=>finalizeRender(mergedCopy),160);  // remove merged tiles after slide
+    // add new random tile after animation
+    setTimeout(()=>{addRandom();},160);
     if(!won&&board.flat().includes(SIZE*SIZE*2)){
       won=true;SFX.win();
-      setTimeout(()=>showOverlay('🎉 You Win!'),120);
+      setTimeout(()=>showOverlay('🎉 You Win!'),200);
     }else if(!hasMoves()){
       over=true;SFX.lose();stopTimer();
       recordScore();
-      setTimeout(()=>showOverlay('💀 Game Over'),120);
+      setTimeout(()=>showOverlay('💀 Game Over'),200);
     }
   }else{
     undoStack.pop();
@@ -527,8 +646,14 @@ function undo(){
   if(!undoStack.length){SFX.lose();return}
   const s=undoStack.pop();
   board=s.board.map(r=>[...r]);
+  tileId=s.tileId.map(r=>[...r]);
   score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
   over=false;won=false;
+  // rebuild tiles from scratch for undo (no animation needed)
+  const b=$('board');
+  for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
+  tileMap={};
+  syncTiles();
   render();SFX.move();startTimer();
 }
 
@@ -541,7 +666,8 @@ function recordScore(){
   if(!all[key])all[key]=[];
   all[key].push({user:currentUser,score,steps,duration:elapsedMs,date:Date.now()});
   all[key].sort((a,b)=>b.score-a.score||a.duration-b.duration);
-  save(LS_LEADER,all[key].slice(0,50));
+  all[key]=all[key].slice(0,50);
+  save(LS_LEADER,all);
 }
 
 function showLeaderboard(){
@@ -581,7 +707,15 @@ function doLoad(){
   board=s.board.map(r=>[...r]);
   score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
   startTime=Date.now()-elapsedMs;over=false;won=false;undoStack.length=0;
+  // rebuild tiles
+  for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
+  tileMap={};nextTileId=1;
+  tileId=[];for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++){tileId[r][c]=board[r][c]?nextTileId++:0}}
+  syncTiles();applyAllTileStyles();
   render();SFX.merge();startTimer();alert('📂 Game loaded!');
+}
+function applyAllTileStyles(){
+  for(const id in tileMap){const t=tileMap[id];applyTileStyle(t.el,t.value)}
 }
 
 /* ------------------------------------------------------------------ overlay */
