@@ -252,6 +252,7 @@ body::before{
 
   <!-- ============ GAME ============ -->
   <div class="screen" id="game-screen">
+    <button class="back-btn" id="b-exit">← Back</button>
     <div class="top-bar">
       <span class="who" id="who-label"></span>
       <span class="stat" id="stat-mode"></span>
@@ -269,7 +270,6 @@ body::before{
       <button class="btn" id="b-undo">↩ Undo</button>
       <button class="btn" id="b-restart">↺ Restart</button>
       <button class="btn" id="b-leaderboard">🏆 Boards</button>
-      <button class="btn ghost" id="b-exit">↩ Exit Game</button>
     </div>
     <div class="arrows">
       <button class="btn" id="b-up">↑</button>
@@ -542,11 +542,10 @@ function init(size){
   elapsedMs=0;undoStack.length=0;
   clearPendingGameTimers();
   buildBoardDOM();
-  // create initial 2 tiles
-  for(let i=0;i<2;i++){
+  // Per the project specification, each new game starts with one 2 and one 4.
+  for(const v of [2,4]){
     const e=emptyCells();if(!e.length)break;
     const [r,c]=e[Math.floor(Math.random()*e.length)];
-    const v=Math.random()<.9?2:4;
     board[r][c]=v;
     const id=nextTileId++;
     tileId[r][c]=id;
