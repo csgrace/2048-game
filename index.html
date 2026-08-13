@@ -334,7 +334,7 @@ body::before{
    Persistent helpers (localStorage)
    ==================================================================== */
 const LS_SESSION ='g2048_session_v1';
-const API_BASE=window.GAME_API_URL||'http://localhost:3000/api';
+const API_BASE=window.GAME_API_URL||'https://vjbugpoxinddrwfkkfkn.supabase.co/functions/v1/game-api';
 let authToken=null;
 
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
