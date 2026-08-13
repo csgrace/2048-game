@@ -151,6 +151,8 @@ body::before{
   box-shadow:0 16px 48px rgba(0,0,0,.4);
 }
 .modal-box h2{margin-bottom:14px;text-align:center;color:#776e65;font-size:22px}
+.lb-section-title{margin:20px 0 0;color:#776e65;font-size:15px}
+.lb-note{margin:5px 0 8px;font-size:12px;color:#777}
 .lb-table{width:100%;border-collapse:collapse}
 .lb-table th,.lb-table td{padding:7px 10px;text-align:left;font-size:14px}
 .lb-table th{border-bottom:2px solid #ccc;color:#776e65}
@@ -286,9 +288,16 @@ body::before{
   <div class="modal-box">
     <h2>🏆 High Scores</h2>
     <div class="mode-badge" id="lb-mode-label"></div>
-    <table class="lb-table" style="margin-top:12px">
-      <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Steps</th><th>Time</th></tr></thead>
-      <tbody id="lb-body"></tbody>
+    <h3 class="lb-section-title">All Players · Best Record per Player</h3>
+    <table class="lb-table" style="margin-top:8px">
+      <thead><tr><th>#</th><th>Player</th><th>Max Tile</th><th>Score</th><th>Time</th></tr></thead>
+      <tbody id="lb-global-body"></tbody>
+    </table>
+    <h3 class="lb-section-title">My Game History</h3>
+    <p class="lb-note" id="lb-personal-note"></p>
+    <table class="lb-table">
+      <thead><tr><th>#</th><th>Max Tile</th><th>Score</th><th>Steps</th><th>Played At</th></tr></thead>
+      <tbody id="lb-personal-body"></tbody>
     </table>
     <button class="modal-close" id="lb-close">Close</button>
   </div>
@@ -324,11 +333,17 @@ body::before{
 /* ====================================================================
    Persistent helpers (localStorage)
    ==================================================================== */
-const LS_USERS   ='g2048_users_v2';
-const LS_SAVES   ='g2048_saves_v2';   // { username: { grid: snapshot } }
-const LS_LEADER  ='g2048_leader_v2';  // { "4":[...], "6":[...], "8":[...] }
+const LS_SESSION ='g2048_session_v1';
+const API_BASE=window.GAME_API_URL||'http://localhost:3000/api';
+let authToken=null;
 
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+async function api(path,options={}){
+  const response=await fetch(API_BASE+path,{...options,headers:{'Content-Type':'application/json',...(authToken?{Authorization:`Bearer ${authToken}`}:{}) ,...(options.headers||{})}});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'Unable to reach the game server.');
+  return data;
+}
 const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
 async function sha256(t){
@@ -384,6 +399,11 @@ let gameTimerInterval=null;
 let boardSize=4;          // current board dimension
 let inputLocked=false;
 const pendingGameTimers=new Set();
+const storedSession=load(LS_SESSION,null);
+if(storedSession?.username&&storedSession?.token){
+  currentUser=storedSession.username;
+  authToken=storedSession.token;
+}
 
 const $=id=>document.getElementById(id);
 
@@ -679,61 +699,50 @@ function undo(){
 
 /* ------------------------------------------------------------------ per-grid leaderboard */
 
-function recordScore(){
+async function recordScore(){
   if(!currentUser)return;
-  const all=load(LS_LEADER,{});
-  const key=String(SIZE);
-  if(!all[key])all[key]=[];
-  all[key].push({user:currentUser,score,steps,duration:elapsedMs,date:Date.now()});
-  all[key].sort((a,b)=>b.score-a.score||a.duration-b.duration);
-  all[key]=all[key].slice(0,50);
-  save(LS_LEADER,all);
+  try{await api(`/records/${SIZE}`,{method:'POST',body:JSON.stringify({board,score,steps,durationMs:elapsedMs})});}
+  catch(error){console.error('Could not submit game record:',error);}
 }
-
-function showLeaderboard(){
-  const all=load(LS_LEADER,{})||{};
-  const key=String(SIZE);
-  const lb=all[key]||[];
+async function showLeaderboard(){
   $('lb-mode-label').textContent=`${SIZE}×${SIZE} Grid · ${timerMode==='up'?'Stopwatch':'Countdown'}`;
-  const body=$('lb-body');
-  if(!lb.length){
-    body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px">No scores yet – be the first!</td></tr>';
-  }else{
-    body.innerHTML=lb.slice(0,15).map((e,i)=>
-      `<tr><td>${i+1}</td><td>${escapeHtml(e.user)}</td><td>${e.score}</td><td>${e.steps}</td><td>${fmtTime(e.duration)}</td></tr>`
-    ).join('');
-  }
+  $('lb-global-body').innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px">Loading…</td></tr>';
+  $('lb-personal-body').innerHTML='';
   $('lb-modal').classList.add('show');
+  try{
+    const global=await api(`/leaderboard/${SIZE}`);
+    const personal=currentUser?await api(`/records/me/${SIZE}`):[];
+    $('lb-global-body').innerHTML=global.length?global.slice(0,15).map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.username)}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${fmtTime(e.durationMs)}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No records yet – be the first!</td></tr>';
+    $('lb-personal-note').textContent=currentUser?'All completed games, newest first.':'Log in to view your personal game history.';
+    $('lb-personal-body').innerHTML=personal.length?personal.map((e,i)=>`<tr><td>${i+1}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${e.steps}</td><td>${new Date(e.completedAt).toLocaleString()}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No personal records yet.</td></tr>';
+  }catch(error){$('lb-global-body').innerHTML=`<tr><td colspan="5" style="text-align:center;padding:16px">${escapeHtml(error.message)}</td></tr>`;}
 }
 function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
 /* ------------------------------------------------------------------ save / load */
 
-function doSave(){
+async function doSave(){
   if(!currentUser){alert('Saving is only available in User Mode.');return}
-  const saves=load(LS_SAVES,{});
-  saves[currentUser]=saves[currentUser]||{};
-  saves[currentUser][String(SIZE)]={board:board.map(r=>[...r]),score,steps,elapsedMs,timerMode};
-  save(LS_SAVES,saves);
-  SFX.merge();alert('✅ Game saved!');
+  try{
+    await api(`/saves/${SIZE}`,{method:'PUT',body:JSON.stringify({board,score,steps,elapsedMs,timerMode})});
+    SFX.merge();alert('✅ Game saved!');
+  }catch(error){alert(error.message);}
 }
-function doLoad(){
+async function doLoad(){
   if(!currentUser)return;
-  const saves=load(LS_SAVES,{})||{};
-  const uSaves=saves[currentUser]||{};
-  const key=String(SIZE);
-  if(!uSaves[key]){alert('No save found for '+SIZE+'×'+SIZE+'.');return}
-  const s=uSaves[key];
-  clearPendingGameTimers();
-  board=s.board.map(r=>[...r]);
-  score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
-  over=false;won=false;undoStack.length=0;
-  // rebuild tiles
-  for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
-  tileMap={};nextTileId=1;
-  tileId=[];for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++){tileId[r][c]=board[r][c]?nextTileId++:0}}
-  syncTiles();applyAllTileStyles();
-  render();SFX.merge();startTimer(elapsedMs);alert('📂 Game loaded!');
+  try{
+    const s=await api(`/saves/${SIZE}`);
+    clearPendingGameTimers();
+    board=s.board.map(r=>[...r]);
+    score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
+    timerMode=s.timerMode||timerMode;
+    over=false;won=false;undoStack.length=0;
+    for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
+    tileMap={};nextTileId=1;
+    tileId=[];for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++){tileId[r][c]=board[r][c]?nextTileId++:0}}
+    syncTiles();applyAllTileStyles();
+    render();SFX.merge();startTimer(elapsedMs);alert('📂 Game loaded!');
+  }catch(error){alert(error.message);}
 }
 function applyAllTileStyles(){
   for(const id in tileMap){const t=tileMap[id];applyTileStyle(t.el,t.value)}
@@ -756,6 +765,8 @@ function exitGame(){
   $('lb-modal').classList.remove('show');
   hideOverlay();
   currentUser=null;
+  authToken=null;
+  localStorage.removeItem(LS_SESSION);
   show('entry-screen');
 }
 
@@ -800,25 +811,24 @@ $('btn-start-game').onclick=()=>{
 /* ====================================================================
    Auth
    ==================================================================== */
+function establishSession(data){
+  currentUser=data.user.username;authToken=data.token;
+  save(LS_SESSION,{username:currentUser,token:authToken});
+}
 $('btn-login').onclick=async()=>{
   SFX.button();
-  const u=$('auth-user').value.trim(),p=$('auth-pass').value;
-  if(!u||!p){$('auth-status').textContent='Enter username and password';return}
-  const users=load(LS_USERS,{});
-  const hash=await sha256(p);
-  if(users[u]&&users[u]===hash){
-    currentUser=u;SFX.merge();showSettings();
-  }else{$('auth-status').textContent='Invalid username or password'}
+  const username=$('auth-user').value.trim(),password=$('auth-pass').value;
+  if(!username||!password){$('auth-status').textContent='Enter username and password';return}
+  try{establishSession(await api('/auth/login',{method:'POST',body:JSON.stringify({username,password})}));SFX.merge();showSettings();}
+  catch(error){$('auth-status').textContent=error.message;}
 };
 
 $('btn-register').onclick=async()=>{
   SFX.button();
-  const u=$('auth-user').value.trim(),p=$('auth-pass').value;
-  if(!u||!p){$('auth-status').textContent='Enter username and password';return}
-  const users=load(LS_USERS,{});
-  if(users[u]){$('auth-status').textContent='Username already taken';return}
-  users[u]=await sha256(p);save(LS_USERS,users);
-  SFX.merge();$('auth-status').textContent='✅ Registered! You can log in now.';
+  const username=$('auth-user').value.trim(),password=$('auth-pass').value;
+  if(!username||!password){$('auth-status').textContent='Enter username and password';return}
+  try{establishSession(await api('/auth/register',{method:'POST',body:JSON.stringify({username,password})}));SFX.merge();showSettings();}
+  catch(error){$('auth-status').textContent=error.message;}
 };
 
 /* ====================================================================
