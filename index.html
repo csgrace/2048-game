@@ -115,8 +115,8 @@ body::before{
 #board .cell{
   position:absolute;display:flex;align-items:center;justify-content:center;
   font-weight:800;border-radius:8px;z-index:2;
-  transition:transform .15s cubic-bezier(.2,.6,.3,1);
-  will-change:transform;
+  transition:left .15s cubic-bezier(.2,.6,.3,1),top .15s cubic-bezier(.2,.6,.3,1);
+  will-change:left,top;
 }
 #board .cell.new{animation:appear .2s ease}
 @keyframes appear{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
@@ -427,7 +427,7 @@ function makeTile(value,r,c,isNew){
   d.style.fontSize=(tilePx*.38)+'px';
   applyTileStyle(d,value);
   const p=pos(r,c);
-  d.style.transform=`translate(${p.x}px,${p.y}px)`;
+  d.style.left=p.x+'px';d.style.top=p.y+'px';
   $('board').appendChild(d);
   return d;
 }
@@ -438,12 +438,12 @@ function applyTileStyle(d,v){
 
 /* ------------------------------------------------------------------ rendering: moves tiles to new positions with slide animation */
 function render(){
-  const b=$('board');
-  // position each tracked tile
+  // position each tracked tile using left/top so CSS scale anim doesn't conflict
   for(const id in tileMap){
     const t=tileMap[id];
     const p=pos(t.row,t.col);
-    t.el.style.transform=`translate(${p.x}px,${p.y}px)`;
+    t.el.style.left=p.x+'px';
+    t.el.style.top=p.y+'px';
   }
   $('stat-score').textContent='🏆 '+score;
   $('stat-steps').textContent='👣 '+steps;
