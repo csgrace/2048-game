@@ -3,24 +3,44 @@ package controller;
 import model.GridNumber;
 import view.GamePanel;
 
-
 /**
- * This class is used for interactive with JButton in GameFrame.
+ * Handles button actions coming from GameFrame and routes them to the
+ * model / view.
  */
 public class GameController {
-    private GamePanel view;
-    private GridNumber model;
 
+    private final GamePanel  view;
+    private final GridNumber model;
 
     public GameController(GamePanel view, GridNumber model) {
-        this.view = view;
+        this.view  = view;
         this.model = model;
-
     }
+
     public void restartGame() {
-        System.out.println("Do restart game here");
+        model.initialNumbers();
+        view.resetSteps();
+        view.updateGridsNumber();
+        view.requestFocusInWindow();
     }
 
-    //todo: add other methods such as loadGame, saveGame...
+    public void loadGame() {
+        String path = javax.swing.JOptionPane.showInputDialog(view, "Input path:");
+        if (path != null && !path.isBlank()) {
+            System.out.println("Loading from: " + path);
+        }
+        view.requestFocusInWindow();
+    }
 
+    public void saveGame() {
+        System.out.println("Saving game...");
+        view.requestFocusInWindow();
+    }
+
+    public void undoGame() {
+        if (view.undo()) {
+            view.updateGridsNumber();
+        }
+        view.requestFocusInWindow();
+    }
 }

@@ -6,60 +6,95 @@ import util.ColorMap;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Top-level frame: panel (board) + control buttons (restart, save, load,
+ * undo) + status labels (step, score).
+ *
+ * Layout is intentionally kept simple (absolute positions) so the code is
+ * easy to follow – useful for a teaching / demo project.
+ */
 public class GameFrame extends JFrame {
 
-    private GameController controller;
-    private JButton restartBtn;
-    private JButton loadBtn;
-
-    private JLabel stepLabel;
-    private GamePanel gamePanel;
+    private final GameController controller;
 
     public GameFrame(int width, int height) {
-        this.setTitle("2024 CS109 Project Demo");
+        this.setTitle("2024 CS109 Project Demo – 2048");
         this.setLayout(null);
         this.setSize(width, height);
         ColorMap.InitialColorMap();
-        gamePanel = new GamePanel((int) (this.getHeight() * 0.8));
-        gamePanel.setLocation(this.getHeight() / 15, this.getWidth() / 15);
+
+        // --- Board panel (occupies most of the window) ---
+        int boardSize = (int) (height * 0.8);
+        GamePanel gamePanel = new GamePanel(boardSize);
+        gamePanel.setLocation(20, 20);
         this.add(gamePanel);
 
+        // --- Controller needs a fully-built model + view ---
         this.controller = new GameController(gamePanel, gamePanel.getModel());
-        this.restartBtn = createButton("Restart", new Point(500, 150), 110, 50);
-        this.loadBtn = createButton("Load", new Point(500, 220), 110, 50);
-        this.stepLabel = createLabel("Start", new Font("serif", Font.ITALIC, 22), new Point(480, 50), 180, 50);
-        gamePanel.setStepLabel(stepLabel);
 
-        this.restartBtn.addActionListener(e -> {
-            controller.restartGame();
-            gamePanel.requestFocusInWindow();//enable key listener
-        });
-        this.loadBtn.addActionListener(e -> {
-            String string = JOptionPane.showInputDialog(this, "Input path:");
-            System.out.println(string);
-            gamePanel.requestFocusInWindow();//enable key listener
-        });
-        //todo: add other button here
+        // --- Labels ---
+        JLabel stepLabel  = createLabel("Step: 0",
+                new Font("SansSerif", Font.BOLD, 16),
+                new Point(480, 30), 180, 30);
+        JLabel scoreLabel = createLabel("Score: 0",
+                new Font("SansSerif", Font.BOLD, 16),
+                new Point(480, 60), 180, 30);
+        gamePanel.setStepLabel(stepLabel);
+        gamePanel.setScoreLabel(scoreLabel);
+
+        // --- Buttons ---
+        createButton("Restart", new Point(480, 110), 120, 40,
+                e -> controller.restartGame());
+
+        createButton("Undo", new Point(480, 160), 120, 40,
+                e -> controller.undoGame());
+
+        createButton("Save", new Point(480, 210), 120, 40,
+                e -> controller.saveGame());
+
+        createButton("Load", new Point(480, 260), 120, 40,
+                e -> controller.loadGame());
+
+        createButton("↑", new Point(520, 320), 50, 40,
+                e -> { gamePanel.doMoveUp();    gamePanel.requestFocusInWindow(); });
+
+        createButton("←", new Point(460, 370), 50, 40,
+                e -> { gamePanel.doMoveLeft();  gamePanel.requestFocusInWindow(); });
+
+        createButton("↓", new Point(520, 370), 50, 40,
+                e -> { gamePanel.doMoveDown();  gamePanel.requestFocusInWindow(); });
+
+        createButton("→", new Point(580, 370), 50, 40,
+                e -> { gamePanel.doMoveRight(); gamePanel.requestFocusInWindow(); });
+
+        // --- Final frame setup ---
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        gamePanel.requestFocusInWindow();
     }
 
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
 
-    private JButton createButton(String name, Point location, int width, int height) {
+    private JButton createButton(String name, Point loc, int w, int h,
+                                 java.awt.event.ActionListener al) {
         JButton button = new JButton(name);
-        button.setLocation(location);
-        button.setSize(width, height);
+        button.setLocation(loc);
+        button.setSize(w, h);
+        button.setFocusable(false);
+        button.setFont(new Font("SansSerif", Font.BOLD, 16));
+        button.addActionListener(al);
         this.add(button);
         return button;
     }
 
-    private JLabel createLabel(String name, Font font, Point location, int width, int height) {
-        JLabel label = new JLabel(name);
+    private JLabel createLabel(String text, Font font, Point loc, int w, int h) {
+        JLabel label = new JLabel(text);
         label.setFont(font);
-        label.setLocation(location);
-        label.setSize(width, height);
+        label.setLocation(loc);
+        label.setSize(w, h);
         this.add(label);
         return label;
     }
-
 }
