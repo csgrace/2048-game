@@ -1,343 +1,496 @@
-<!doctype html>
-<html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>2048 · CSGRACE</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230f4c81'/><text x='50%25' y='54%25' font-size='28' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>2</text></svg>">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2048 – CS109 Project</title>
 <style>
-  /* ===== design tokens ===== */
-  :root{
-    --bg:#0b1e33;--panel:#123052;--panel2:#173d66;--line:#275080;
-    --txt:#eaf4ff;--mut:#8fb3d9;--gold:#ffd54d;--cta:#0a8cff;--cta2:#0760b0;
-    --acc:#ff5e5b;--acc2:#cc3d3b;
-    --tile:#1a3a5c;--tile2:#1f4a73;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{height:100%}
-  body{
-    font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
-    background:var(--bg);color:var(--txt);height:100%;display:flex;align-items:center;justify-content:center;
-    overflow:hidden;-webkit-tap-highlight-color:transparent;
-  }
-  button{font-family:inherit;border:none;cursor:pointer;font-weight:700}
-  input{font-family:inherit;outline:none}
-  .card{
-    background:linear-gradient(160deg,var(--panel),var(--panel2));
-    border:1px solid var(--line);border-radius:24px;
-    box-shadow:0 24px 60px rgba(0,0,0,.45);
-    padding:32px;width:min(420px,92vw);text-align:center;
-  }
-  h1{font-size:36px;letter-spacing:1px;background:linear-gradient(90deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
-  .sub{color:var(--mut);font-size:13px;margin-bottom:20px}
-  .btn-row{display:flex;gap:12px;margin-top:18px}
-  .btn-primary{flex:1;padding:14px;border-radius:14px;background:var(--cta);color:#fff;font-size:16px;transition:background .15s}
-  .btn-primary:hover{background:var(--cta2)}
-  .btn-ghost{flex:1;padding:14px;border-radius:14px;background:transparent;border:1px solid var(--line);color:var(--txt);font-size:16px}
-  .btn-ghost:hover{border-color:var(--cta)}
-  .field{display:flex;align-items:center;gap:8px;margin-top:12px}
-  .field label{font-size:13px;color:var(--mut);flex:0 0 70px;text-align:left}
-  .field select,.field input{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--txt);font-size:14px}
-  .status{font-size:13px;color:var(--acc);min-height:18px;margin-top:8px}
-  .link{color:var(--cta);cursor:pointer;text-decoration:underline}
-  /* ===== game screen ===== */
-  #game-screen{display:flex;flex-direction:column;align-items:center;padding:16px;gap:12px}
-  .top-bar{display:flex;width:min(480px,94vw);justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
-  .top-bar .who{font-weight:700;color:var(--gold)}
-  .top-bar .mode{background:var(--bg);padding:4px 10px;border-radius:8px;font-size:12px;border:1px solid var(--line)}
-  .stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-  .stat{background:var(--bg);padding:6px 14px;border-radius:10px;font-size:14px;border:1px solid var(--line);min-width:70px}
-  .stat .label{font-size:10px;color:var(--mut)}
-  .stat .val{font-weight:800;color:var(--gold)}
-  /* board container */
-  .board-wrap{position:relative}
-  .board-bg,.board-fg{position:relative;border-radius:12px;overflow:hidden}
-  .board-bg{position:absolute;inset:0}
-  #board{position:relative}
-  .bg-cell{position:absolute;border-radius:8px}
-  .cell{
-    position:absolute;display:flex;align-items:center;justify-content:center;
-    font-weight:800;border-radius:8px;z-index:2;
-    transition:left .15s cubic-bezier(.2,.6,.3,1),top .15s cubic-bezier(.2,.6,.3,1);
-    will-change:left,top;
-  }
-  #board .cell.new{animation:appear .2s ease}
-  #board .cell.merging{animation:pop .2s ease .15s both;z-index:3}
-  @keyframes appear{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
-  @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
-  /* controls */
-  .controls{display:grid;grid-template-columns:repeat(3,60px);grid-template-rows:repeat(2,60px);gap:6px;margin-top:4px}
-  .ctrl-btn{border-radius:12px;font-size:22px;background:var(--bg);border:1px solid var(--line);color:var(--txt)}
-  .ctrl-btn:hover{border-color:var(--cta)}
-  .ctrl-btn:active{background:var(--panel2)}
-  .ctrl-up{grid-column:2;grid-row:1}
-  .ctrl-left{grid-column:1;grid-row:2}
-  .ctrl-down{grid-column:2;grid-row:2}
-  .ctrl-right{grid-column:3;grid-row:2}
-  .actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-  .act-btn{padding:8px 14px;border-radius:10px;font-size:12px;background:var(--bg);border:1px solid var(--line);color:var(--txt)}
-  .act-btn:hover{border-color:var(--cta)}
-  .act-btn:disabled{opacity:.35;pointer-events:none}
-  /* overlay */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100}
-  .overlay.show{display:flex}
-  .overlay-box{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:32px;text-align:center;min-width:260px}
-  .overlay-box h2{font-size:32px;margin-bottom:16px}
-  .overlay-box .btn-primary{display:inline-block;text-decoration:none;padding:12px 32px;border-radius:14px;background:var(--cta);color:#fff;font-size:16px}
-  /* leaderboard modal */
-  .lb-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100}
-  .lb-modal.show{display:flex}
-  .lb-box{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;width:min(420px,92vw);max-height:80vh;overflow:auto}
-  .lb-box h2{font-size:22px;margin-bottom:4px}
-  .lb-box .lb-mode{font-size:13px;color:var(--mut);margin-bottom:12px}
-  .lb-box table{width:100%;border-collapse:collapse;font-size:13px}
-  .lb-box th,.lb-box td{padding:8px;border-bottom:1px solid var(--line);text-align:left}
-  .lb-box th{color:var(--mut);font-weight:600}
-  /* grids */
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  /* hide screens by default, show via .active */
-  .screen{display:none}
-  .screen.active{display:block}
-  #game-screen.active{display:flex}
-  /* hide game on small screens */
-  @media(max-width:480px){
-    .card{padding:18px;border-radius:0;width:100vw;min-height:100vh}
-    #game-screen{padding:8px;gap:6px}
-    .stat{padding:4px 8px;min-width:56px;font-size:12px}
-    .controls{grid-template-columns:repeat(3,50px);grid-template-rows:repeat(2,50px)}
-  }
+/* ================================================================== reset */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c-empty:#cdc1b4;--c-board:#bbada0;
+  --c-bg-top:#0f1428;--c-bg-bot:#321e50;
+  --c-text-dark:#776e65;--c-text-light:#f9f6f2;
+  --c-accent:#8f7a66;--c-accent-h:#a59178;
+  --c-glow:rgba(143,122,102,.35);
+  --radius:14px;
+}
+html,body{height:100%}
+body{font-family:'Segoe UI','Helvetica Neue',sans-serif;color:var(--c-text-light);overflow-x:hidden;position:relative}
+
+/* ================================================================== animated background */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+body::before{
+  content:'';position:fixed;inset:-50%;z-index:0;
+  background:conic-gradient(from 0deg at 50% 50%,
+    rgba(143,122,102,.08) 0deg,rgba(237,194,46,.04) 60deg,
+    rgba(246,94,59,.04) 120deg,rgba(143,122,102,.06) 180deg,
+    rgba(237,207,114,.04) 240deg,rgba(242,177,121,.05) 300deg,
+    rgba(143,122,102,.08) 360deg);
+  animation:bgspin 20s linear infinite;
+}
+@keyframes bgspin{to{transform:rotate(360deg)}}
+
+/* ================================================================== app */
+.app{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:24px 16px}
+
+/* ================================================================== screens */
+.screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:620px;animation:fadeIn .4s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ================================================================== glass card */
+.glass{
+  background:rgba(255,255,255,.07);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.15);border-radius:18px;
+  box-shadow:0 8px 32px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08);
+  padding:32px 28px;
+}
+
+/* ================================================================== entry */
+.title-big{font-size:clamp(48px,10vw,72px);font-weight:800;color:#f9f6f2;letter-spacing:4px;text-shadow:0 0 30px var(--c-glow)}
+.subtitle{font-size:16px;color:rgba(255,255,255,.7);margin:8px 0 32px}
+
+.card-pick{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.pick{
+  width:210px;padding:28px 16px;text-align:center;
+  background:rgba(143,122,102,.2);backdrop-filter:blur(10px);
+  color:#fff;border-radius:var(--radius);cursor:pointer;
+  border:1px solid rgba(255,255,255,.12);font-size:18px;font-weight:700;
+  transition:all .25s ease;
+}
+.pick .icon{font-size:40px;display:block;margin-bottom:8px}
+.pick small{display:block;font-weight:400;opacity:.75;font-size:13px;margin-top:6px}
+.pick:hover{background:rgba(143,122,102,.35);transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+
+/* ================================================================== settings grid */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px;margin:12px 0}
+.setting-group{display:flex;flex-direction:column;gap:6px}
+.setting-group label{font-size:13px;font-weight:700;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:1px}
+.setting-group select,.setting-group input{
+  width:100%;padding:10px 14px;font-size:15px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08);color:#fff;outline:none;transition:border .2s;
+}
+.setting-group select:focus,.setting-group input:focus{border-color:rgba(143,122,102,.6)}
+.setting-group select option{background:#1a1a2e;color:#fff}
+
+/* ================================================================== auth */
+.auth-box{width:100%;max-width:360px}
+.auth-box label{display:block;margin:10px 0 4px;font-size:13px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:1px}
+.auth-box input{
+  width:100%;padding:10px 14px;font-size:15px;border-radius:8px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.06);color:#fff;outline:none;transition:border .2s;
+}
+.auth-box input:focus{border-color:rgba(143,122,102,.6)}
+.auth-box input::placeholder{color:rgba(255,255,255,.35)}
+.btn-row{display:flex;gap:8px;margin-top:18px}
+.btn{
+  flex:1;padding:10px;border:none;border-radius:8px;
+  background:var(--c-accent);color:#fff;font-weight:700;cursor:pointer;
+  font-size:14px;transition:all .2s;
+}
+.btn:hover{background:var(--c-accent-h);transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15)}
+.btn.ghost:hover{background:rgba(255,255,255,.22)}
+.status-msg{margin-top:12px;font-size:13px;color:#ffaaaa;min-height:18px;text-align:center}
+
+/* ================================================================== game */
+#game-screen{max-width:760px}
+.top-bar{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+.who{font-weight:700;font-size:15px}
+.stat{
+  background:rgba(255,255,255,.1);backdrop-filter:blur(8px);
+  padding:6px 14px;border-radius:20px;font-weight:700;font-size:13px;
+  min-width:80px;text-align:center;border:1px solid rgba(255,255,255,.08);
+}
+.stat.timer-warn{animation:pulse .6s ease infinite alternate}
+@keyframes pulse{to{background:rgba(246,94,59,.3)}}
+
+.board-wrap{position:relative}
+#board{position:relative;background:var(--c-board);border-radius:12px}
+#board .bg-cell{
+  position:absolute;background:rgba(238,228,218,.35);border-radius:8px;z-index:1;
+}
+#board .cell{
+  position:absolute;display:flex;align-items:center;justify-content:center;
+  font-weight:800;border-radius:8px;z-index:2;
+  transition:left .15s cubic-bezier(.2,.6,.3,1),top .15s cubic-bezier(.2,.6,.3,1);
+  will-change:left,top;
+}
+#board .cell.new{animation:appear .2s ease}
+@keyframes appear{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+#board .cell.merging{animation:pop .2s ease .15s both;z-index:3}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
+
+.sides{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.sides .btn{min-width:72px;padding:8px 10px;font-size:13px}
+
+.arrows{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,44px);gap:4px;margin-top:12px;justify-content:center}
+.arrows .btn{min-width:48px;font-size:18px;padding:6px}
+.arrows .btn:nth-child(1){grid-column:2;grid-row:1}
+.arrows .btn:nth-child(2){grid-column:1;grid-row:2}
+.arrows .btn:nth-child(3){grid-column:2;grid-row:2}
+.arrows .btn:nth-child(4){grid-column:3;grid-row:2}
+
+/* overlay */
+#overlay{
+  display:none;position:absolute;inset:0;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);border-radius:12px;z-index:5;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+#overlay.show{display:flex}
+#overlay h2{color:#fff;font-size:32px}
+
+/* leaderboard modal */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{
+  background:linear-gradient(135deg,#faf8ef,#f5efe0);color:#333;padding:28px 32px;border-radius:16px;
+  min-width:360px;max-width:92vw;max-height:80vh;overflow-y:auto;
+  box-shadow:0 16px 48px rgba(0,0,0,.4);
+}
+.modal-box h2{margin-bottom:14px;text-align:center;color:#776e65;font-size:22px}
+.lb-table{width:100%;border-collapse:collapse}
+.lb-table th,.lb-table td{padding:7px 10px;text-align:left;font-size:14px}
+.lb-table th{border-bottom:2px solid #ccc;color:#776e65}
+.lb-table tr:nth-child(even){background:rgba(0,0,0,.03)}
+.modal-close{margin-top:16px;display:block;width:100%;padding:10px;border:none;background:var(--c-accent);color:#fff;font-weight:700;border-radius:8px;cursor:pointer;transition:background .2s}
+.modal-close:hover{background:var(--c-accent-h)}
+
+/* back button */
+.back-btn{
+  align-self:flex-start;margin-bottom:12px;padding:6px 14px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;transition:all .2s;
+}
+.back-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+
+/* mode badge */
+.mode-badge{
+  display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;
+  background:rgba(143,122,102,.25);color:rgba(255,255,255,.8);margin-left:8px;
+}
+
+@media(max-width:520px){
+  .settings-grid{grid-template-columns:1fr}
+  .stat{font-size:11px;min-width:68px;padding:5px 8px}
+  .pick{width:170px;font-size:16px}
+  .sides .btn{min-width:60px;font-size:12px;padding:7px 6px}
+}
 </style>
 </head>
 <body>
 
-<!-- ============ ENTRY ============ -->
-<div id="entry-screen" class="screen active">
-  <div class="card">
-    <h1>2048</h1>
-    <p class="sub">Merge tiles to reach <b id="entry-target">16</b>!</p>
-    <div class="btn-row">
-      <button class="btn-primary" id="btn-user">👤 User Mode</button>
-      <button class="btn-ghost" id="btn-guest">🎮 Play as Guest</button>
+<canvas id="bg-canvas"></canvas>
+<div class="app">
+
+  <!-- ============ ENTRY ============ -->
+  <div class="screen active" id="entry-screen">
+    <div class="title-big">2048</div>
+    <div class="subtitle">Choose how you want to play</div>
+    <div class="card-pick">
+      <button class="pick" id="btn-user">
+        <span class="icon">👤</span>User Mode
+        <small>Save · Leaderboard · Resume</small>
+      </button>
+      <button class="pick" id="btn-guest">
+        <span class="icon">🎮</span>Guest Mode
+        <small>Jump in · No saves · Free play</small>
+      </button>
     </div>
   </div>
-</div>
 
-<!-- ============ AUTH ============ -->
-<div id="auth-screen" class="screen">
-  <div class="card">
-    <h1>2048</h1>
-    <p class="sub">User Mode</p>
-    <div class="field"><label>Username</label><input id="auth-user" type="text" maxlength="20" placeholder="Enter username"></div>
-    <div class="field"><label>Password</label><input id="auth-pass" type="password" placeholder="Enter password"></div>
-    <p class="status" id="auth-status"></p>
-    <div class="btn-row">
-      <button class="btn-primary" id="btn-login">Log In</button>
-      <button class="btn-ghost" id="btn-register">Register</button>
-    </div>
-    <p style="margin-top:12px;font-size:13px"><span class="link" id="btn-auth-back">← Back</span></p>
-  </div>
-</div>
-
-<!-- ============ SETTINGS ============ -->
-<div id="settings-screen" class="screen">
-  <div class="card">
-    <h1>2048</h1>
-    <p class="sub">Choose your game</p>
-    <div class="grid-2">
-      <div class="field" style="margin:0"><label>Grid</label>
-        <select id="sel-grid">
-          <option value="4">4 × 4</option>
-          <option value="6">6 × 6</option>
-          <option value="8">8 × 8</option>
-        </select>
+  <!-- ============ AUTH ============ -->
+  <div class="screen" id="auth-screen">
+    <button class="back-btn" id="btn-auth-back">← Back</button>
+    <div class="glass auth-box">
+      <div class="title-big" style="font-size:32px;text-align:center;margin-bottom:4px">User Mode</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:16px">Log in or register</div>
+      <label for="auth-user">Username</label>
+      <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" />
+      <label for="auth-pass">Password</label>
+      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" />
+      <div class="btn-row">
+        <button class="btn" id="btn-login">Login</button>
+        <button class="btn" id="btn-register">Register</button>
       </div>
-      <div class="field" style="margin:0"><label>Timer</label>
-        <select id="sel-timer">
-          <option value="up">⏱ Stopwatch</option>
-          <option value="down-60">⏳ 60s</option>
-          <option value="down-120">⏳ 120s</option>
-          <option value="down-300">⏳ 5 min</option>
-        </select>
+      <div class="status-msg" id="auth-status"></div>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="screen" id="settings-screen">
+    <button class="back-btn" id="btn-settings-back">← Back</button>
+    <div class="glass" style="width:100%;max-width:480px">
+      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">Game Settings</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:20px">Configure your board</div>
+      <div class="settings-grid">
+        <div class="setting-group">
+          <label>Grid Size</label>
+          <select id="sel-grid">
+            <option value="4">4 × 4  (Classic)</option>
+            <option value="6">6 × 6  (Extended)</option>
+            <option value="8">8 × 8  (Mega)</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>Timer Mode</label>
+          <select id="sel-timer">
+            <option value="up">⏱ Count Up (Stopwatch)</option>
+            <option value="down-60">⏳ Count Down 60s</option>
+            <option value="down-120">⏳ Count Down 2 min</option>
+            <option value="down-300">⏳ Count Down 5 min</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:24px">
+        <button class="btn" id="btn-start-game" style="padding:14px;font-size:16px">Start Game →</button>
       </div>
     </div>
-    <div class="btn-row">
-      <button class="btn-primary" id="btn-start-game">▶ Start</button>
+  </div>
+
+  <!-- ============ GAME ============ -->
+  <div class="screen" id="game-screen">
+    <div class="top-bar">
+      <span class="who" id="who-label"></span>
+      <span class="stat" id="stat-mode"></span>
+      <span class="stat" id="stat-score">🏆 0</span>
+      <span class="stat" id="stat-steps">👣 0</span>
+      <span class="stat" id="stat-time">⏱ 00:00</span>
     </div>
-    <p style="margin-top:12px;font-size:13px"><span class="link" id="btn-settings-back">← Back</span></p>
+    <div class="board-wrap">
+      <div id="board"></div>
+      <div id="overlay"><h2 id="ov-title"></h2><button class="btn" id="ov-btn">Play Again</button></div>
+    </div>
+    <div class="sides">
+      <button class="btn" id="b-save">💾 Save</button>
+      <button class="btn" id="b-load">📂 Load</button>
+      <button class="btn" id="b-undo">↩ Undo</button>
+      <button class="btn" id="b-restart">↺ Restart</button>
+      <button class="btn" id="b-leaderboard">🏆 Boards</button>
+    </div>
+    <div class="arrows">
+      <button class="btn" id="b-up">↑</button>
+      <button class="btn" id="b-left">←</button>
+      <button class="btn" id="b-down">↓</button>
+      <button class="btn" id="b-right">→</button>
+    </div>
   </div>
+
 </div>
 
-<!-- ============ GAME ============ -->
-<div id="game-screen" class="screen">
-  <div class="top-bar">
-    <span class="who" id="who-label">🎮 Guest</span>
-    <span class="mode" id="stat-mode">4 × 4</span>
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="label">TIME</div><div class="val" id="stat-time">0:00</div></div>
-    <div class="stat"><div class="label">🏆 SCORE</div><div class="val" id="stat-score">0</div></div>
-    <div class="stat"><div class="label">👣 STEPS</div><div class="val" id="stat-steps">0</div></div>
-  </div>
-  <div class="board-wrap" id="board-wrap">
-    <div class="board-bg" id="board-bg"></div>
-    <div id="board"></div>
-  </div>
-  <div class="controls">
-    <button class="ctrl-btn ctrl-up" id="b-up">▲</button>
-    <button class="ctrl-btn ctrl-left" id="b-left">◀</button>
-    <button class="ctrl-btn ctrl-down" id="b-down">▼</button>
-    <button class="ctrl-btn ctrl-right" id="b-right">▶</button>
-  </div>
-  <div class="actions">
-    <button class="act-btn" id="b-undo">↩ Undo</button>
-    <button class="act-btn" id="b-restart">🔄 Restart</button>
-    <button class="act-btn" id="b-save">💾 Save</button>
-    <button class="act-btn" id="b-load">📂 Load</button>
-    <button class="act-btn" id="b-leaderboard">🏆 Rank</button>
-  </div>
-</div>
-
-<!-- ============ OVERLAY ============ -->
-<div class="overlay" id="overlay">
-  <div class="overlay-box">
-    <h2 id="ov-title">Game Over</h2>
-    <a class="btn-primary" id="ov-btn" href="#" style="display:inline-block;text-decoration:none">🔄 Play Again</a>
-  </div>
-</div>
-
-<!-- ============ LEADERBOARD MODAL ============ -->
-<div class="lb-modal" id="lb-modal">
-  <div class="lb-box">
-    <h2>🏆 Leaderboard</h2>
-    <p class="lb-mode" id="lb-mode-label">4 × 4</p>
-    <table>
-      <thead><tr><th>#</th><th>User</th><th>Score</th><th>Steps</th><th>Time</th></tr></thead>
+<!-- leaderboard modal -->
+<div class="modal" id="lb-modal">
+  <div class="modal-box">
+    <h2>🏆 High Scores</h2>
+    <div class="mode-badge" id="lb-mode-label"></div>
+    <table class="lb-table" style="margin-top:12px">
+      <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Steps</th><th>Time</th></tr></thead>
       <tbody id="lb-body"></tbody>
     </table>
-    <div class="btn-row" style="margin-top:16px"><button class="btn-ghost" id="lb-close">✕ Close</button></div>
+    <button class="modal-close" id="lb-close">Close</button>
   </div>
 </div>
 
 <script>
-function $(id){return document.getElementById(id)}
-/* ===== storage helpers ===== */
-const LS_USERS='g2048_users',LS_LEADER='g2048_leaderboard',LS_SAVES='g2048_saves';
-function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v!==null?v:d}catch(e){return d}}
-function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
-/* ===== sha256 ===== */
-async function sha256(m){const buf=new TextEncoder().encode(m);const h=await crypto.subtle.digest('SHA-256',buf);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
-/* ===== SFX ===== */
-const SFX=(()=>{
-  let ctx;
-  function ac(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext);if(ctx.state==='suspended')ctx.resume();return ctx}
-  function tone(freq,dur,type='sine',vol=.18){
-    try{
-      const a=ac(),o=a.createOscillator(),g=a.createGain();
-      o.type=type;o.frequency.value=freq;g.gain.value=vol;
-      o.connect(g);g.connect(a.destination);
-      const t=a.currentTime;o.start(t);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.stop(t+dur);
-    }catch(e){}
+/* ====================================================================
+   Animated background
+   ==================================================================== */
+(function(){
+  const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
+  let W,H,stars=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;initStars()}
+  function initStars(){stars=[];for(let i=0;i<80;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.4,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28})}
+  function frame(){
+    x.clearRect(0,0,W,H);
+    // gradient bg
+    const g=x.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,'#0f1428');g.addColorStop(1,'#321e50');
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+    // stars
+    for(const s of stars){
+      s.ph+=s.a;
+      const alpha=.3+.7*Math.sin(s.ph)*Math.sin(s.ph);
+      x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fillStyle=`rgba(255,255,255,${alpha*.5})`;x.fill();
+      s.y-=s.s;if(s.y<-5){s.y=H+5;s.x=Math.random()*W}
+    }
+    requestAnimationFrame(frame)
   }
-  return{
-    button:()=>tone(600,.08,'square',.12),
-    move:()=>tone(220,.1,'sine',.15),
-    merge:()=>{tone(660,.12,'sine',.2);setTimeout(()=>tone(880,.1,'sine',.15),80)},
-    lose:()=>{tone(200,.15,'sawtooth',.2);setTimeout(()=>tone(150,.2,'sawtooth',.2),150)},
-    win:()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.18,'sine',.22),i*120))}
-  }
+  addEventListener('resize',resize);resize();frame()
 })();
-/* ===== tile colors ===== */
-const BG=['#1a3a5c','#1a3a5c','#ff5e5b','#ff8a5b','#ffc75b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b','#ff5e5b'];
-const FG=['#1a3a5c','#1a3a5c','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#0b1e33','#0b1e33','#0b1e33','#0b1e33','#0b1e33','#0b1e33','#0b1e33','#0b1e33'];
-function bg(v){return BG[Math.log2(v)]||BG[BG.length-1]||'#0b1e33'}
-function fg(v){return FG[Math.log2(v)]||FG[FG.length-1]||'#eaf4ff'}
-/* ===== game state ===== */
-let board=[];
-let tileId=[];      // stable numeric id per cell, 0=empty
-let tileMap={};     // id -> {el, value, row, col}
-let nextTileId=1;
-let boardSize=4;
+
+/* ====================================================================
+   Persistent helpers (localStorage)
+   ==================================================================== */
+const LS_USERS   ='g2048_users_v2';
+const LS_SAVES   ='g2048_saves_v2';   // { username: { grid: snapshot } }
+const LS_LEADER  ='g2048_leader_v2';  // { "4":[...], "6":[...], "8":[...] }
+
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+async function sha256(t){
+  const buf=new TextEncoder().encode(t);
+  const h=await crypto.subtle.digest('SHA-256',buf);
+  return[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ====================================================================
+   Sound
+   ==================================================================== */
+let audioCtx=null;
+function snd(freq,dur=.08,type='sine',vol=.15){
+  try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
+    o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur);
+  }catch{}
+}
+const SFX={
+  move:()=>snd(330,.05,'square',.06),
+  merge:()=>snd(660,.12,'sine',.18),
+  win:()=>{snd(880,.2);setTimeout(()=>snd(1100,.3),120)},
+  lose:()=>{snd(220,.2);setTimeout(()=>snd(165,.3),120)},
+  button:()=>snd(500,.03,'square',.05),
+};
+
+/* ====================================================================
+   Colours
+   ==================================================================== */
+const BG={
+  0:[205,193,180],2:[238,228,218],4:[237,224,200],8:[242,177,121],
+  16:[245,149,99],32:[246,124,95],64:[246,94,59],128:[237,207,114],
+  256:[237,204,97],512:[237,200,80],1024:[237,197,63],2048:[237,194,46],
+  4096:[80,78,70],8192:[50,48,42]
+};
+function bg(v){const c=BG[v]||[40,38,32];return`rgb(${c[0]},${c[1]},${c[2]})`}
+function fg(v){return v<=4?'#776e65':'#f9f6f2'}
+
+/* ====================================================================
+   Game state
+   ==================================================================== */
 let SIZE=4;
-let score=0,steps=0;
-let won=false,over=false;
-let currentUser=null;
-let timerMode='up';
-let startTime=0,elapsedMs=0,countDownTotal=60;
-let gameTimerInterval=null;
+let board,score,steps,elapsedMs,startTime,won,over,countDownSec,countDownTotal;
+let timerMode='up'; // 'up' | 'down-60' | 'down-120' | 'down-300'
+const undoStack=[];
 const MAX_UNDO=30;
-let undoStack=[];
-/* ===== geometry ===== */
-const GAP=12;
+let currentUser=null;     // null = guest
+let cells=[];
+let gameTimerInterval=null;
+let boardSize=4;          // current board dimension
+let inputLocked=false;
+const pendingGameTimers=new Set();
+
+const $=id=>document.getElementById(id);
+
+/* ------------------------------------------------------------------ tile geometry helpers */
 function geom(){
-  const wrapW=Math.min(window.innerWidth*0.94,480);
-  const tilePx=Math.floor((wrapW-GAP*(SIZE+1))/SIZE);
-  const boardPx=tilePx*SIZE+GAP*(SIZE+1);
-  return {tilePx,boardPx,wrapW};
+  const tilePx = SIZE<=4?100:SIZE<=6?74:56;
+  const gap    = SIZE<=4?10:SIZE<=6?8:6;
+  const pad    = SIZE<=4?12:SIZE<=6?10:8;
+  const boardPx= tilePx*SIZE + gap*(SIZE-1) + pad*2;
+  return {tilePx,gap,pad,boardPx};
 }
 function pos(r,c){
-  const {tilePx}=geom();
-  return {x:GAP+c*(tilePx+GAP),y:GAP+r*(tilePx+GAP)};
+  const {tilePx,gap,pad}=geom();
+  return { x: pad + c*(tilePx+gap), y: pad + r*(tilePx+gap) };
 }
-/* ===== build board ===== */
+
+/* ------------------------------------------------------------------ build board DOM */
+let nextTileId=1;
+let tileMap={};   // id → {el,value,row,col}
+let tileId=[];    // tileId[r][c] = id or 0
+
 function buildBoardDOM(){
   const b=$('board');b.innerHTML='';
   const {tilePx,boardPx}=geom();
   b.style.width=boardPx+'px';b.style.height=boardPx+'px';
-  const bg=$('board-bg');bg.innerHTML='';
-  bg.style.width=boardPx+'px';bg.style.height=boardPx+'px';
+  // background cells
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
     const d=document.createElement('div');d.className='bg-cell';
+    const p=pos(r,c);const {tilePx:g}=geom();
+    d.style.left=p.x+'px';d.style.top=p.y+'px';
     d.style.width=tilePx+'px';d.style.height=tilePx+'px';
-    const p=pos(r,c);d.style.left=p.x+'px';d.style.top=p.y+'px';
-    d.style.background='rgba(255,255,255,.06)';
-    bg.appendChild(d);
+    b.appendChild(d);
   }
+  // reset tracking
+  tileMap={};tileId=[];nextTileId=1;
+  for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++)tileId[r][c]=0;}
 }
-/* ===== tile factory ===== */
+
 function makeTile(value,r,c,isNew){
   const {tilePx}=geom();
   const d=document.createElement('div');
   d.className='cell'+(isNew?' new':'');
   d.style.width=tilePx+'px';d.style.height=tilePx+'px';
   d.style.fontSize=(tilePx*.38)+'px';
-  d.textContent=value;
-  d.style.background=bg(value);d.style.color=fg(value);
+  applyTileStyle(d,value);
   const p=pos(r,c);
   d.style.left=p.x+'px';d.style.top=p.y+'px';
   $('board').appendChild(d);
   return d;
 }
-/* ===== validate & sanitize data ===== */
-function isPowerOfTwo(n){return n>0&&(n&(n-1))===0}
-function sanitizeBoard(){
-  // Remove any OLD-style save data that has corrupted values
-  // (this handles saves created during earlier buggy versions)
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    const v=board[r][c];
-    if(v!==0&&!isPowerOfTwo(v)){
-      // Fix: round to nearest power of two, minimum 2
-      const corrected=Math.pow(2,Math.max(1,Math.round(Math.log2(v))));
-      console.warn('⚠️ Corrected invalid tile value at',r,c,':',v,'->',corrected);
-      board[r][c]=corrected;
+function applyTileStyle(d,v){
+  d.textContent=v||'';
+  d.style.background=bg(v);d.style.color=fg(v);
+}
+
+/* ------------------------------------------------------------------ rendering: moves tiles to new positions with slide animation */
+function render(){
+  // position each tracked tile using left/top so CSS scale anim doesn't conflict
+  for(const id in tileMap){
+    const t=tileMap[id];
+    const p=pos(t.row,t.col);
+    t.el.style.left=p.x+'px';
+    t.el.style.top=p.y+'px';
+  }
+  $('stat-score').textContent='🏆 '+score;
+  $('stat-steps').textContent='👣 '+steps;
+}
+
+/* called after slide calcs — updates value/cleanup, triggers merge pop */
+function finalizeRender(mergedIds){
+  // remove tiles that were merged into others (slide-finished)
+  for(const id of mergedIds){
+    const t=tileMap[id];
+    if(t){t.el.remove();delete tileMap[id];}
+  }
+  // update merged tile values + pop anim
+  for(const id in tileMap){
+    const t=tileMap[id];
+    const v=board[t.row][t.col];
+    if(t.value!==v){
+      t.value=v;applyTileStyle(t.el,v);
+      t.el.classList.remove('merging');void t.el.offsetWidth;t.el.classList.add('merging');
     }
   }
 }
-/* ===== timer ===== */
-function fmtTime(ms){
-  const s=Math.floor(ms/1000);const m=Math.floor(s/60);
-  return timerMode==='up'?`${m}:${String(s%60).padStart(2,'0')}`:`${Math.max(0,countDownTotal-s)}s`;
-}
+
 function updateTimer(){
-  $('stat-time').textContent=fmtTime(elapsedMs);
-  if(timerMode!=='up'){
-    const remain=countDownTotal-Math.floor(elapsedMs/1000);
-    $('stat-time').textContent=Math.max(0,remain)+'s';
+  const el=$('stat-time');
+  if(timerMode==='up'){
+    el.textContent='⏱ '+fmtTime(elapsedMs);
+    el.classList.remove('timer-warn');
+  }else{
+    const remain=Math.max(0,countDownTotal-Math.floor(elapsedMs/1000));
+    el.textContent='⏳ '+fmtTime(remain*1000);
+    if(remain<=10)el.classList.add('timer-warn');
+    else el.classList.remove('timer-warn');
   }
 }
-function startTimer(){
+
+function fmtTime(ms){
+  const s=Math.floor(ms/1000);
+  return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+function startTimer(initialElapsedMs=0){
   stopTimer();
-  startTime=Date.now();
-  elapsedMs=0;
+  elapsedMs=initialElapsedMs;
+  startTime=Date.now()-elapsedMs;
   if(timerMode!=='up'){
     const m=timerMode.match(/down-(\d+)/);
     countDownTotal=m?parseInt(m[1]):60;
@@ -346,6 +499,7 @@ function startTimer(){
     if(over)return;
     elapsedMs=Date.now()-startTime;
     updateTimer();
+    // check countdown expiry
     if(timerMode!=='up'){
       const remain=countDownTotal-Math.floor(elapsedMs/1000);
       if(remain<=0){stopTimer();gameOverByTime();}
@@ -353,6 +507,19 @@ function startTimer(){
   },100);
 }
 function stopTimer(){if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null}}
+
+function clearPendingGameTimers(){
+  for(const timerId of pendingGameTimers)clearTimeout(timerId);
+  pendingGameTimers.clear();
+  inputLocked=false;
+}
+function queueGameAction(callback,delay=170){
+  const timerId=setTimeout(()=>{
+    pendingGameTimers.delete(timerId);
+    callback();
+  },delay);
+  pendingGameTimers.add(timerId);
+}
 
 /* ------------------------------------------------------------------ game logic */
 function emptyCells(){const o=[];for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(!board[r][c])o.push([r,c]);return o}
@@ -372,9 +539,7 @@ function init(size){
   board=Array.from({length:SIZE},()=>Array(SIZE).fill(0));
   score=0;steps=0;won=false;over=false;
   elapsedMs=0;undoStack.length=0;
-  // clean up any orphaned tiles
-  for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
-  tileMap={};nextTileId=1;
+  clearPendingGameTimers();
   buildBoardDOM();
   // create initial 2 tiles
   for(let i=0;i<2;i++){
@@ -433,7 +598,7 @@ function colLine(c){const l=[],ids=[];for(let r=0;r<SIZE;r++){l.push(board[r][c]
 function colSet(c,res){for(let r=0;r<SIZE;r++){board[r][c]=res.line[r];tileId[r][c]=res.ids[r]}}
 
 function move(dir){
-  if(over)return;
+  if(over||inputLocked)return;
   const before=JSON.stringify(board);
   undoStack.push(snapshot());
   if(undoStack.length>MAX_UNDO)undoStack.shift();
@@ -460,17 +625,20 @@ function move(dir){
     syncTiles();          // create any missing tile els, update row/col refs
     render();             // trigger CSS slide
     const mergedCopy=allMerged.slice();
-    setTimeout(()=>finalizeRender(mergedCopy),160);  // remove merged tiles after slide
-    // add new random tile after animation
-    setTimeout(()=>{addRandom();},160);
-    if(!won&&board.flat().includes(SIZE*SIZE*2)){
-      won=true;SFX.win();
-      setTimeout(()=>showOverlay('🎉 You Win!'),200);
-    }else if(!hasMoves()){
-      over=true;SFX.lose();stopTimer();
-      recordScore();
-      setTimeout(()=>showOverlay('💀 Game Over'),200);
-    }
+    const reachedTarget=!won&&board.flat().includes(2048);
+    inputLocked=true;
+    queueGameAction(()=>{
+      finalizeRender(mergedCopy);
+      addRandom();
+      inputLocked=false;
+      if(reachedTarget){
+        won=true;SFX.win();showOverlay('🎉 You Win!');
+      }else if(!hasMoves()){
+        over=true;SFX.lose();stopTimer();
+        recordScore();
+        showOverlay('💀 Game Over');
+      }
+    });
   }else{
     undoStack.pop();
   }
@@ -489,47 +657,24 @@ function gameOverByTime(){
   if(over)return;
   over=true;SFX.lose();
   recordScore();
+  // Only win if target reached on count-down end
   showOverlay('⏰ Time\'s Up!');
 }
 
 function undo(){
+  clearPendingGameTimers();
   if(!undoStack.length){SFX.lose();return}
   const s=undoStack.pop();
   board=s.board.map(r=>[...r]);
   tileId=s.tileId.map(r=>[...r]);
   score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
   over=false;won=false;
-  // rebuild tiles from scratch for undo
+  // rebuild tiles from scratch for undo (no animation needed)
+  const b=$('board');
   for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
   tileMap={};
   syncTiles();
-  render();SFX.move();startTimer();
-}
-
-/* called after slide calcs — updates value/cleanup, triggers merge pop */
-function finalizeRender(mergedIds){
-  // remove tiles that were merged into others (slide-finished)
-  for(const id of mergedIds){
-    const t=tileMap[id];
-    if(t){t.el.remove();delete tileMap[id];}
-  }
-  // update merged tile values + pop anim
-  for(const id in tileMap){
-    const t=tileMap[id];
-    const v=board[t.row][t.col];
-    if(!isPowerOfTwo(v)&&v!==0){
-      // Safety: correct if somehow invalid
-      const corrected=Math.pow(2,Math.max(1,Math.round(Math.log2(v))));
-      board[t.row][t.col]=corrected;
-      t.value=corrected;
-      t.el.textContent=corrected;
-      t.el.style.background=bg(corrected);t.el.style.color=fg(corrected);
-    }else if(t.value!==v){
-      t.value=v;t.el.textContent=v;
-      t.el.style.background=bg(v);t.el.style.color=fg(v);
-      t.el.classList.remove('merging');void t.el.offsetWidth;t.el.classList.add('merging');
-    }
-  }
+  render();SFX.move();startTimer(elapsedMs);
 }
 
 /* ------------------------------------------------------------------ per-grid leaderboard */
@@ -566,8 +711,6 @@ function escapeHtml(s){const d=document.createElement('div');d.textContent=s;ret
 
 function doSave(){
   if(!currentUser){alert('Saving is only available in User Mode.');return}
-  // before saving, sanitize to ensure no invalid values persisted
-  sanitizeBoard();
   const saves=load(LS_SAVES,{});
   saves[currentUser]=saves[currentUser]||{};
   saves[currentUser][String(SIZE)]={board:board.map(r=>[...r]),score,steps,elapsedMs,timerMode};
@@ -581,28 +724,19 @@ function doLoad(){
   const key=String(SIZE);
   if(!uSaves[key]){alert('No save found for '+SIZE+'×'+SIZE+'.');return}
   const s=uSaves[key];
+  clearPendingGameTimers();
   board=s.board.map(r=>[...r]);
   score=s.score;steps=s.steps;elapsedMs=s.elapsedMs;
-  startTime=Date.now()-elapsedMs;over=false;won=false;undoStack.length=0;
-  // REBUILD TILES FROM SCRATCH using sanitizeBoard
+  over=false;won=false;undoStack.length=0;
+  // rebuild tiles
   for(const id in tileMap)if(tileMap[id].el)tileMap[id].el.remove();
   tileMap={};nextTileId=1;
-  tileId=[];
-  // IMPORTANT: assign stable tileId for each non-empty cell
-  for(let r=0;r<SIZE;r++){
-    tileId[r]=[];
-    for(let c=0;c<SIZE;c++){
-      const v=board[r][c];
-      if(v){
-        tileId[r][c]=nextTileId++;
-      }else{
-        tileId[r][c]=0;
-      }
-    }
-  }
-  sanitizeBoard(); // <-- Critical: fixes invalid values from previous versions
-  syncTiles();
-  render();SFX.merge();startTimer();alert('📂 Game loaded!');
+  tileId=[];for(let r=0;r<SIZE;r++){tileId[r]=[];for(let c=0;c<SIZE;c++){tileId[r][c]=board[r][c]?nextTileId++:0}}
+  syncTiles();applyAllTileStyles();
+  render();SFX.merge();startTimer(elapsedMs);alert('📂 Game loaded!');
+}
+function applyAllTileStyles(){
+  for(const id in tileMap){const t=tileMap[id];applyTileStyle(t.el,t.value)}
 }
 
 /* ------------------------------------------------------------------ overlay */
@@ -629,6 +763,7 @@ $('btn-settings-back').onclick=()=>{SFX.button();
 };
 
 function showSettings(){
+  // restore defaults from storage if any
   const last=load('g2048_last_settings',{grid:4,timer:'up'});
   $('sel-grid').value=String(last.grid||4);
   $('sel-timer').value=last.timer||'up';
@@ -641,8 +776,10 @@ $('btn-start-game').onclick=()=>{
   const t=$('sel-timer').value;
   boardSize=g;timerMode=t;
   save('g2048_last_settings',{grid:g,timer:t});
+  // set up game screen labels
   $('who-label').textContent=currentUser?('👤 '+currentUser):'🎮 Guest';
   $('stat-mode').textContent=`${g}×${g}`;
+  // disable save/load for guest
   $('b-save').disabled=!currentUser;
   $('b-save').style.opacity=currentUser?'1':'.35';
   $('b-save').style.pointerEvents=currentUser?'auto':'none';
