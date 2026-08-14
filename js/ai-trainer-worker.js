@@ -128,7 +128,7 @@ function playOneGame() {
 function trainStep(lr, batchSize) {
   if (buffer.length < batchSize) return 0;
   var batch = [];
-  for (var i = 0; i < bufferSize; i++) {
+  for (var i = 0; i < batchSize; i++) {
     var idx = Math.random() * buffer.length | 0;
     var sample = buffer[idx];
     batch.push({ input: sample.input, target: sample.target, weight: 1 });
