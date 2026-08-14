@@ -1189,13 +1189,16 @@ function startTraining(games,lr){
   startShowcase();
   buildTrainingWorker();
 }
-function stopTraining(){
+function resetTrainingUI(){
   stopShowcase();
   terminateTraining();
   var t1=$('ai-train');if(t1)t1.hidden=false;
   var t2=$('ai-stop-training');if(t2)t2.hidden=true;
   var tp=$('training-panel');if(tp)tp.hidden=true;
   $('game-screen').classList.remove('ai-training-mode');
+}
+function stopTraining(){
+  resetTrainingUI();
   init(boardSize);
   show('entry-screen');
 }
@@ -1433,6 +1436,7 @@ function showSettings(){
 
 $('btn-start-game').onclick=()=>{
   SFX.button();
+  resetTrainingUI();
   const g=parseInt($('sel-grid').value);
   const t=$('sel-timer').value;
   boardSize=g;timerMode=t;
