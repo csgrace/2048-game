@@ -94,6 +94,10 @@ body::before{
 .training-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:rgba(255,255,255,.85)}
 .training-actions{display:flex;gap:8px}
 .btn.sm{padding:6px 14px;font-size:13px}
+/* Training stat cards */
+.train-stat{flex:1;min-width:80px;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:2px}
+.ts-label{font-size:9px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px}
+.ts-value{font-size:15px;font-weight:700;color:#ffd166}
 
 /* ================================================================== AI training mode: hide game controls */
 .ai-training-mode .sides,
@@ -106,6 +110,7 @@ body::before{
 .training-details{margin-top:14px;padding:14px 16px;border:1px solid rgba(147,112,219,.22);border-radius:12px;background:rgba(0,0,0,.16)}
 .training-details h3{margin:0 0 8px;color:#ffd166;font-size:14px;letter-spacing:.4px}
 .training-details p{margin:4px 0;font-size:12px;line-height:1.65;color:rgba(255,255,255,.62)}
+@keyframes pulse-bar{0%,100%{transform:translateX(-30%);opacity:.6}50%{transform:translateX(120%);opacity:1}}
 .ai-training-mode .top-bar{justify-content:center;margin-bottom:12px}
 .ai-training-mode{align-items:center;justify-content:center;flex-direction:column;display:flex}
 #stat-ai{display:none}
@@ -378,11 +383,41 @@ body::before{
         <span>🧠 <strong>AI Training Lab</strong></span>
         <div class="training-actions">
           <button class="btn sm" id="ai-train">▶ Train on GitHub</button>
-          <button class="btn sm" id="ai-stop-training" hidden>↻ Refresh Status</button>
+          <button class="btn sm" id="ai-stop-training" hidden>↻ Refresh</button>
+          <button class="btn sm" id="ai-set-token" style="display:none">🔑 Token</button>
         </div>
       </div>
-      <div id="training-log" style="margin-top:6px;font-size:12px;color:rgba(255,255,255,.7);max-height:200px;overflow-y:auto;white-space:pre-wrap;line-height:1.5" aria-live="polite">点击 Train on GitHub 开始后台训练。</div>
-      <div id="training-jobs" style="margin-top:8px"></div>
+
+      <!-- Stats row -->
+      <div id="training-stats" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <div class="train-stat" id="ts-version"><span class="ts-label">Version</span><span class="ts-value">—</span></div>
+        <div class="train-stat" id="ts-games"><span class="ts-label">Games</span><span class="ts-value">—</span></div>
+        <div class="train-stat" id="ts-best"><span class="ts-label">Best Tile</span><span class="ts-value">—</span></div>
+        <div class="train-stat" id="ts-avg"><span class="ts-label">Avg Score</span><span class="ts-value">—</span></div>
+        <div class="train-stat" id="ts-loss"><span class="ts-label">Loss</span><span class="ts-value">—</span></div>
+      </div>
+
+      <!-- Loss curve chart -->
+      <div style="margin-top:8px">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px">📈 Training Loss Curve</div>
+        <canvas id="training-curve" width="280" height="80" style="width:100%;height:80px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08)"></canvas>
+      </div>
+
+      <!-- Max tile bar chart -->
+      <div style="margin-top:6px">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px">🎯 Max Tile per Game</div>
+        <canvas id="training-tiles" width="280" height="50" style="width:100%;height:50px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08)"></canvas>
+      </div>
+
+      <!-- Status log -->
+      <div id="training-log" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.7);max-height:120px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;border-radius:8px;padding:8px 10px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.06)" aria-live="polite">点击 Train on GitHub 开始后台训练。</div>
+
+      <!-- Workflow runs -->
+      <div style="margin-top:8px">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">☁️ GitHub Actions Runs</div>
+        <div id="training-jobs"></div>
+      </div>
+
       <section class="training-details" aria-label="训练逻辑说明">
         <h3>训练流程</h3>
     <p>① <strong>点击 Train</strong>：前端通过 GitHub API 触发 Actions workflow，在云端服务器上运行训练。</p>
@@ -1057,7 +1092,7 @@ let aiCurrentRunId=null;
 function initAiNet(weights){
   if(!window.AIBrain)return;
   aiNet=new window.AIBrain.ValueNet();
-  if(weights)aiNet.importWeights(weights);
+  if(weights){aiNet.importWeights(weights);if(aiNet)aiNet._meta=weights;}
   aiUseNN=!!weights&&aiTrainGames>50;
 }
 function aiNeuralEvaluate(grid){
@@ -1101,7 +1136,13 @@ function enterTrainingMode(){
   var tp=$('training-panel');if(tp)tp.hidden=false;
   var t1=$('ai-train');if(t1)t1.hidden=false;
   var t2=$('ai-stop-training');if(t2)t2.hidden=false;
-  t2.textContent='↻ Refresh Status';
+  t2.textContent='↻ Refresh';
+  // Show/hide token button
+  var tb=$('ai-set-token');if(tb)tb.style.display='inline-block';
+  // Load existing weights history for visualization
+  loadTrainingStatsFromWeights();
+  drawTrainingCurve();
+  drawMaxTileChart();
   // Check if token is set
   if(!getGitHubToken()){
     $('training-log').innerHTML='⚠ 尚未设置 GitHub Token，无法触发训练。<br><br>请先设置一个有 repo 和 workflow 权限的 Personal Access Token：<br><button class="btn sm" id="gh-set-token" style="margin-top:8px">🔑 设置 Token</button>';
@@ -1111,6 +1152,94 @@ function enterTrainingMode(){
   }
   // Show recent runs
   fetchWorkflowRuns();
+}
+/* Load training history from ai-weights.json for charts & stats */
+var aiHistory=[];
+function loadTrainingStatsFromWeights(){
+  if(aiNet&&aiNet._meta){
+    var m=aiNet._meta;
+    if(m.history){aiHistory=m.history;}
+    if(m.version){setStat('ts-version','v'+m.version);}
+    if(m.bestMaxTile){setStat('ts-best',m.bestMaxTile);}
+    if(m.avgScore){setStat('ts-avg',m.avgScore);}
+    if(m.history&&m.history.length){
+      setStat('ts-games',m.history[m.history.length-1].game);
+      var last=m.history[m.history.length-1];
+      setStat('ts-loss',last.loss.toFixed(6));
+    }
+  }
+}
+function setStat(id,val){var el=$(id);if(el){var v=el.querySelector('.ts-value');if(v)v.textContent=val;}}
+/* Draw loss curve on canvas */
+function drawTrainingCurve(){
+  var c=$('training-curve');if(!c)return;
+  var ctx=c.getContext('2d');
+  var W=c.width=c.clientWidth||280;
+  var H=c.height=80;
+  ctx.clearRect(0,0,W,H);
+  // Background grid
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+  for(var i=1;i<4;i++){ctx.beginPath();ctx.moveTo(0,H/4*i);ctx.lineTo(W,H/4*i);ctx.stroke();}
+  if(!aiHistory.length){
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暂无训练数据',W/2,H/2);
+    return;
+  }
+  var losses=aiHistory.map(function(p){return p.loss});
+  var maxL=Math.max.apply(null,losses);var minL=Math.min.apply(null,losses);
+  var range=(maxL-minL)||0.001;
+  // Draw loss curve with gradient
+  var grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(255,209,102,.25)');
+  grad.addColorStop(1,'rgba(255,209,102,0)');
+  ctx.beginPath();
+  ctx.moveTo(0,H);
+  aiHistory.forEach(function(p,i){
+    var x=i/(aiHistory.length-1)*W;
+    var y=H-2-(p.loss-minL)/range*(H-6);
+    ctx.lineTo(x,y);
+  });
+  ctx.lineTo(W,H);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+  // Line
+  ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.beginPath();
+  aiHistory.forEach(function(p,i){
+    var x=i/(aiHistory.length-1)*W;
+    var y=H-2-(p.loss-minL)/range*(H-6);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // Last point dot
+  var lastP=aiHistory[aiHistory.length-1];
+  var lx=W;var ly=H-2-(lastP.loss-minL)/range*(H-6);
+  ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(lx-2,ly,3,0,6.28);ctx.fill();
+}
+/* Draw max tile bar chart */
+function drawMaxTileChart(){
+  var c=$('training-tiles');if(!c)return;
+  var ctx=c.getContext('2d');
+  var W=c.width=c.clientWidth||280;
+  var H=c.height=50;
+  ctx.clearRect(0,0,W,H);
+  if(!aiHistory.length){
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暂无数据',W/2,H/2);
+    return;
+  }
+  var tiles=aiHistory.map(function(p){return p.maxTile});
+  var maxT=Math.max.apply(null,tiles);
+  var n=tiles.length;
+  var barW=Math.max(2,W/n-1);
+  tiles.forEach(function(t,i){
+    var x=i*(W/n);
+    var h=(t/maxT)*(H-4);
+    var y=H-h;
+    // Color based on tile value
+    var color='#6bcb77';
+    if(t>=1024)color='#9b59b6';else if(t>=512)color='#3498db';else if(t>=256)color='#2ecc71';else if(t>=128)color='#f39c12';else color='#e74c3c';
+    ctx.fillStyle=color;
+    ctx.fillRect(x,y,barW,h);
+  });
 }
 function promptForToken(){
   var existing=getGitHubToken();
@@ -1157,31 +1286,39 @@ async function fetchWorkflowRuns(){
   try{
     var resp=await ghApi('/actions/workflows/'+GH_WORKFLOW_ID+'/runs?per_page=5');
     if(!resp.ok){
-      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.5)">无法获取训练记录 (HTTP '+resp.status+')。'+'</p>';
-      if(resp.status===401)jobsEl.innerHTML+='<p style="font-size:12px;color:#ffaaaa">Token 无效或已过期。</p>';
+      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4)">无法获取训练记录 (HTTP '+resp.status+')。</p>';
+      if(resp.status===401)jobsEl.innerHTML+='<p style="font-size:11px;color:#ffaaaa">Token 无效或已过期，请点击 🔑 Token 重新设置。</p>';
       return;
     }
     var data=await resp.json();
     if(!data.workflow_runs||!data.workflow_runs.length){
-      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.5)">暂无训练记录。</p>';
+      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4)">暂无训练记录。</p>';
       return;
     }
     var html='';
     for(var i=0;i<data.workflow_runs.length;i++){
       var run=data.workflow_runs[i];
-      var statusIcon=run.status==='completed'?(run.conclusion==='success'?'✅':'❌'):'🔄';
+      var isRunning=run.status!=='completed';
+      var isOk=!isRunning&&run.conclusion==='success';
+      var statusIcon=isOk?'✅':(!isRunning?'🔄':'❌');
       var time=new Date(run.created_at).toLocaleString('zh-CN');
       var commitMsg=run.head_commit?run.head_commit.message.split('\n')[0]:'';
-      var color=run.status==='completed'?(run.conclusion==='success'?'#6bcb77':'#ff6b6b'):'#ffd166';
-      html+='<div style="padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.1)">';
+      var color=isOk?'#6bcb77':(isRunning?'#ffd166':'#ff6b6b');
+      var bg=isOk?'rgba(107,203,119,.08)':(isRunning?'rgba(255,209,102,.08)':'rgba(255,107,107,.06)');
+      var bd=isOk?'rgba(107,203,119,.2)':(isRunning?'rgba(255,209,102,.2)':'rgba(255,107,107,.15)');
+      html+='<div style="padding:8px 10px;margin-bottom:6px;border-radius:8px;background:'+bg+';border:1px solid '+bd+'">';
       html+='<div style="display:flex;align-items:center;gap:8px;font-size:13px">';
-      html+='<span>'+statusIcon+'</span>';
-      html+='<span style="color:'+color+';font-weight:600">'+run.conclusion||run.status+'</span>';
-      html+='<span style="color:rgba(255,255,255,.5);font-size:11px">'+time+'</span>';
+      html+='<span style="font-size:15px">'+statusIcon+'</span>';
+      html+='<span style="color:'+color+';font-weight:600">'+escapeHtml(run.conclusion||run.status)+'</span>';
+      html+='<span style="color:rgba(255,255,255,.4);font-size:11px;margin-left:auto">'+time+'</span>';
       html+='</div>';
-      html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">'+escapeHtml(commitMsg)+'</div>';
-      if(run.status!=='completed'){
-        html+='<div style="font-size:11px;color:#ffd166;margin-top:3px">⏳ '+run.status+'...</div>';
+      html+='<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(commitMsg)+'</div>';
+      if(isRunning){
+        // Progress bar animation
+        html+='<div style="margin-top:5px;height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden">';
+        html+='<div style="height:100%;width:40%;border-radius:2px;background:linear-gradient(90deg,#ffd166,#ff9f43);animation:pulse-bar 1.5s ease-in-out infinite"></div>';
+        html+='</div>';
+        html+='<div style="font-size:10px;color:#ffd166;margin-top:3px">⏳ '+escapeHtml(run.status)+'...</div>';
       }
       html+='</div>';
     }
@@ -1192,7 +1329,7 @@ async function fetchWorkflowRuns(){
       aiCurrentRunId=running.id;
       $('ai-train').disabled=true;
       $('ai-train').textContent='⏳ Training...';
-      log.textContent='🔄 训练进行中: '+running.head_commit.message.split('\n')[0]+'\n开始时间: '+new Date(running.created_at).toLocaleString('zh-CN');
+      log.innerHTML='🔄 <strong>训练进行中</strong><br>'+escapeHtml(running.head_commit?running.head_commit.message.split('\n')[0]:'')+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">开始: '+new Date(running.created_at).toLocaleString('zh-CN')+'</span>';
       // Auto-poll every 10 seconds
       if(!aiPollTimer){
         aiPollTimer=setInterval(fetchWorkflowRuns,10000);
@@ -1205,13 +1342,13 @@ async function fetchWorkflowRuns(){
       // Check if the latest run just completed
       var latest=data.workflow_runs[0];
       if(latest&&latest.status==='completed'&&latest.conclusion==='success'){
-        log.textContent='✅ 训练完成！正在重新加载 AI 权重...\n\n最新 commit: '+escapeHtml(latest.head_commit.message.split('\n')[0]);
+        log.innerHTML='✅ <strong>训练完成！</strong> 正在重新加载 AI 权重...<br><span style="font-size:11px;color:rgba(255,255,255,.4)">'+escapeHtml(latest.head_commit?latest.head_commit.message.split('\n')[0]:'')+'</span>';
         // Reload weights
         reloadWeightsFromRepo();
       }
     }
   }catch(e){
-    jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.5)">获取训练记录失败: '+escapeHtml(e.message)+'</p>';
+    jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4)">获取训练记录失败: '+escapeHtml(e.message)+'</p>';
   }
 }
 function escapeHtml(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''
@@ -1222,8 +1359,14 @@ async function reloadWeightsFromRepo(){
     var w=await resp.json();
     if(w&&w.l1W&&w.l1W.length>100){
       initAiNet(w);aiTrainGames=w.version||100;refreshAiEvalLeaf();
+      // Store meta for stats & charts
+      if(aiNet)aiNet._meta=w;
+      // Update stats and charts
+      loadTrainingStatsFromWeights();
+      drawTrainingCurve();
+      drawMaxTileChart();
       console.log('AI weights reloaded from repo:',w.l1W.length,'weights, v'+(w.version||0));
-      $('training-log').textContent+='✅ 权重已更新！版本 v'+(w.version||0)+'，包含 '+w.l1W.length+' 个参数。';
+      $('training-log').innerHTML='✅ <strong>权重已更新！</strong><br>版本 v'+(w.version||0)+' · '+w.l1W.length+' 个参数'+(w.trainTime?' · 训练耗时 '+w.trainTime:'')+(w.bestMaxTile?' · 最高方块 '+w.bestMaxTile:'');
     }
   }catch(e){
     // Weight file not ready yet, will load on next page refresh
@@ -1568,6 +1711,7 @@ $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
 $('ai-train').onclick=()=>{SFX.button();startTraining()};
 $('ai-stop-training').onclick=()=>{SFX.button();fetchWorkflowRuns()};
+$('ai-set-token').onclick=()=>{SFX.button();promptForToken()};
 $('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
 $('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
 $('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};

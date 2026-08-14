@@ -299,6 +299,7 @@ console.log('');
 var startTime = Date.now();
 var totalScore = 0;
 var bestMaxTile = 0;
+var trainingHistory = [];  // array of {game, loss, maxTile, score, avgScore}
 
 for (var g = 0; g < GAMES; g++) {
   var result = learnFromGame();
@@ -318,6 +319,17 @@ for (var g = 0; g < GAMES; g++) {
   totalScore += result.score;
   if (result.maxTile > bestMaxTile) bestMaxTile = result.maxTile;
 
+  // Record training data point every 5 games (for visualization)
+  if (g % 5 === 0 || g === GAMES - 1) {
+    trainingHistory.push({
+      game: g + 1,
+      loss: parseFloat(ls.toFixed(6)),
+      maxTile: result.maxTile,
+      score: result.score,
+      avgScore: Math.round(totalScore / (g + 1))
+    });
+  }
+
   // Log progress every 20 games
   if (g % 20 === 0 || g === GAMES - 1) {
     var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -333,10 +345,14 @@ for (var g = 0; g < GAMES; g++) {
   }
 }
 
-/* ---------- save weights ---------- */
+/* ---------- save weights + training history ---------- */
 var weights = net.exportWeights();
 weights.version = totalGamesTrained;
 weights.description = '2048 AI trained weights - trained ' + totalGamesTrained + ' games via GitHub Actions';
+weights.history = trainingHistory;
+weights.bestMaxTile = bestMaxTile;
+weights.avgScore = Math.round(totalScore / GAMES);
+weights.trainTime = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
 
 fs.writeFileSync(weightsPath, JSON.stringify(weights, null, 2));
 
