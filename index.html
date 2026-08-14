@@ -441,6 +441,17 @@ body::before{
     <p>⑥ <strong>自动部署</strong>：训练完成后，GitHub Actions 自动 commit 更新 <code>js/ai-weights.json</code>，所有用户刷新页面即可使用最新的 AI。</p>
     <p>⑦ <strong>增量训练</strong>：每次训练会加载上一版本的权重继续训练，AI 会持续变强。</p>
       </section>
+
+      <!-- AI Playtest Records -->
+      <div id="playtest-panel" style="margin-top:10px;padding:14px 16px;border:1px solid rgba(147,112,219,.22);border-radius:12px;background:rgba(0,0,0,.16)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:14px;font-weight:600;color:#ffd166;letter-spacing:.4px">🏆 AI 实战记录</span>
+          <button class="btn sm" id="ai-playtest-clear" style="padding:4px 10px;font-size:11px;opacity:.6">清空</button>
+        </div>
+        <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">对战详情（点击展开）</div>
+        <div id="playtest-records" style="max-height:180px;overflow-y:auto;font-size:12px;border-radius:8px"></div>
+      </div>
     </div>
     <div class="sides">
       <button class="btn" id="b-save">💾 Save</button>
@@ -860,11 +871,13 @@ function move(dir,fromAI=false){
       addRandom();
       inputLocked=false;
 if(reachedTarget){
-won=true;SFX.win();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;showOverlay('🎉 You Win!',info);
+won=true;SFX.win();stopAiAutoPlay();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;showOverlay('🎉 You Win!',info);
+recordAiPlaytest('win');
 schedulePostGameLeaderboard();
 }else if(!hasMoves()){
 over=true;SFX.lose();stopTimer();
 recordScore();
+if(aiAutoPlay)recordAiPlaytest('fail');
 showOverlay('💀 Game Over',`score: ${score} · moves: ${steps}`);
 schedulePostGameLeaderboard();
 }
@@ -1061,13 +1074,13 @@ function updateAiControls(){
   $('ai-auto').hidden=aiAutoPlay;$('ai-stop').hidden=!aiAutoPlay;
 }
 function scheduleAiMove(){
-  if(!aiAutoPlay)return;
-  if(over){stopAiAutoPlay();return}
-  if(inputLocked){aiTimer=setTimeout(scheduleAiMove,120);return}
-  const direction=aiBestMove();
-  if(!direction){stopAiAutoPlay();return}
-  move(direction,true);
-  aiTimer=setTimeout(scheduleAiMove,360);
+if(!aiAutoPlay)return;
+if(over||won){stopAiAutoPlay();return}
+if(inputLocked){aiTimer=setTimeout(scheduleAiMove,120);return}
+const direction=aiBestMove();
+if(!direction){stopAiAutoPlay();return}
+move(direction,true);
+aiTimer=setTimeout(scheduleAiMove,360);
 }
 function startAiAutoPlay(){
   if(SIZE!==4){$('tool-status').textContent='AI Auto Play is available on 4×4 only.';return}
@@ -1159,6 +1172,7 @@ function enterTrainingMode(){
   // Check if a training run is in progress by polling progress file
   checkTrainingProgress();
   $('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong>▶ Train</strong> 在云端启动训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练在 GitHub Actions 云端运行，每 20 局自动推送进度，前端自动刷新图表。</span>';
+  renderPlaytestPanel();
 }
 /* Load training history from ai-weights.json for charts & stats */
 var aiHistory=[];
@@ -1313,7 +1327,103 @@ function startPollingProgress(){
   },10000);
 }
 function stopPollingProgress(){
-  if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null;}
+if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null;}
+}
+
+/* ====================================================================
+AI Playtest Records — track AI auto-play results per weight version
+==================================================================== */
+const LS_PLAYTEST='g2048_ai_playtest_v1';
+function loadPlaytests(){return load(LS_PLAYTEST,[])}
+function savePlaytests(r){save(LS_PLAYTEST,r)}
+function getCurrentWeightVersion(){
+if(aiNet&&aiNet._meta&&aiNet._meta.version)return 'v'+aiNet._meta.version;
+return aiTrainGames>0?('v'+aiTrainGames):'unknown';
+}
+function recordAiPlaytest(result){
+if(!aiAutoPlay&&!cheated)return;
+var maxTile=0;
+for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
+var rec={
+ts:Date.now(),
+version:getCurrentWeightVersion(),
+result:result,
+score:score,
+maxTile:maxTile,
+steps:steps,
+durationMs:elapsedMs,
+boardSize:SIZE
+};
+var records=loadPlaytests();
+records.push(rec);
+if(records.length>500)records=records.slice(-500);
+savePlaytests(records);
+renderPlaytestPanel();
+}
+function fmtPlayTime(ms){
+var s=Math.floor(ms/1000);
+if(s<60)return s+'s';
+var m=Math.floor(s/60);s=s%60;
+if(m<60)return m+'m '+s+'s';
+var h=Math.floor(m/60);m=m%60;
+return h+'h '+m+'m';
+}
+function renderPlaytestPanel(){
+var records=loadPlaytests();
+var statsEl=$('playtest-stats');
+var recsEl=$('playtest-records');
+if(!statsEl||!recsEl)return;
+
+if(!records.length){
+statsEl.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4)">暂无实战记录。使用 AI Auto Play 后会自动记录每局结果。</span>';
+recsEl.innerHTML='';
+return;
+}
+
+// Group by version
+var byVersion={};
+records.forEach(function(r){
+var v=r.version||'unknown';
+if(!byVersion[v])byVersion[v]={total:0,wins:0,fails:0,bestScore:0,bestTile:0,avgScore:0,scores:[]};
+byVersion[v].total++;
+if(r.result==='win')byVersion[v].wins++;else byVersion[v].fails++;
+byVersion[v].bestScore=Math.max(byVersion[v].bestScore,r.score);
+byVersion[v].bestTile=Math.max(byVersion[v].bestTile,r.maxTile);
+byVersion[v].scores.push(r.score);
+});
+
+// Build stats cards
+var html='';
+Object.keys(byVersion).forEach(function(v){
+var s=byVersion[v];
+s.avgScore=Math.round(s.scores.reduce(function(a,b){return a+b},0)/s.scores.length);
+var rate=s.total>0?Math.round(s.wins/s.total*100):0;
+var rateColor=rate>=60?'#6bcb77':rate>=30?'#ffd166':'#ff6b6b';
+html+='<div style="padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);min-width:120px;flex:1">';
+html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px">'+v+' · '+s.total+'局</div>';
+html+='<div style="font-size:16px;font-weight:700;color:'+rateColor+'">'+rate+'%</div>';
+html+='<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">✅'+s.wins+' ❌'+s.fails+' · 最高分'+s.bestScore+' · 最大方块'+s.bestTile+'</div>';
+html+='</div>';
+});
+statsEl.innerHTML=html;
+
+// Recent records (last 20)
+var recent=records.slice(-20).reverse();
+var recHtml='';
+recent.forEach(function(r,i){
+var idx=records.length-i;
+var isWin=r.result==='win';
+var bg=isWin?'rgba(107,203,119,.06)':'rgba(255,107,107,.06)';
+var border=isWin?'rgba(107,203,119,.15)':'rgba(255,107,107,.15)';
+var icon=isWin?'✅':'❌';
+var date=new Date(r.ts);
+var timeStr=date.toLocaleDateString()+' '+date.toLocaleTimeString().slice(0,5);
+recHtml+='<div style="padding:6px 10px;margin-bottom:4px;border-radius:6px;background:'+bg+';border:1px solid '+border+';display:flex;justify-content:space-between;align-items:center">';
+recHtml+='<span>'+icon+' <strong style="color:'+(isWin?'#6bcb77':'#ff6b6b')+'">'+(isWin?'Win':'Fail')+'</strong> <span style="color:rgba(255,255,255,.4);font-size:11px">'+r.version+'</span></span>';
+recHtml+='<span style="color:rgba(255,255,255,.6);font-size:11px">分数 '+r.score+' · 最大 '+r.maxTile+' · '+r.steps+'步 · '+fmtPlayTime(r.durationMs)+'</span>';
+recHtml+='</div>';
+});
+recsEl.innerHTML=recHtml;
 }
 /* Update stat cards from live data */
 function updateLiveStats(d){
@@ -1807,6 +1917,13 @@ $('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};
 $('ai-auto').onclick=()=>{SFX.button();startAiAutoPlay()};
 $('ai-stop').onclick=()=>{SFX.button();stopAiAutoPlay();$('tool-status').textContent='AI Auto Play stopped.'};
 $('tools-close').onclick=()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')};
+$('ai-playtest-clear').onclick=()=>{
+SFX.button();
+if(confirm('确定清空所有实战记录？')){
+savePlaytests([]);
+renderPlaytestPanel();
+}
+};
 $('b-restart').onclick=()=>{SFX.button();init(boardSize)};
 $('b-save').onclick=()=>{SFX.button();doSave()};
 $('b-load').onclick=()=>{SFX.button();doLoad()};
