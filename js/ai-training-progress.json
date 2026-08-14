@@ -1,31 +1,103 @@
 {
-  "active": false,
-  "done": true,
-  "version": 2,
-  "bestMaxTile": 2048,
-  "avgScore": 18506,
-  "trainTime": "3.5s",
+  "active": true,
+  "game": 40,
+  "total": 40,
+  "loss": 0.000676,
+  "maxTile": 1024,
+  "bestMax": 4096,
+  "avgScore": 20587,
+  "version": 42,
   "history": [
     {
       "game": 1,
-      "total": 2,
-      "loss": 0.000561,
-      "maxTile": 2048,
-      "score": 23212,
-      "avgScore": 23212,
-      "bestMax": 2048,
-      "version": 1
+      "total": 40,
+      "loss": 0.000222,
+      "maxTile": 512,
+      "score": 7216,
+      "avgScore": 7216,
+      "bestMax": 512,
+      "version": 3
     },
     {
-      "game": 2,
-      "total": 2,
-      "loss": 0.000535,
+      "game": 6,
+      "total": 40,
+      "loss": 0.000475,
       "maxTile": 1024,
-      "score": 13800,
-      "avgScore": 18506,
+      "score": 15668,
+      "avgScore": 16250,
       "bestMax": 2048,
-      "version": 2
+      "version": 8
+    },
+    {
+      "game": 11,
+      "total": 40,
+      "loss": 0.00123,
+      "maxTile": 1024,
+      "score": 14676,
+      "avgScore": 19311,
+      "bestMax": 2048,
+      "version": 13
+    },
+    {
+      "game": 16,
+      "total": 40,
+      "loss": 0.000362,
+      "maxTile": 1024,
+      "score": 17284,
+      "avgScore": 18217,
+      "bestMax": 2048,
+      "version": 18
+    },
+    {
+      "game": 21,
+      "total": 40,
+      "loss": 0.000585,
+      "maxTile": 1024,
+      "score": 16692,
+      "avgScore": 17718,
+      "bestMax": 2048,
+      "version": 23
+    },
+    {
+      "game": 26,
+      "total": 40,
+      "loss": 0.000246,
+      "maxTile": 1024,
+      "score": 13980,
+      "avgScore": 16763,
+      "bestMax": 2048,
+      "version": 28
+    },
+    {
+      "game": 31,
+      "total": 40,
+      "loss": 0.00049,
+      "maxTile": 2048,
+      "score": 28000,
+      "avgScore": 19216,
+      "bestMax": 4096,
+      "version": 33
+    },
+    {
+      "game": 36,
+      "total": 40,
+      "loss": 0.000626,
+      "maxTile": 2048,
+      "score": 35512,
+      "avgScore": 20184,
+      "bestMax": 4096,
+      "version": 38
+    },
+    {
+      "game": 40,
+      "total": 40,
+      "loss": 0.000676,
+      "maxTile": 1024,
+      "score": 16548,
+      "avgScore": 20587,
+      "bestMax": 4096,
+      "version": 42
     }
   ],
-  "timestamp": 1786713579928
+  "timestamp": 1786714239802
 }
