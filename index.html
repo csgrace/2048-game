@@ -1323,14 +1323,14 @@ async function startTraining(){
       // Start polling after a short delay
       setTimeout(startPollingProgress,15000);
     }else if(resp.status===401||resp.status===403){
-      log.innerHTML='❌ 需要 GitHub Token 才能触发训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到仓库 Actions 页面手动点击 "Run workflow"。</span>';
+      log.innerHTML='❌ 需要 GitHub Token 才能直接触发训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">仓库 Actions 页面</a> 手动点击 "Run workflow"。</span>';
       $('ai-train').disabled=false;
     }else{
-      log.innerHTML='❌ 启动失败 (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到仓库 Actions 页面手动点击 "Run workflow"。</span>';
+      log.innerHTML='❌ 启动失败 (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">仓库 Actions 页面</a> 手动点击 "Run workflow"。</span>';
       $('ai-train').disabled=false;
     }
   }catch(e){
-    log.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到仓库 Actions 页面手动触发。</span>';
+    log.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">仓库 Actions 页面</a> 手动触发。</span>';
     $('ai-train').disabled=false;
   }
 }
