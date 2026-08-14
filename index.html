@@ -347,7 +347,7 @@ transition:all .25s ease;
   <div class="screen" id="playtest-screen">
     <button class="back-btn" id="btn-playtest-back">← Back</button>
     <div class="glass" style="width:100%;max-width:640px;padding:20px 24px">
-      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">🏆 AI 实战记录</div>
+      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">🏆 AI Playtest Arena</div>
       <div class="subtitle" style="text-align:center;margin-bottom:16px">Batch auto-play · Win rate stats · Version comparison</div>
 
       <!-- Batch auto-play controls -->
@@ -364,13 +364,6 @@ transition:all .25s ease;
             <option value="20">20 games</option>
             <option value="50">50 games</option>
           </select>
-          <label style="font-size:12px;color:rgba(255,255,255,.6)">Speed</label>
-          <select id="playtest-speed" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
-            <option value="0">Turbo (no delay)</option>
-            <option value="100" selected>Fast (100ms)</option>
-            <option value="300">Normal (300ms)</option>
-            <option value="600">Slow (600ms)</option>
-          </select>
           <button class="btn sm" id="playtest-batch-start" style="padding:8px 18px;font-size:13px;background:#14b8a6;color:#fff;border:none;border-radius:8px;cursor:pointer">▶ Start</button>
           <button class="btn sm" id="playtest-batch-stop" style="padding:8px 18px;font-size:13px;display:none">⏹ Stop</button>
         </div>
@@ -383,7 +376,16 @@ transition:all .25s ease;
             <div id="playtest-batch-bar" style="height:100%;background:linear-gradient(90deg,#14b8a6,#6bcb77);width:0%;transition:width .3s"></div>
           </div>
         </div>
-        <div id="playtest-batch-log" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.5);max-height:100px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
+        <!-- Live game info during batch -->
+        <div id="playtest-live-info" style="display:none;margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <span style="font-size:12px;color:rgba(255,255,255,.5)">Live Game</span>
+            <span style="font-size:13px;font-weight:600;color:#ffd166" id="playtest-live-score">Score: 0</span>
+            <span style="font-size:13px;font-weight:600;color:#6bcb77" id="playtest-live-max">Max: 0</span>
+            <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.7)" id="playtest-live-steps">Steps: 0</span>
+          </div>
+        </div>
+        <div id="playtest-batch-log" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.5);max-height:80px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
       </div>
 
       <!-- Stats -->
@@ -392,7 +394,7 @@ transition:all .25s ease;
       <!-- Records -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <span style="font-size:11px;color:rgba(255,255,255,.5)">Match details (last 20)</span>
-        <button class="btn sm" id="ai-playtest-clear" style="padding:4px 10px;font-size:11px;opacity:.6">Clear</button>
+        <button class="btn sm" id="ai-playtest-clear" style="padding:3px 8px;font-size:10px;opacity:.5;border-radius:6px">Clear</button>
       </div>
       <div id="playtest-records" style="max-height:200px;overflow-y:auto;font-size:12px;border-radius:8px"></div>
     </div>
@@ -934,6 +936,7 @@ function move(dir,fromAI=false){
 
   if(JSON.stringify(board)!==before){
     steps++;SFX.move();
+updatePlaytestLiveInfo();
     syncTiles();          // create any missing tile els, update row/col refs
     render();             // trigger CSS slide
     const mergedCopy=allMerged.slice();
@@ -944,15 +947,15 @@ function move(dir,fromAI=false){
       addRandom();
       inputLocked=false;
 if(reachedTarget){
-won=true;SFX.win();stopAiAutoPlay();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;showOverlay('🎉 You Win!',info);
-recordAiPlaytest('win');
-schedulePostGameLeaderboard();
+won=true;SFX.win();stopAiAutoPlay();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;
+if(batchPlaytestMode){recordAiPlaytest('win');advanceBatchPlaytest();}
+else{showOverlay('🎉 You Win!',info);schedulePostGameLeaderboard();}
 }else if(!hasMoves()){
 over=true;SFX.lose();stopTimer();
 recordScore();
-if(aiAutoPlay)recordAiPlaytest('fail');
-showOverlay('💀 Game Over',`score: ${score} · moves: ${steps}`);
-schedulePostGameLeaderboard();
+if(aiAutoPlay||batchPlaytestMode)recordAiPlaytest('fail');
+if(batchPlaytestMode){advanceBatchPlaytest();}
+else{showOverlay('💀 Game Over',`score: ${score} · moves: ${steps}`);schedulePostGameLeaderboard();}
 }
     });
   }else{
@@ -1505,146 +1508,133 @@ tag.textContent='Weights: '+getCurrentWeightVersion();
 }
 
 /* ====================================================================
-Batch AI auto-play — runs N games headless and records results
+Batch AI auto-play — runs N games on the real game screen with AI
 ==================================================================== */
-let batchRunning=false;
+let batchPlaytestMode=false;
+let batchPlaytestTotal=0;
+let batchPlaytestCurrent=0;
+let batchPlaytestWins=0;
+let batchPlaytestFails=0;
 let batchCancelled=false;
 
-function cloneBoard(b){return b.map(r=>[...r])}
-function boardEmpty(b){return b.every(r=>r.every(v=>!v))}
+function startBatchPlaytest(){
+if(batchPlaytestMode)return;
+batchPlaytestTotal=parseInt($('playtest-batch-count').value);
+batchPlaytestCurrent=0;batchPlaytestWins=0;batchPlaytestFails=0;
+batchCancelled=false;batchPlaytestMode=true;
 
-/* Headless game simulation (no DOM) */
-function simulateGame(){
-var simBoard=Array.from({length:4},()=>Array(4).fill(0));
-// init: one 2 + one 4
-var cells=[];
-for(var r=0;r<4;r++)for(var c=0;c<4;c++)cells.push([r,c]);
-var pick=cells.splice(Math.floor(Math.random()*cells.length),1)[0];
-simBoard[pick[0]][pick[1]]=2;
-pick=cells.splice(Math.floor(Math.random()*cells.length),1)[0];
-simBoard[pick[0]][pick[1]]=4;
-
-var simScore=0,simSteps=0,simWon=false,simOver=false;
-
-function simEmpty(b){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!b[r][c])e.push([r,c]);return e}
-function simHasMoves(b){
-for(var r=0;r<4;r++)for(var c=0;c<4;c++){
-if(!b[r][c])return true;
-if(c<3&&b[r][c]===b[r][c+1])return true;
-if(r<3&&b[r][c]===b[r+1][c])return true;
-}
-return false;
-}
-function simMaxTile(b){var m=0;for(var r=0;r<4;r++)for(var c=0;c<4;c++)m=Math.max(m,b[r][c]);return m}
-
-// Save and override globals so aiBestMove() operates on simBoard
-var savedBoard=board;
-var savedSize=SIZE;
-SIZE=4;
-
-function simStep(){
-if(simWon||simOver||batchCancelled)return 'done';
-// Set global board to current simBoard so aiBestMove reads correct state
-board=simBoard.map(function(r){return r.slice()});
-var dir=aiBestMove();
-if(!dir){simOver=true;return 'fail';}
-// Apply the move using the game's own aiMoveBoard (same logic as real game)
-var res=aiMoveBoard(simBoard,dir);
-if(!res.changed){simOver=true;return 'fail';}
-simBoard=res.board;simScore+=res.gained;simSteps++;
-if(!simWon&&simBoard.flat().includes(2048)){simWon=true;return 'win';}
-// Add random tile (90% chance 2, 10% chance 4)
-var empties=simEmpty(simBoard);
-if(!empties.length){simOver=true;return 'fail';}
-var rc=empties[Math.floor(Math.random()*empties.length)];
-simBoard[rc[0]][rc[1]]=Math.random()<0.9?2:4;
-if(!simHasMoves(simBoard)){simOver=true;return 'fail';}
-return 'continue';
-}
-var result='continue',safety=0;
-while(result==='continue'&&safety<5000){
-result=simStep();
-safety++;
-}
-// Restore globals
-board=savedBoard;SIZE=savedSize;
-var maxT=simMaxTile(simBoard);
-return{
-result:simWon?'win':'fail',
-score:simScore,
-maxTile:maxT,
-steps:simSteps,
-boardSize:4
-};
-}
-
-async function runBatchPlaytest(){
-if(batchRunning)return;
-batchRunning=true;batchCancelled=false;
-var count=parseInt($('playtest-batch-count').value);
-var speed=parseInt($('playtest-speed').value);
 var startBtn=$('playtest-batch-start');
 var stopBtn=$('playtest-batch-stop');
 var progDiv=$('playtest-batch-progress');
+var liveInfo=$('playtest-live-info');
 var infoEl=$('playtest-batch-info');
-var rateEl=$('playtest-batch-rate');
-var barEl=$('playtest-batch-bar');
 var logEl=$('playtest-batch-log');
 
 startBtn.style.display='none';
 stopBtn.style.display='';
 progDiv.style.display='';
+liveInfo.style.display='';
 logEl.innerHTML='';
-var wins=0,fails=0;
-var version=getCurrentWeightVersion();
 
-for(var i=0;i<count;i++){
-if(batchCancelled){
-logEl.innerHTML+='⚠️ Stopped\n';
-break;
+// Switch to game screen and start first game
+show('game-screen');
+$('game-screen').classList.remove('ai-training-mode');
+$('training-panel').hidden=true;
+init(4);
+startBatchGame();
 }
-infoEl.textContent='Game '+(i+1)+' / '+count+'...';
-barEl.style.width=((i/count)*100)+'%';
 
-// Yield to UI
-await new Promise(function(resolve){
-if(speed===0)resolve();
-else setTimeout(resolve,speed);
-});
+function startBatchGame(){
+if(batchCancelled||batchPlaytestCurrent>=batchPlaytestTotal){
+finishBatchPlaytest();
+return;
+}
+batchPlaytestCurrent++;
+var infoEl=$('playtest-batch-info');
+var barEl=$('playtest-batch-bar');
+var rateEl=$('playtest-batch-rate');
+if(infoEl)infoEl.textContent='Game '+batchPlaytestCurrent+' / '+batchPlaytestTotal+'...';
+if(barEl)barEl.style.width=((batchPlaytestCurrent-1)/batchPlaytestTotal*100)+'%';
+var rate=0;
+if(batchPlaytestCurrent>1)rate=Math.round(batchPlaytestWins/(batchPlaytestCurrent-1)*100);
+if(rateEl)rateEl.textContent='Win rate '+rate+'% ('+batchPlaytestWins+'W/'+batchPlaytestFails+'L)';
 
-var result=simulateGame();
-var rec={
-ts:Date.now(),
-version:version,
-result:result.result,
-score:result.score,
-maxTile:result.maxTile,
-steps:result.steps,
-durationMs:0,
-boardSize:4
-};
-var records=loadPlaytests();
-records.push(rec);
-if(records.length>500)records=records.slice(-500);
-savePlaytests(records);
+// Start a new game with AI auto-play
+init(4);
+cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
+}
 
-if(result.result==='win')wins++;else fails++;
-var icon=result.result==='win'?'✅':'❌';
-var color=result.result==='win'?'#6bcb77':'#ff6b6b';
-logEl.innerHTML+='<span style="color:'+color+'">'+icon+' Game '+(i+1)+': '+result.result+' · Score '+result.score+' · Max '+result.maxTile+' · '+result.steps+' moves</span>\n';
+function advanceBatchPlaytest(){
+// Called when a game ends (win or fail) during batch mode
+var maxTile=0;
+for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
+var result=(won)?'win':'fail';
+if(result==='win')batchPlaytestWins++;else batchPlaytestFails++;
+
+// Log
+var logEl=$('playtest-batch-log');
+if(logEl){
+var icon=result==='win'?'✅':'❌';
+var color=result==='win'?'#6bcb77':'#ff6b6b';
+logEl.innerHTML+='<span style="color:'+color+'">'+icon+' Game '+batchPlaytestCurrent+': '+result+' · Score '+score+' · Max '+maxTile+' · '+steps+' moves</span>\n';
 logEl.scrollTop=logEl.scrollHeight;
+}
 
-var rate=Math.round(wins/(wins+fails)*100);
-rateEl.textContent='Win rate '+rate+'% ('+wins+'W/'+fails+'L)';
-barEl.style.width=((i+1)/count*100)+'%';
+// Update progress
+var barEl=$('playtest-batch-bar');
+var rateEl=$('playtest-batch-rate');
+var infoEl=$('playtest-batch-info');
+if(barEl)barEl.style.width=(batchPlaytestCurrent/batchPlaytestTotal*100)+'%';
+var rate=Math.round(batchPlaytestWins/batchPlaytestCurrent*100);
+if(rateEl)rateEl.textContent='Win rate '+rate+'% ('+batchPlaytestWins+'W/'+batchPlaytestFails+'L)';
 
+// Update playtest records panel (will be visible when user goes back)
+renderPlaytestPanel();
+
+// Start next game after a short delay
+var self=this;
+setTimeout(function(){
+if(batchCancelled){
+finishBatchPlaytest();
+return;
+}
+if(batchPlaytestCurrent<batchPlaytestTotal){
+startBatchGame();
+}else{
+finishBatchPlaytest();
+}
+},500);
+}
+
+function finishBatchPlaytest(){
+batchPlaytestMode=false;
+stopAiAutoPlay();
+var startBtn=$('playtest-batch-start');
+var stopBtn=$('playtest-batch-stop');
+var infoEl=$('playtest-batch-info');
+var liveInfo=$('playtest-live-info');
+var barEl=$('playtest-batch-bar');
+if(startBtn)startBtn.style.display='';
+if(stopBtn)stopBtn.style.display='none';
+if(liveInfo)liveInfo.style.display='none';
+if(barEl)barEl.style.width='100%';
+if(infoEl)infoEl.textContent='Done! '+batchPlaytestWins+'W '+batchPlaytestFails+'L';
+show('playtest-screen');
 renderPlaytestPanel();
 }
 
-infoEl.textContent='Done! '+wins+'W '+fails+'L';
-startBtn.style.display='';
-stopBtn.style.display='none';
-batchRunning=false;
+/* Update live game info (score, steps, max tile) during batch */
+function updatePlaytestLiveInfo(){
+if(!batchPlaytestMode)return;
+var scoreEl=$('playtest-live-score');
+var maxEl=$('playtest-live-max');
+var stepsEl=$('playtest-live-steps');
+if(!scoreEl)return; // not on playtest screen, that's ok
+var maxTile=0;
+for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
+scoreEl.textContent='Score: '+score;
+maxEl.textContent='Max: '+maxTile;
+stepsEl.textContent='Steps: '+steps;
 }
 /* Update stat cards from live data */
 function updateLiveStats(d){
@@ -1793,7 +1783,8 @@ function stopTraining(){
     .then(w=>{
       if(w&&w.l1W&&w.l1W.length>100){
         initAiNet(w);aiTrainGames=w.version||100;refreshAiEvalLeaf();
-        console.log('AI weights loaded from repo:',w.l1W.length,'weights');
+        if(aiNet)aiNet._meta=w;
+        console.log('AI weights loaded from repo:',w.l1W.length,'weights, v'+(w.version||0));
       }else{
         throw new Error('No valid weights in repo file');
       }
@@ -1802,7 +1793,7 @@ function stopTraining(){
       // Fallback 到 localStorage
       try{
         const saved=localStorage.getItem(LS_AI_WEIGHTS);
-        if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;refreshAiEvalLeaf();}}
+        if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;refreshAiEvalLeaf();if(aiNet)aiNet._meta=w;}}
       }catch(_){}
     });
 })();
@@ -2147,8 +2138,8 @@ savePlaytests([]);
 renderPlaytestPanel();
 }
 };
-$('playtest-batch-start').onclick=()=>{SFX.button();runBatchPlaytest()};
-$('playtest-batch-stop').onclick=()=>{SFX.button();batchCancelled=true};
+$('playtest-batch-start').onclick=()=>{SFX.button();startBatchPlaytest()};
+$('playtest-batch-stop').onclick=()=>{SFX.button();batchCancelled=true;finishBatchPlaytest()};
 $('b-restart').onclick=()=>{SFX.button();init(boardSize)};
 $('b-save').onclick=()=>{SFX.button();doSave()};
 $('b-load').onclick=()=>{SFX.button();doLoad()};
