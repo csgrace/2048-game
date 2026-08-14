@@ -1118,7 +1118,7 @@ function refreshAiEvalLeaf(){
     return value;
   };
 }
-let aiPendingGames=500, aiPendingLr=0.002;
+let aiPendingGames=100, aiPendingLr=0.002;
 function buildTrainingWorker(){
   if(aiWorker)terminateTraining();
   try{
@@ -1587,7 +1587,7 @@ $('b-left').onclick=()=>{SFX.button();move('left')};
 $('b-right').onclick=()=>{SFX.button();move('right')};
 $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
-$('ai-train').onclick=()=>{SFX.button();startTraining(500,0.002)};
+$('ai-train').onclick=()=>{SFX.button();startTraining(100,0.002)};
 $('ai-stop-training').onclick=()=>{SFX.button();stopTraining()};
 $('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
 $('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
