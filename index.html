@@ -97,7 +97,10 @@ body::before{
 .ai-training-mode .sides,
 .ai-training-mode .arrows,
 .ai-training-mode #b-tools{display:none}
-.ai-training-mode .board-wrap{transform:scale(0.7);margin-top:-30px}
+.ai-training-mode .board-wrap{display:none}
+.ai-training-mode #training-panel{grid-column:1/-1;max-width:520px;margin:0 auto}
+.ai-training-mode .top-bar{justify-content:center;margin-bottom:12px}
+.ai-training-mode{align-items:center;justify-content:center;flex-direction:column;display:flex}
 #stat-ai{display:none}
 .ai-training-mode #stat-ai{display:inline-flex;align-items:center;font-weight:600;letter-spacing:1px}
 /* showcase mini-board */
@@ -1168,6 +1171,9 @@ function stopTraining(){
   var t1=$('ai-train');if(t1)t1.hidden=false;
   var t2=$('ai-stop-training');if(t2)t2.hidden=true;
   var tp=$('training-panel');if(tp)tp.hidden=true;
+  $('game-screen').classList.remove('ai-training-mode');
+  init(boardSize);
+  show('entry-screen');
 }
 function terminateTraining(){
   if(aiWorker){aiWorker.terminate();aiWorker=null}
