@@ -1075,7 +1075,18 @@ function startAiAutoPlay(){
   cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
 }
 function stopAiAutoPlay(){
-  aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}if($('ai-auto'))updateAiControls();
+aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}if($('ai-auto'))updateAiControls();
+}
+
+/* Reset any AI-training-mode UI state so normal play can proceed */
+function resetTrainingUI(){
+stopAiAutoPlay();
+stopPollingProgress();
+cancelToolSelection();
+var tp=$('training-panel');if(tp)tp.hidden=true;
+var t1=$('ai-train');if(t1){t1.disabled=false;t1.textContent='▶ Train';}
+var t2=$('ai-stop-training');if(t2)t2.hidden=true;
+$('game-screen').classList.remove('ai-training-mode');
 }
 
 /* ------------------------------------------------------------------ neural network training (off main thread via Web Worker) ---------- */
