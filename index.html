@@ -85,6 +85,71 @@ body::before{
   .ai-entry .ai-arrow{display:none}
 }
 
+/* AI Playtest Arena — board preview grid */
+.pt-board{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;
+  width:100%;max-width:240px;margin:8px auto;
+  padding:8px;border-radius:10px;
+  background:rgba(0,0,0,.35);border:1px solid rgba(20,184,166,.18);
+}
+.pt-board .cell{
+  aspect-ratio:1;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;
+  background:rgba(255,255,255,.04);color:rgba(255,255,255,.15);
+  transition:background .12s,color .12s;
+}
+.pt-board .cell[data-v="2"]{background:#eee4da;color:#5a5246}
+.pt-board .cell[data-v="4"]{background:#ede0c8;color:#5a5246}
+.pt-board .cell[data-v="8"]{background:#f2b179;color:#fff}
+.pt-board .cell[data-v="16"]{background:#f59563;color:#fff}
+.pt-board .cell[data-v="32"]{background:#f67c5f;color:#fff}
+.pt-board .cell[data-v="64"]{background:#f65e3b;color:#fff}
+.pt-board .cell[data-v="128"]{background:#edcf72;color:#fff}
+.pt-board .cell[data-v="256"]{background:#edcc61;color:#fff}
+.pt-board .cell[data-v="512"]{background:#edc850;color:#fff}
+.pt-board .cell[data-v="1024"]{background:#edc53f;color:#fff;font-size:11px}
+.pt-board .cell[data-v="2048"]{background:#edc22e;color:#fff;font-size:11px}
+.pt-board .cell:not([data-v="0"]){box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.pt-live-stats{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  margin:8px 0;font-size:13px;color:rgba(255,255,255,.8)}
+.pt-live-stats b{color:#ffd166}
+.pt-progress{display:flex;gap:8px;align-items:center;margin-top:10px}
+.pt-progress-bar{flex:1;height:8px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden}
+.pt-progress-bar > div{height:100%;background:linear-gradient(90deg,#14b8a6,#6bcb77);width:0%;transition:width .3s ease}
+
+/* better looking buttons */
+.btn-arena-start{
+  padding:10px 22px;font-size:14px;font-weight:700;
+  background:linear-gradient(135deg,#14b8a6,#0d9488);color:#fff;
+  border:none;border-radius:10px;cursor:pointer;
+  box-shadow:0 4px 14px rgba(20,184,166,.3);
+  transition:all .15s ease;
+}
+.btn-arena-start:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(20,184,166,.45)}
+.btn-arena-stop{
+  padding:10px 22px;font-size:14px;font-weight:700;
+  background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;
+  border:none;border-radius:10px;cursor:pointer;
+  box-shadow:0 4px 14px rgba(239,68,68,.3);
+  transition:all .15s ease;
+}
+.btn-arena-stop:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(239,68,68,.45)}
+.btn-xs-ghost{
+  padding:3px 10px;font-size:11px;
+  background:transparent;color:rgba(255,255,255,.5);
+  border:1px solid rgba(255,255,255,.15);border-radius:6px;
+  cursor:pointer;transition:all .15s;
+}
+.btn-xs-ghost:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+.btn-sm-ghost{
+  padding:5px 12px;font-size:11px;
+  background:rgba(255,255,255,.05);color:rgba(255,255,255,.7);
+  border:1px solid rgba(255,255,255,.12);border-radius:8px;
+  cursor:pointer;transition:all .15s;
+}
+.btn-sm-ghost:hover{background:rgba(255,255,255,.1);color:#fff}
+
 /* playtest entry on entry-screen (same style as ai-entry but teal) */
 .pt-entry{
 display:flex;align-items:center;gap:14px;width:100%;max-width:450px;
@@ -343,60 +408,93 @@ transition:all .25s ease;
     </button>
   </div>
 
-  <!-- ============ PLAYTEST ============ -->
+  <!-- ============ PLAYTEST ARENA ============ -->
   <div class="screen" id="playtest-screen">
     <button class="back-btn" id="btn-playtest-back">← Back</button>
-    <div class="glass" style="width:100%;max-width:640px;padding:20px 24px">
-      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">🏆 AI Playtest Arena</div>
-      <div class="subtitle" style="text-align:center;margin-bottom:16px">Batch auto-play · Win rate stats · Version comparison</div>
+    <div class="glass" style="width:100%;max-width:560px;padding:22px 24px 26px">
+      <div class="title-big" style="font-size:26px;text-align:center;margin-bottom:2px">🏆 AI Playtest Arena</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:18px;font-size:13px">Batch auto-play · Live board preview · Win-rate stats</div>
 
-      <!-- Batch auto-play controls -->
-      <div style="padding:14px 16px;border:1px solid rgba(20,184,166,.25);border-radius:12px;background:rgba(20,184,166,.06);margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:14px;font-weight:600;color:#14b8a6">🎮 Batch Auto-Play</span>
-          <span id="playtest-version-tag" style="font-size:11px;padding:3px 8px;border-radius:8px;background:rgba(255,209,102,.15);color:#ffd166;border:1px solid rgba(255,209,102,.2)">Weights: —</span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <label style="font-size:12px;color:rgba(255,255,255,.6)">Games</label>
-          <select id="playtest-batch-count" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
-            <option value="5">5 games</option>
-            <option value="10" selected>10 games</option>
-            <option value="20">20 games</option>
-            <option value="50">50 games</option>
-          </select>
-          <button class="btn sm" id="playtest-batch-start" style="padding:8px 18px;font-size:13px;background:#14b8a6;color:#fff;border:none;border-radius:8px;cursor:pointer">▶ Start</button>
-          <button class="btn sm" id="playtest-batch-stop" style="padding:8px 18px;font-size:13px;display:none">⏹ Stop</button>
-        </div>
-        <div id="playtest-batch-progress" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.6);display:none">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span id="playtest-batch-info">Preparing...</span>
-            <span id="playtest-batch-rate"></span>
-          </div>
-          <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden">
-            <div id="playtest-batch-bar" style="height:100%;background:linear-gradient(90deg,#14b8a6,#6bcb77);width:0%;transition:width .3s"></div>
+      <!-- Weight info bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.18);margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="pt-weight-badge" style="font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px;background:rgba(255,209,102,.15);color:#ffd166">v42</span>
+          <div>
+            <div style="font-size:12px;color:rgba(255,255,255,.8)" id="pt-weight-summary">MLP 256→96→48→16→1 · 42 games trained</div>
+            <div style="font-size:10.5px;color:rgba(255,255,255,.4);margin-top:1px" id="pt-weight-extra">Best tile: 4096 · Avg score: 20587</div>
           </div>
         </div>
-        <!-- Live game info during batch -->
-        <div id="playtest-live-info" style="display:none;margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06)">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-            <span style="font-size:12px;color:rgba(255,255,255,.5)">Live Game</span>
-            <span style="font-size:13px;font-weight:600;color:#ffd166" id="playtest-live-score">Score: 0</span>
-            <span style="font-size:13px;font-weight:600;color:#6bcb77" id="playtest-live-max">Max: 0</span>
-            <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.7)" id="playtest-live-steps">Steps: 0</span>
-          </div>
-        </div>
-        <div id="playtest-batch-log" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.5);max-height:80px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
+        <button class="btn-sm-ghost" id="pt-toggle-details">Details ▾</button>
       </div>
 
-      <!-- Stats -->
-      <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <!-- Weight details (collapsible) -->
+      <div id="pt-weight-details" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);font-size:11.5px;color:rgba(255,255,255,.6);line-height:1.7">
+        <div style="font-weight:600;color:#14b8a6;margin-bottom:4px;font-size:12.5px">Weight parameters (what gets trained)</div>
+        The weights are a <b style="color:rgba(255,255,255,.85)">4-layer MLP value network</b> that estimates how good a board state is:
+        <table style="width:100%;margin:6px 0 2px;border-collapse:collapse;font-size:11px">
+          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Input</td><td style="padding:3px 0">4×4 grid × 16 channels (one-hot log₂ values) = <b>256</b></td></tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 1 (l1W/l1b)</td><td style="padding:3px 0">256 → <b>96</b> (He init)</td></tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 2 (l2W/l2b)</td><td style="padding:3px 0">96 → <b>48</b></td></tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 3 (l3W/l3b)</td><td style="padding:3px 0">48 → <b>16</b></td></tr>
+          <tr><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 4 (l4W/l4b)</td><td style="padding:3px 0">16 → <b>1</b> state value (Xavier init)</td></tr>
+        </table>
+        Plus <b style="color:rgba(255,255,255,.85)">adam_t</b> (Adam optimizer timestep).<br>
+        <span style="font-size:10.5px;color:rgba(255,255,255,.4)">Training = self-play games + TD(λ) updates to all W/b matrices. Higher version = more games = stronger AI.</span>
+      </div>
+
+      <!-- Controls row -->
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
+        <label style="font-size:12px;color:rgba(255,255,255,.5)">Games</label>
+        <select id="playtest-batch-count" style="padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+        <button class="btn-arena-start" id="playtest-batch-start">▶ Start Batch</button>
+        <button class="btn-arena-stop" id="playtest-batch-stop" style="display:none">⏹ Stop</button>
+      </div>
+
+      <!-- Progress bar -->
+      <div id="playtest-batch-progress" style="display:none;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px">
+          <span id="playtest-batch-info" style="color:rgba(255,255,255,.6)">Preparing...</span>
+          <span id="playtest-batch-rate" style="color:#6bcb77;font-weight:600"></span>
+        </div>
+        <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden">
+          <div id="playtest-batch-bar" style="height:100%;background:linear-gradient(90deg,#14b8a6,#6bcb77);width:0%;transition:width .3s"></div>
+        </div>
+      </div>
+
+      <!-- Live board section (while running) -->
+      <div id="pt-live" style="display:none;text-align:center;margin-bottom:8px">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Live Game <span id="pt-game-num" style="color:#14b8a6;font-weight:600">1/10</span></div>
+        <div class="pt-board" id="pt-board">
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+        </div>
+        <div class="pt-live-stats">
+          <span>🏆 <b id="pt-score">0</b></span>
+          <span>👣 <b id="pt-steps">0</b></span>
+          <span>🎯 <b id="pt-max" style="color:#6bcb77">0</b></span>
+          <span>⏱ <b id="pt-time" style="color:rgba(255,255,255,.6)">0s</b></span>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;justify-content:center"></div>
 
       <!-- Records -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:11px;color:rgba(255,255,255,.5)">Match details (last 20)</span>
-        <button class="btn sm" id="ai-playtest-clear" style="padding:3px 8px;font-size:10px;opacity:.5;border-radius:6px">Clear</button>
+        <span style="font-size:11px;color:rgba(255,255,255,.45)">Match details (last 20)</span>
+        <button class="btn-xs-ghost" id="ai-playtest-clear">Clear</button>
       </div>
-      <div id="playtest-records" style="max-height:200px;overflow-y:auto;font-size:12px;border-radius:8px"></div>
+      <div id="playtest-records" style="max-height:180px;overflow-y:auto;font-size:12px;border-radius:8px"></div>
+
+      <!-- Inline log -->
+      <div id="playtest-batch-log" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.4);max-height:70px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
     </div>
   </div>
 
@@ -935,8 +1033,7 @@ function move(dir,fromAI=false){
   }
 
   if(JSON.stringify(board)!==before){
-    steps++;SFX.move();
-updatePlaytestLiveInfo();
+    steps++;SFX.move();updatePtBoard();
     syncTiles();          // create any missing tile els, update row/col refs
     render();             // trigger CSS slide
     const mergedCopy=allMerged.slice();
@@ -1193,6 +1290,7 @@ let aiLiveHistory=[]; // live training data from polling
 let aiNet=null;
 let aiUseNN=false;
 let aiTrainGames=0;
+let loadedWeightVersion=0;
 function initAiNet(weights){
   if(!window.AIBrain)return;
   aiNet=new window.AIBrain.ValueNet();
@@ -1413,6 +1511,7 @@ function loadPlaytests(){return load(LS_PLAYTEST,[])}
 function savePlaytests(r){save(LS_PLAYTEST,r)}
 function getCurrentWeightVersion(){
 if(aiNet&&aiNet._meta&&aiNet._meta.version)return 'v'+aiNet._meta.version;
+if(typeof loadedWeightVersion==='number'&&loadedWeightVersion>0)return 'v'+loadedWeightVersion;
 return aiTrainGames>0?('v'+aiTrainGames):'unknown';
 }
 function recordAiPlaytest(result){
@@ -1501,10 +1600,28 @@ recHtml+='</div>';
 recsEl.innerHTML=recHtml;
 }
 
-/* Update version tag on playtest screen */
-function updatePlaytestVersionTag(){
-var tag=$('playtest-version-tag');if(!tag)return;
-tag.textContent='Weights: '+getCurrentWeightVersion();
+/* Update weight info bar on arena page */
+function updateWeightInfoBar(){
+var badge=$('pt-weight-badge');
+var summary=$('pt-weight-summary');
+var extra=$('pt-weight-extra');
+var v=getCurrentWeightVersion();
+if(badge)badge.textContent=v;
+var verNum=0,bestMax=0,avgScore=0;
+if(aiNet&&aiNet._meta){
+var m=aiNet._meta;
+verNum=m.version||0;
+bestMax=m.bestMaxTile||0;
+avgScore=m.avgScore||0;
+}
+if(summary){
+if(verNum>0)summary.textContent='MLP 256→96→48→16→1 · '+verNum+' games trained';
+else summary.textContent='MLP 256→96→48→16→1 · heuristic only';
+}
+if(extra){
+if(bestMax>0||avgScore>0)extra.textContent='Best tile: '+bestMax+' · Avg score: '+avgScore;
+else extra.textContent='— no weight metadata —';
+}
 }
 
 /* ====================================================================
@@ -1526,21 +1643,23 @@ batchCancelled=false;batchPlaytestMode=true;
 var startBtn=$('playtest-batch-start');
 var stopBtn=$('playtest-batch-stop');
 var progDiv=$('playtest-batch-progress');
-var liveInfo=$('playtest-live-info');
+var liveSec=$('pt-live');
 var infoEl=$('playtest-batch-info');
 var logEl=$('playtest-batch-log');
+var gameNum=$('pt-game-num');
 
 startBtn.style.display='none';
 stopBtn.style.display='';
 progDiv.style.display='';
-liveInfo.style.display='';
+liveSec.style.display='';
+if(gameNum)gameNum.textContent='1/'+batchPlaytestTotal;
 logEl.innerHTML='';
 
-// Switch to game screen and start first game
-show('game-screen');
-$('game-screen').classList.remove('ai-training-mode');
-$('training-panel').hidden=true;
+// Stay on arena page; init the game then show the board preview
+buildPtBoard();
 init(4);
+updatePtBoard();
+cheated=true;aiAutoPlay=true;updateAiControls();
 startBatchGame();
 }
 
@@ -1553,19 +1672,21 @@ batchPlaytestCurrent++;
 var infoEl=$('playtest-batch-info');
 var barEl=$('playtest-batch-bar');
 var rateEl=$('playtest-batch-rate');
+var gameNum=$('pt-game-num');
 if(infoEl)infoEl.textContent='Game '+batchPlaytestCurrent+' / '+batchPlaytestTotal+'...';
 if(barEl)barEl.style.width=((batchPlaytestCurrent-1)/batchPlaytestTotal*100)+'%';
 var rate=0;
 if(batchPlaytestCurrent>1)rate=Math.round(batchPlaytestWins/(batchPlaytestCurrent-1)*100);
 if(rateEl)rateEl.textContent='Win rate '+rate+'% ('+batchPlaytestWins+'W/'+batchPlaytestFails+'L)';
+if(gameNum)gameNum.textContent=batchPlaytestCurrent+'/'+batchPlaytestTotal;
 
-// Start a new game with AI auto-play
+// Start a new game with AI auto-play (on hidden game screen)
 init(4);
 cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
 }
 
 function advanceBatchPlaytest(){
-// Called when a game ends (win or fail) during batch mode
+if(!batchPlaytestMode)return;
 var maxTile=0;
 for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
 var result=(won)?'win':'fail';
@@ -1576,7 +1697,7 @@ var logEl=$('playtest-batch-log');
 if(logEl){
 var icon=result==='win'?'✅':'❌';
 var color=result==='win'?'#6bcb77':'#ff6b6b';
-logEl.innerHTML+='<span style="color:'+color+'">'+icon+' Game '+batchPlaytestCurrent+': '+result+' · Score '+score+' · Max '+maxTile+' · '+steps+' moves</span>\n';
+logEl.innerHTML+='<span style="color:'+color+'">'+icon+' Game '+batchPlaytestCurrent+': '+result+' · Score '+score+' · Max '+maxTile+' · '+steps+' moves · '+fmtPlayTime(elapsedMs)+'</span>\n';
 logEl.scrollTop=logEl.scrollHeight;
 }
 
@@ -1588,11 +1709,9 @@ if(barEl)barEl.style.width=(batchPlaytestCurrent/batchPlaytestTotal*100)+'%';
 var rate=Math.round(batchPlaytestWins/batchPlaytestCurrent*100);
 if(rateEl)rateEl.textContent='Win rate '+rate+'% ('+batchPlaytestWins+'W/'+batchPlaytestFails+'L)';
 
-// Update playtest records panel (will be visible when user goes back)
 renderPlaytestPanel();
 
 // Start next game after a short delay
-var self=this;
 setTimeout(function(){
 if(batchCancelled){
 finishBatchPlaytest();
@@ -1612,30 +1731,47 @@ stopAiAutoPlay();
 var startBtn=$('playtest-batch-start');
 var stopBtn=$('playtest-batch-stop');
 var infoEl=$('playtest-batch-info');
-var liveInfo=$('playtest-live-info');
+var liveSec=$('pt-live');
 var barEl=$('playtest-batch-bar');
 if(startBtn)startBtn.style.display='';
 if(stopBtn)stopBtn.style.display='none';
-if(liveInfo)liveInfo.style.display='none';
+if(liveSec)liveSec.style.display='none';
 if(barEl)barEl.style.width='100%';
 if(infoEl)infoEl.textContent='Done! '+batchPlaytestWins+'W '+batchPlaytestFails+'L';
-show('playtest-screen');
 renderPlaytestPanel();
 }
 
-/* Update live game info (score, steps, max tile) during batch */
-function updatePlaytestLiveInfo(){
-if(!batchPlaytestMode)return;
-var scoreEl=$('playtest-live-score');
-var maxEl=$('playtest-live-max');
-var stepsEl=$('playtest-live-steps');
-if(!scoreEl)return; // not on playtest screen, that's ok
-var maxTile=0;
-for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
-scoreEl.textContent='Score: '+score;
-maxEl.textContent='Max: '+maxTile;
-stepsEl.textContent='Steps: '+steps;
+/* Build the pt-board grid cells (called once) */
+function buildPtBoard(){
+var el=$('pt-board');if(!el)return;
+var html='';
+for(var i=0;i<16;i++)html+='<div class="cell"></div>';
+el.innerHTML=html;
 }
+
+/* Update live board + stats on the arena page */
+function updatePtBoard(){
+if(!batchPlaytestMode)return;
+var boardEl=$('pt-board');
+if(!boardEl)return;
+var cells=boardEl.querySelectorAll('.cell');
+var maxTile=0;
+for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++)
+maxTile=Math.max(maxTile,board[r][c]);
+for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++){
+var v=board[r][c];
+var cell=cells[r*SIZE+c];
+if(!cell)continue;
+if(v){cell.textContent=v;cell.setAttribute('data-v',v);}
+else{cell.textContent='';cell.setAttribute('data-v','0');}
+}
+var scoreEl=$('pt-score'),maxEl=$('pt-max'),stepsEl=$('pt-steps'),timeEl=$('pt-time');
+if(scoreEl)scoreEl.textContent=score;
+if(maxEl)maxEl.textContent=maxTile;
+if(stepsEl)stepsEl.textContent=steps;
+if(timeEl)timeEl.textContent=fmtPlayTime(elapsedMs);
+}
+
 /* Update stat cards from live data */
 function updateLiveStats(d){
   if(!aiLiveHistory.length)return;
@@ -1753,9 +1889,9 @@ async function reloadWeightsFromRepo(){
     var resp=await fetch(WEIGHTS_URL+'?t='+Date.now());
     var w=await resp.json();
     if(w&&w.l1W&&w.l1W.length>100){
-      initAiNet(w);aiTrainGames=w.version||100;refreshAiEvalLeaf();
-      // Store meta for stats & charts
-      if(aiNet)aiNet._meta=w;
+initAiNet(w);aiTrainGames=w.version||100;loadedWeightVersion=aiTrainGames;refreshAiEvalLeaf();
+// Store meta for stats & charts
+if(aiNet)aiNet._meta=w;
       // Update stats and charts
       loadTrainingStatsFromWeights();
       drawTrainingCurve();
@@ -1781,9 +1917,9 @@ function stopTraining(){
   fetch(WEIGHTS_URL+'?t='+Date.now())
     .then(r=>r.json())
     .then(w=>{
-      if(w&&w.l1W&&w.l1W.length>100){
-        initAiNet(w);aiTrainGames=w.version||100;refreshAiEvalLeaf();
-        if(aiNet)aiNet._meta=w;
+if(w&&w.l1W&&w.l1W.length>100){
+initAiNet(w);aiTrainGames=w.version||100;loadedWeightVersion=w.version||100;refreshAiEvalLeaf();
+if(aiNet)aiNet._meta=w;
         console.log('AI weights loaded from repo:',w.l1W.length,'weights, v'+(w.version||0));
       }else{
         throw new Error('No valid weights in repo file');
@@ -1793,7 +1929,7 @@ function stopTraining(){
       // Fallback 到 localStorage
       try{
         const saved=localStorage.getItem(LS_AI_WEIGHTS);
-        if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;refreshAiEvalLeaf();if(aiNet)aiNet._meta=w;}}
+        if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;loadedWeightVersion=100;refreshAiEvalLeaf();if(aiNet)aiNet._meta=w;}}
       }catch(_){}
     });
 })();
@@ -2039,7 +2175,7 @@ hideOverlay();
 $('btn-user').onclick=()=>{SFX.button();show('auth-screen')};
 $('btn-guest').onclick=()=>{SFX.button();currentUser=null;showSettings()};
 $('btn-ai-training').onclick=()=>{SFX.button();currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();};
-$('btn-playtest').onclick=()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updatePlaytestVersionTag();};
+$('btn-playtest').onclick=()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();};
 $('btn-playtest-back').onclick=()=>{SFX.button();show('entry-screen')};
 $('btn-auth-back').onclick=()=>{SFX.button();show('entry-screen')};
 
@@ -2140,6 +2276,7 @@ renderPlaytestPanel();
 };
 $('playtest-batch-start').onclick=()=>{SFX.button();startBatchPlaytest()};
 $('playtest-batch-stop').onclick=()=>{SFX.button();batchCancelled=true;finishBatchPlaytest()};
+$('pt-toggle-details').onclick=()=>{SFX.button();var d=$('pt-weight-details');var btn=$('pt-toggle-details');if(d){var open=d.style.display==='none';d.style.display=open?'':'none';btn.textContent=open?'Details ▴':'Details ▾';}};
 $('b-restart').onclick=()=>{SFX.button();init(boardSize)};
 $('b-save').onclick=()=>{SFX.button();doSave()};
 $('b-load').onclick=()=>{SFX.button();doLoad()};
