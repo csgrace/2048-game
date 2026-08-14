@@ -1068,8 +1068,9 @@ function buildTrainingWorker(){
 function updateTrainingLog(d){
   const el=$('training-log');
   if(!el)return;
-  const pct=Math.round(d.game/d.total*100);
-  el.textContent=`Game ${d.game}/${d.total} (${pct}%) | max: ${d.maxTile||'—'} | loss: ${(d.loss||0).toFixed(6)} | net eval: ${aiUseNN?'ON':'heuristic'}`;
+  const tot=d.total||aiPendingGames||'?';
+  const pct=d.total?Math.round(d.game/d.total*100):'?';
+  el.textContent=`Game ${d.game}/${tot} (${pct}%) | max: ${d.maxTile||'—'} | loss: ${(d.loss||0).toFixed(6)} | net eval: ${aiUseNN?'ON':'heuristic'}`;
   el.scrollTop=el.scrollHeight;
 }
 function drawTrainingCurve(){
