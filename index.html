@@ -1525,32 +1525,8 @@ pick=cells.splice(Math.floor(Math.random()*cells.length),1)[0];
 simBoard[pick[0]][pick[1]]=4;
 
 var simScore=0,simSteps=0,simWon=false,simOver=false;
-var maxDepth=6,timeBudget=1500;
-var directions=['up','down','left','right'];
 
 function simEmpty(b){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!b[r][c])e.push([r,c]);return e}
-function simMoveBoard(b,dir){
-var n=b.map(r=>[...r]),changed=false,gained=0;
-function slide(line){
-var t=line.filter(Boolean),r=[],g=0;
-for(var i=0;i<t.length;i++){if(t[i]===t[i+1]){var v=t[i]*2;r.push(v);g+=v;i++;}else r.push(t[i]);}
-while(r.length<4)r.push(0);return{line:r,g:g};
-}
-for(var i=0;i<4;i++){
-var ln,orig;
-if(dir==='left'){ln=n[i].slice();orig=n[i].slice();}
-else if(dir==='right'){ln=n[i].slice().reverse();orig=n[i].slice();}
-else if(dir==='up'){ln=[n[0][i],n[1][i],n[2][i],n[3][i]];orig=[n[0][i],n[1][i],n[2][i],n[3][i]];}
-else{ln=[n[0][i],n[1][i],n[2][i],n[3][i]].reverse();orig=[n[0][i],n[1][i],n[2][i],n[3][i]];}
-var res=slide(ln);
-if(dir==='right'||dir==='down')res.line=res.line.reverse();
-if(res.line.some((v,k)=>v!==orig[k]))changed=true;
-gained+=res.g;
-if(dir==='left'||dir==='right')n[i]=res.line;
-else for(var r=0;r<4;r++)n[r][i]=res.line[r];
-}
-return{board:n,changed:changed,gained:gained};
-}
 function simHasMoves(b){
 for(var r=0;r<4;r++)for(var c=0;c<4;c++){
 if(!b[r][c])return true;
@@ -1561,21 +1537,23 @@ return false;
 }
 function simMaxTile(b){var m=0;for(var r=0;r<4;r++)for(var c=0;c<4;c++)m=Math.max(m,b[r][c]);return m}
 
-// Use the same aiExpectimax + aiBestMove from the game (they operate on global `board`)
-// We need to temporarily set board to simBoard
+// Save and override globals so aiBestMove() operates on simBoard
 var savedBoard=board;
 var savedSize=SIZE;
 SIZE=4;
-board=simBoard;
 
 function simStep(){
 if(simWon||simOver||batchCancelled)return 'done';
+// Set global board to current simBoard so aiBestMove reads correct state
+board=simBoard.map(function(r){return r.slice()});
 var dir=aiBestMove();
 if(!dir){simOver=true;return 'fail';}
-var res=simMoveBoard(simBoard,dir);
+// Apply the move using the game's own aiMoveBoard (same logic as real game)
+var res=aiMoveBoard(simBoard,dir);
 if(!res.changed){simOver=true;return 'fail';}
 simBoard=res.board;simScore+=res.gained;simSteps++;
 if(!simWon&&simBoard.flat().includes(2048)){simWon=true;return 'win';}
+// Add random tile (90% chance 2, 10% chance 4)
 var empties=simEmpty(simBoard);
 if(!empties.length){simOver=true;return 'fail';}
 var rc=empties[Math.floor(Math.random()*empties.length)];
@@ -1588,6 +1566,7 @@ while(result==='continue'&&safety<5000){
 result=simStep();
 safety++;
 }
+// Restore globals
 board=savedBoard;SIZE=savedSize;
 var maxT=simMaxTile(simBoard);
 return{
