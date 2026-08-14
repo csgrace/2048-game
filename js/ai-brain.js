@@ -141,8 +141,9 @@
       var pred = this.forward(sample.input);
       var error = pred - sample.target;
       totalLoss += error * error;
-      // output layer gradient (chain rule through tanh)
-      var dOut = 2 * error * (1 - pred * pred) * sample.weight; // MSE grad × tanh' × importance
+      // output layer gradient (chain rule through tanh(2x))
+      // d/dx tanh(2x) = 2(1 - tanh²(2x)); MSE d/dpred = 2*error
+      var dOut = 4 * error * (1 - pred * pred) * sample.weight; // 2×MSE × 2×tanh' × importance
       var gradToL4Input = this.l4.backward([dOut]);
       var gradToL3Input = this.l3.backward(gradToL4Input);
       var gradToL2Input = this.l2.backward(gradToL3Input);
@@ -191,18 +192,17 @@
   Trajectory.prototype.computeTargets = function (gamma, lambda, netOut) {
     var T = this.rewards.length;
     var targets = new Float32Array(T);
-    // reward scale: merge score can be large → divide by 4000 typical final score
-    var norm = 4000;
+    // rewards are already normalized in the worker (gained/200 + heuristic_delta/5000)
+    // so we use them directly here without further scaling
     for (var t = 0; t < T; t++) {
-      if (t === T - 1) targets[t] = this.rewards[t] / norm; // terminal: only immediate reward
+      if (t === T - 1) targets[t] = this.rewards[t]; // terminal: only immediate reward
       else {
         var g = 0;
-        var disc = 1;
         for (var n = 1; n <= Math.min(8, T - t); n++) {
           var end = t + n;
           var boot = end < T ? netOut(this.positions[end]) : 0;
           var sumR = 0;
-          for (var k = t; k < end; k++) sumR += Math.pow(gamma, k - t) * (this.rewards[k] / norm);
+          for (var k = t; k < end; k++) sumR += Math.pow(gamma, k - t) * this.rewards[k];
           g += Math.pow(lambda, n - 1) * (sumR + Math.pow(gamma, end - t) * boot);
           if (n > 1) g *= (1 - lambda);
         }

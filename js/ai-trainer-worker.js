@@ -124,17 +124,16 @@ function playOneGame() {
   return { traj: traj, score: score, maxTile: Math.max.apply(null, g.map(function (r) { return Math.max.apply(null, r); })) };
 }
 
-/* ---------- Train one mini-batch step ---------- */
+/* ---------- Train one mini-batch step (sample-by-sample to avoid weight-sharing bug) ---------- */
 function trainStep(lr, batchSize) {
   if (buffer.length < batchSize) return 0;
-  var batch = [];
+  var totalLoss = 0;
   for (var i = 0; i < batchSize; i++) {
     var idx = Math.random() * buffer.length | 0;
     var sample = buffer[idx];
-    batch.push({ input: sample.input, target: sample.target, weight: 1 });
+    totalLoss += net.trainStep([{ input: sample.input, target: sample.target, weight: 1 }], lr);
   }
-  var loss = net.trainStep(batch, lr);
-  return loss;
+  return totalLoss / batchSize;
 }
 
 /* ---------- Add trajectory to buffer with TD(λ) targets ---------- */
