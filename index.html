@@ -1116,8 +1116,8 @@ function buildTrainingWorker(){
 function updateTrainingLog(d){
   const el=$('training-log');
   if(!el)return;
-  const tot=d.total||aiPendingGames||'?';
-  const pct=d.total?Math.round(d.game/d.total*100):'?';
+  const tot=d.totalGames||aiPendingGames||'?';
+  const pct=d.totalGames?Math.round(d.game/d.totalGames*100):'?';
   el.textContent=`Game ${d.game}/${tot} (${pct}%) | max: ${d.maxTile||'—'} | loss: ${(d.loss||0).toFixed(6)} | net eval: ${aiUseNN?'ON':'heuristic'}`;
   el.scrollTop=el.scrollHeight;
 }
