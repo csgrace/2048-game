@@ -382,8 +382,25 @@ body::before{
       <div class="training-head">
         <span>🧠 <strong>AI Training Lab</strong></span>
         <div class="training-actions">
+          <button class="btn sm" id="ai-token-btn" title="设置 GitHub Token">🔑 Token</button>
           <button class="btn sm" id="ai-train">▶ Train</button>
           <button class="btn sm" id="ai-stop-training" hidden>↻ Refresh</button>
+        </div>
+      </div>
+      <!-- Token input modal -->
+      <div id="token-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center">
+        <div style="background:rgba(30,30,50,.95);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px 22px;max-width:400px;width:90%">
+          <h3 style="margin:0 0 8px;color:#ffd166;font-size:16px">🔑 GitHub Token 设置</h3>
+          <p style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.6;margin:0 0 12px">输入你的 GitHub Fine-grained Token，用于从前端直接触发 Actions 训练。Token 仅存储在本地浏览器，不会上传。</p>
+          <input type="password" id="token-input" placeholder="github_pat_xxxx..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px;box-sizing:border-box">
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn sm" id="token-save" style="flex:1">保存</button>
+            <button class="btn sm" id="token-clear" style="flex:1">清除</button>
+            <button class="btn sm" id="token-close" style="flex:1">取消</button>
+          </div>
+          <p style="font-size:11px;color:rgba(255,255,255,.35);margin-top:10px;line-height:1.5">
+            <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:#ffd166">点此创建 Token</a> → Repository access 选 csgrace/2048-game → Permissions: Actions = Read and write
+          </p>
         </div>
       </div>
 
@@ -1127,7 +1144,6 @@ function enterTrainingMode(){
   var t1=$('ai-train');if(t1)t1.hidden=false;
   var t2=$('ai-stop-training');if(t2)t2.hidden=false;
   t2.textContent='↻ Refresh';
-  var tb=$('ai-set-token');if(tb)tb.style.display='none';
   // Load existing weights history for visualization
   loadTrainingStatsFromWeights();
   drawTrainingCurve();
@@ -1301,37 +1317,66 @@ function updateLiveStats(d){
   setStat('ts-avg',last.avgScore);
   setStat('ts-loss',last.loss.toFixed(6));
 }
+/* Token management */
+const LS_GH_TOKEN='g2048_gh_token';
+function getGHToken(){
+  return localStorage.getItem(LS_GH_TOKEN)||window.GH_TOKEN||'';
+}
+function setGHToken(token){
+  if(token){localStorage.setItem(LS_GH_TOKEN,token);window.GH_TOKEN=token;}
+  else{localStorage.removeItem(LS_GH_TOKEN);window.GH_TOKEN='';}
+}
+// Load token on page load
+(function(){var t=localStorage.getItem(LS_GH_TOKEN);if(t)window.GH_TOKEN=t;})();
+
+/* Token modal handlers */
+function openTokenModal(){
+  var m=$('token-modal');m.style.display='flex';
+  var inp=$('token-input');inp.value=getGHToken();
+  setTimeout(function(){inp.focus();},100);
+}
+function closeTokenModal(){$('token-modal').style.display='none';}
+
 /* Trigger GitHub Actions workflow to start cloud training */
 async function startTraining(){
   var log=$('training-log');
+  var token=getGHToken();
+  if(!token){
+    log.innerHTML='🔑 需要设置 GitHub Token 才能直接触发训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">点击上方 <strong>🔑 Token</strong> 按钮输入，或到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
+    return;
+  }
   $('ai-train').disabled=true;
+  $('ai-train').textContent='⏳ 触发中...';
   log.innerHTML='⏳ 正在触发 GitHub Actions 训练...';
   try{
-    // Use GitHub Actions API to trigger the workflow
     var apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches';
     var resp=await fetch(apiUrl,{
       method:'POST',
       headers:{
         'Accept':'application/vnd.github+json',
         'Content-Type':'application/json',
-        'Authorization':'Bearer '+(window.GH_TOKEN||'')
+        'Authorization':'Bearer '+token
       },
       body:JSON.stringify({ref:'main',inputs:{games:'200'}})
     });
     if(resp.status===204){
-      log.innerHTML='🚀 <strong>训练已触发！</strong> 200 局自对弈。<br><span style="font-size:11px;color:#ffd166">GitHub Actions 正在启动...</span>';
-      // Start polling after a short delay
-      setTimeout(startPollingProgress,15000);
+      log.innerHTML='🚀 <strong>训练已触发！</strong> 200 局自对弈。<br><span style="font-size:11px;color:#ffd166">GitHub Actions 正在启动... 约需 30-60 秒开始推送进度。</span>';
+      $('ai-train').textContent='⏳ Training...';
+      // Start polling after a short delay (Actions needs time to spin up)
+      setTimeout(startPollingProgress,20000);
     }else if(resp.status===401||resp.status===403){
-      log.innerHTML='❌ 需要 GitHub Token 才能直接触发训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">仓库 Actions 页面</a> 手动点击 "Run workflow"。</span>';
+      log.innerHTML='❌ Token 无效或权限不足。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请点击 <strong>🔑 Token</strong> 按钮重新设置，或到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
       $('ai-train').disabled=false;
+      $('ai-train').textContent='▶ Train';
     }else{
-      log.innerHTML='❌ 启动失败 (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">仓库 Actions 页面</a> 手动点击 "Run workflow"。</span>';
+      log.innerHTML='❌ 启动失败 (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
       $('ai-train').disabled=false;
+      $('ai-train').textContent='▶ Train';
     }
   }catch(e){
-    log.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">仓库 Actions 页面</a> 手动触发。</span>';
+    log.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
     $('ai-train').disabled=false;
+    $('ai-train').textContent='▶ Train';
   }
 }
 function escapeHtml(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''
@@ -1694,6 +1739,12 @@ $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
   $('ai-train').onclick=()=>{SFX.button();startTraining()};
   $('ai-stop-training').onclick=()=>{SFX.button();checkTrainingProgress()};
+  $('ai-token-btn').onclick=()=>{SFX.button();openTokenModal()};
+  $('token-save').onclick=()=>{SFX.button();setGHToken($('token-input').value);closeTokenModal();$('training-log').innerHTML='✅ Token 已保存。现在可以点击 <strong>▶ Train</strong> 开始训练。';};
+  $('token-clear').onclick=()=>{SFX.button();setGHToken('');$('token-input').value='';closeTokenModal();$('training-log').innerHTML='Token 已清除。';};
+  $('token-close').onclick=()=>{SFX.button();closeTokenModal()};
+  $('token-modal').onclick=(e)=>{if(e.target.id==='token-modal')closeTokenModal()};
+  $('token-input').addEventListener('keydown',(e)=>{if(e.key==='Enter'){$('token-save').click();}});
 $('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
 $('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
 $('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};
