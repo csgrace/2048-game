@@ -306,7 +306,7 @@ function runTraining(opts) {
         version: totalGamesTrained
       };
       trainingHistory.push(dataPoint);
-      onProgress(Object.assign({ type: 'progress' }, dataPoint));
+      onProgress(Object.assign({ type: 'progress' }, dataPoint, { history: trainingHistory }));
     }
 
     if (g % 20 === 0 || g === GAMES - 1) {
@@ -376,14 +376,79 @@ if (require.main === module) {
     if (!existingWeights || !existingWeights.l1W || existingWeights.l1W.length < 100) existingWeights = null;
   } catch (e) { /* no file */ }
 
+  var cliStartTime = Date.now();
+
   runTraining({
     games: GAMES,
     lr: LR,
     warmup: WARMUP,
     existingWeights: existingWeights,
+    onProgress: function (data) {
+      // Every 20 games, write intermediate progress so frontend can poll
+      if (data.type === 'progress' && data.game % 20 === 0) {
+        try {
+          var progressPath = path.join(__dirname, '..', 'js', 'ai-training-progress.json');
+          // Write full training history up to this point
+          var progressPayload = {
+            active: true,
+            game: data.game,
+            total: data.total,
+            loss: data.loss,
+            maxTile: data.maxTile,
+            bestMax: data.bestMax,
+            avgScore: data.avgScore,
+            version: data.version,
+            history: data.history || [],
+            timestamp: Date.now()
+          };
+          fs.writeFileSync(progressPath, JSON.stringify(progressPayload, null, 2));
+          // Git commit + push the progress file
+          var execSync = require('child_process').execSync;
+          var repoRoot = path.join(__dirname, '..');
+          try {
+            execSync('git add js/ai-training-progress.json', { cwd: repoRoot, stdio: 'pipe' });
+            execSync('git commit -m "progress: game ' + data.game + '/' + data.total + ' [skip ci]"', { cwd: repoRoot, stdio: 'pipe' });
+            execSync('git push', { cwd: repoRoot, stdio: 'pipe' });
+            console.log('[Progress committed: game ' + data.game + '/' + data.total + ']');
+          } catch (e) {
+            // Git commit might fail silently (no changes or network), that's ok
+            console.log('[Git push skipped: ' + (e.stderr ? e.stderr.toString().trim() : e.message) + ']');
+          }
+        } catch (e) {
+          console.log('[Progress write error: ' + e.message + ']');
+        }
+      }
+    },
     onComplete: function (weights) {
       fs.writeFileSync(weightsPath, JSON.stringify(weights, null, 2));
       console.log('Weights saved to: js/ai-weights.json');
+      // Write final progress file (marks training as done)
+      try {
+        var progressPath = path.join(__dirname, '..', 'js', 'ai-training-progress.json');
+        var finalHistory = weights.history || [];
+        fs.writeFileSync(progressPath, JSON.stringify({
+          active: false,
+          done: true,
+          version: weights.version,
+          bestMaxTile: weights.bestMaxTile,
+          avgScore: weights.avgScore,
+          trainTime: weights.trainTime,
+          history: finalHistory,
+          timestamp: Date.now()
+        }, null, 2));
+        var execSync = require('child_process').execSync;
+        var repoRoot = path.join(__dirname, '..');
+        try {
+          execSync('git add js/ai-training-progress.json js/ai-weights.json', { cwd: repoRoot, stdio: 'pipe' });
+          execSync('git commit -m "chore(ai): training complete v' + weights.version + ' [skip ci]"', { cwd: repoRoot, stdio: 'pipe' });
+          execSync('git push', { cwd: repoRoot, stdio: 'pipe' });
+          console.log('Final commit pushed.');
+        } catch (e) {
+          console.log('Git push error: ' + (e.stderr ? e.stderr.toString().trim() : e.message));
+        }
+      } catch (e) {
+        console.log('Final commit error: ' + e.message);
+      }
     }
   });
 }

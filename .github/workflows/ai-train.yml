@@ -7,19 +7,16 @@ on:
       games:
         description: 'Number of games to train'
         required: false
-        default: '200'
+        default: '100'
         type: string
-  # 定时触发：每 12 小时训练一次（UTC 0:00 和 12:00）
-  schedule:
-    - cron: '0 0,12 * * *'
 
 permissions:
-  contents: write  # 需要 push 权限来更新 ai-weights.json
+  contents: write  # 需要 push 权限来更新 ai-weights.json 和 ai-training-progress.json
 
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -28,16 +25,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Run AI training
-        run: node scripts/train-ai.js --games ${{ github.event.inputs.games || '200' }}
-
-      - name: Commit updated weights
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add js/ai-weights.json
+
+      - name: Run AI training
+        run: node scripts/train-ai.js --games ${{ github.event.inputs.games || '100' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit updated weights (fallback if script didn't)
+        run: |
+          git add js/ai-weights.json js/ai-training-progress.json 2>/dev/null || true
           git diff --staged --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore(ai): update trained weights via GitHub Actions [skip ci]"
           git push
