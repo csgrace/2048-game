@@ -391,10 +391,11 @@ body::before{
       </div>
       <section class="training-details" aria-label="训练逻辑说明">
         <h3>训练逻辑</h3>
-        <p>① 启发式 AI 自对弈：按空格数、蛇形权重、大数靠角、平滑度与可合并数选择下一步。</p>
-        <p>② 每局结束后，TD(λ) 为轨迹中每个局面计算折扣价值目标。</p>
-        <p>③ 数据进入 8,000 条经验回放缓冲区；每局随机抽样进行 mini-batch 梯度下降。</p>
-        <p>④ 价值网络为 256→96→48→16→1 MLP，采用 Adam，学习率为 0.002；训练 50 局后接入 AI 帮玩评估。</p>
+    <p>① <strong>Expectimax 搜索自对弈</strong>：Max 节点选最优移动，Chance 节点计算随机生成 2(90%)/4(10%) 的期望值，搜索深度根据空格数自适应（2-5 层）。</p>
+    <p>② <strong>神经网络叶节点评估</strong>：搜索到底后，使用 MLP 价值网络评估局面，混合启发式保证初期稳定性。</p>
+    <p>③ <strong>TD(λ) 训练目标</strong>：每局结束后，用 TD(λ=0.5, γ=0.95) 计算每个局面的折扣价值目标。</p>
+    <p>④ <strong>经验回放 + mini-batch</strong>：数据进入 8,000 条缓冲区，每局随机抽样 64 条做 Adam 梯度下降。</p>
+    <p>⑤ <strong>渐进式 NN 融合</strong>：前 30 局纯启发式热身，之后 NN 评估权重随训练局数逐渐增加到 80%。</p>
       </section>
     </div>
     <div class="sides">
@@ -1053,7 +1054,10 @@ function aiNeuralEvaluate(grid){
   if(!aiUseNN||!aiNet)return aiEvaluate(grid);
   const input=window.AIBrain.encodeBoard(grid);
   const raw=aiNet.forward(input);
-  return aiEvaluate(grid)*0.5+raw*4000;
+  // 混合策略：启发式提供稳定性，神经网络提供学习信号
+  // 随着训练进行，逐渐增加 NN 权重
+  const nnWeight=Math.min(0.8,aiTrainGames/300);
+  return aiEvaluate(grid)*(1-nnWeight)+raw*5000*nnWeight;
 }
 function refreshAiEvalLeaf(){
   aiExpectimax=function(grid,depth,isChance,table){
@@ -1063,6 +1067,7 @@ function refreshAiEvalLeaf(){
     if(cached!==undefined)return cached;
     let value;
     if(!isChance){
+      // Max 节点：选择最大收益
       value=-Infinity;
       for(const direction of AI_DIRECTIONS){
         const result=aiMoveBoard(grid,direction);
@@ -1070,9 +1075,11 @@ function refreshAiEvalLeaf(){
       }
       if(value===-Infinity)value=-100000;
     }else{
+      // Chance 节点：计算随机生成 2/4 的期望值
       const empty=aiEmptyCells(grid);
       if(!empty.length){value=aiExpectimax(grid,depth-1,false,table)}
       else{
+        // 空位太多时采样加速
         const sample=empty.length>4?empty.filter((_,i)=>i%Math.ceil(empty.length/4)===0):empty;
         let total=0;for(const [r,c] of sample){
           const t=aiClone(grid);t[r][c]=2;const f=aiClone(grid);f[r][c]=4;
@@ -1099,7 +1106,7 @@ function buildTrainingWorker(){
     const d=e.data;
     if(d.type==='load')$('training-log').textContent='AI worker loading…';
     if(d.type==='ready'){
-      aiWorker.postMessage({cmd:'train',games:aiPendingGames,lr:aiPendingLr});
+      aiWorker.postMessage({cmd:'train',games:aiPendingGames,lr:aiPendingLr,warmupGames:30});
     }
     if(d.type==='progress'){
       aiTrainGames=d.totalTrained;
@@ -1108,24 +1115,28 @@ function buildTrainingWorker(){
       updateTrainingLog(d);
       drawTrainingCurve();
     }
-    if(d.type==='epoch'){
-      stopShowcase();
-      var trainButton=$('ai-train');if(trainButton)trainButton.hidden=false;
-      var stopButton=$('ai-stop-training');if(stopButton)stopButton.hidden=true;
-      if(d.weights){
-        aiStartingWeights=d.weights;
-        try{localStorage.setItem(LS_AI_WEIGHTS,JSON.stringify(d.weights))}catch(_){}
-        initAiNet(d.weights);
-        refreshAiEvalLeaf();
+      if(d.type==='epoch'){
+        stopShowcase();
+        var trainButton=$('ai-train');if(trainButton)trainButton.hidden=false;
+        var stopButton=$('ai-stop-training');if(stopButton)stopButton.hidden=true;
+        if(d.weights){
+          aiStartingWeights=d.weights;
+          try{localStorage.setItem(LS_AI_WEIGHTS,JSON.stringify(d.weights))}catch(_){}
+          initAiNet(d.weights);
+          refreshAiEvalLeaf();
+        }
+        updateTrainingLog({game:d.epoch,total:d.epoch,loss:d.loss});
+        drawTrainingCurve();
+        if(aiUseNN)$('training-log').textContent+=`\n✅ Epoch complete. Expectimax + NN active (${aiTrainGames} games)`;
       }
-      updateTrainingLog({game:d.epoch,total:d.epoch,loss:d.loss});
-      drawTrainingCurve();
-      if(aiUseNN)$('training-log').textContent+=`\n✅ Epoch complete. NN active for leaf eval (${aiTrainGames} games)`;
-      if(!aiUseNN&&aiTrainGames>50){aiUseNN=true;refreshAiEvalLeaf();$('training-log').textContent+='\n⚡ NN leaf evaluation activated.';}
-    }
+      if(d.type==='nnEnabled'){
+        aiUseNN=true;
+        refreshAiEvalLeaf();
+        if($('training-log'))$('training-log').textContent+='\n⚡ NN leaf evaluation activated for self-play.';
+      }
   };
   aiWorker.onerror=(e)=>{var el=$('training-log');if(el)el.textContent+='\nWorker error: '+e.message};
-  aiWorker.postMessage({cmd:'init',weights:aiStartingWeights});
+  aiWorker.postMessage({cmd:'init',weights:aiStartingWeights,useNN:aiUseNN});
 }
 function updateTrainingLog(d){
   const el=$('training-log');
@@ -1170,7 +1181,7 @@ function enterTrainingMode(){
   var t2=$('ai-stop-training');if(t2)t2.hidden=true;
   aiCurve.length=0;
   drawTrainingCurve();
-  $('training-log').textContent='▶ Click "Train" to start.\nOnce you hit Train, self-play games accumulate in the background and the neural network updates.';
+  $('training-log').textContent='▶ 点击 Train 开始训练\n系统将使用 Expectimax 搜索 + 神经网络评估进行自弈';
   $('showside-bar').style.width='0';
 }
 function startTraining(games,lr){
@@ -1232,7 +1243,52 @@ function sMove(g,dir){var n=g.map(r=>r.slice()),ch=false,gn=0;for(var i=0;i<4;i+
 function sEmpty(g){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!g[r][c])e.push([r,c]);return e}
 function sHasMoves(g){for(var r=0;r<4;r++)for(var c=0;c<4;c++){if(!g[r][c])return true;if(c<3&&g[r][c]===g[r][c+1])return true;if(r<3&&g[r][c]===g[r+1][c])return true}return false}
 function sHeuristic(g){var e=sEmpty(g).length,sm=0,mg=0,mx=0,tc=0;var pw=new Set();for(var r=0;r<4;r++)for(var c=0;c<4;c++){var v=g[r][c];if(v){tc++;if(v>mx)mx=v;if(v>2)pw.add(Math.log2(v)|0);if(c<3){var o=g[r][c+1];if(o){sm-=Math.abs(Math.log2(v)-Math.log2(o));if(v===o)mg++;}}if(r<3){var o2=g[r+1][c];if(o2){sm-=Math.abs(Math.log2(v)-Math.log2(o2));if(v===o2)mg++;}}}}var sn=[[16,15,14,13],[9,10,11,12],[8,7,6,5],[1,2,3,4]];var st=0;for(var r2=0;r2<4;r2++)for(var c2=0;c2<4;c2++)st+=(g[r2][c2]?Math.log2(g[r2][c2]):0)*sn[r2][c2];var cu=mx>0&&Math.max(g[0][0],g[0][3],g[3][0],g[3][3])===mx?1:0;var fillPenalty=(tc-e)*30;return e*100+st*5+Math.log2(mx||1)*20+cu*150+sm*8+mg*120-fillPenalty;}
-function sPick(g){var b=-1,bv=-Infinity;for(var d=0;d<4;d++){var res=sMove(g,d);if(!res.ch)continue;var v=sHeuristic(res.next)+res.g;if(v>bv){bv=v;b=d}}return b}
+// Showcase 使用快速 Expectimax 搜索（比纯启发式更强）
+function sExpectimax(grid,depth,isChance,table){
+  if(depth<=0)return sHeuristic(grid);
+  var key=JSON.stringify(grid)+'_'+depth+'_'+(isChance?1:0);
+  var cached=table.get(key);
+  if(cached!==undefined)return cached;
+  var value;
+  if(!isChance){
+    value=-Infinity;
+    for(var d=0;d<4;d++){
+      var res=sMove(grid,d);
+      if(res.ch)value=Math.max(res.g+sExpectimax(res.next,depth-1,true,table),value);
+    }
+    if(value===-Infinity)value=-100000;
+  }else{
+    var empties=sEmpty(grid);
+    if(!empties.length){value=sExpectimax(grid,depth-1,false,table)}
+    else{
+      var total=0;
+      for(var i=0;i<empties.length;i++){
+        var p=empties[i];
+        var g2=grid.map(r=>r.slice());g2[p[0]][p[1]]=2;
+        var g4=grid.map(r=>r.slice());g4[p[0]][p[1]]=4;
+        total+=.9*sExpectimax(g2,depth-1,false,table)+.1*sExpectimax(g4,depth-1,false,table);
+      }
+      value=total/empties.length;
+    }
+  }
+  table.set(key,value);
+  return value;
+}
+function sGetDepth(g){var e=sEmpty(g).length;if(e>=8)return 2;if(e>=4)return 3;return 4;}
+function sPick(g){
+  // 使用 Expectimax 搜索选择移动
+  var table=new Map();
+  var depth=sGetDepth(g);
+  var b=-1,bv=-Infinity;
+  for(var d=0;d<4;d++){
+    var res=sMove(g,d);
+    if(!res.ch)continue;
+    var v=res.g+sExpectimax(res.next,depth,true,table);
+    if(v>bv){bv=v;b=d}}
+  // Fallback: 如果搜索失败，使用启发式
+  if(b<0){bv=-Infinity;for(var d2=0;d2<4;d2++){var res2=sMove(g,d2);if(!res2.ch)continue;var v2=sHeuristic(res2.next)+res2.g;if(v2>bv){bv=v2;b=d2}}}
+  return b;
+}
 function sRender(){for(var r=0;r<4;r++)for(var c=0;c<4;c++){var el=sTiles[r*4+c];var v=sg[r][c];el.textContent=v||'';el.setAttribute('data-v',v||'');}var pct=sScore>0?Math.min(100,Math.round(Math.log2(Math.max(sScore,1))/11*100)):0;$('showside-bar').style.width=pct+'%';if(document.getElementById('game-screen').classList.contains('ai-training-mode')){$('stat-score').textContent='🏆 '+sScore;$('stat-steps').textContent='👣 '+sMoves;}}
 function sMax(g){var m=0;for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(g[r][c]>m)m=g[r][c];return m}
 function sInitGame(){sg=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];sScore=0;sMoves=0;sGameCount++;for(var k=0;k<2;k++){var e=sEmpty(sg);var p=e[Math.random()*e.length|0];sg[p[0]][p[1]]=Math.random()<.9?2:4;}sRender();}
