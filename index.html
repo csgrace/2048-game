@@ -98,7 +98,12 @@ body::before{
 .ai-training-mode .arrows,
 .ai-training-mode #b-tools{display:none}
 .ai-training-mode .board-wrap{display:none}
-.ai-training-mode #training-panel{grid-column:1/-1;max-width:520px;margin:0 auto}
+.ai-training-mode #training-panel{grid-column:1/-1;max-width:680px;margin:0 auto;padding:18px 20px}
+.ai-training-mode .training-head{font-size:16px}
+.ai-training-mode .btn.sm{padding:8px 18px;font-size:14px}
+.training-details{margin-top:14px;padding:14px 16px;border:1px solid rgba(147,112,219,.22);border-radius:12px;background:rgba(0,0,0,.16)}
+.training-details h3{margin:0 0 8px;color:#ffd166;font-size:14px;letter-spacing:.4px}
+.training-details p{margin:4px 0;font-size:12px;line-height:1.65;color:rgba(255,255,255,.62)}
 .ai-training-mode .top-bar{justify-content:center;margin-bottom:12px}
 .ai-training-mode{align-items:center;justify-content:center;flex-direction:column;display:flex}
 #stat-ai{display:none}
@@ -381,16 +386,16 @@ body::before{
         <div id="showcase-side">
           <span class="sl-big">AI Self-Play</span>
           <div class="sc-bar"><i id="showside-bar"></i></div>
-          <span class="sc-help">
-            <strong>训练逻辑：</strong><br>
-            ① 启发式 AI 在棋盘上自对弈，每一步按"空格数 + 蛇形权重 + 大数靠角 + 平滑度 + 可合并数"选方向<br>
-            ② 每局结束后用 TD(λ) 算法为每个局面计算价值目标（后续局面的折扣回报）<br>
-            ③ 存入 8000 条经验回放缓冲区，每步随机抽 64 条做 mini-batch 梯度下降<br>
-            ④ 网络：256→96→48→16→1 MLP，Adam 优化，学习率 0.002<br>
-            ⑤ 累计训练 50 局后价值网络自动接入 AI 帮玩的局面评估
-          </span>
+          <span class="sc-help">点击 Train 后，这里将显示一局实时自弈；顶栏同步展示该局的得分和步数。</span>
         </div>
       </div>
+      <section class="training-details" aria-label="训练逻辑说明">
+        <h3>训练逻辑</h3>
+        <p>① 启发式 AI 自对弈：按空格数、蛇形权重、大数靠角、平滑度与可合并数选择下一步。</p>
+        <p>② 每局结束后，TD(λ) 为轨迹中每个局面计算折扣价值目标。</p>
+        <p>③ 数据进入 8,000 条经验回放缓冲区；每局随机抽样进行 mini-batch 梯度下降。</p>
+        <p>④ 价值网络为 256→96→48→16→1 MLP，采用 Adam，学习率为 0.002；训练 50 局后接入 AI 帮玩评估。</p>
+      </section>
     </div>
     <div class="sides">
       <button class="btn" id="b-save">💾 Save</button>
@@ -1104,6 +1109,9 @@ function buildTrainingWorker(){
       drawTrainingCurve();
     }
     if(d.type==='epoch'){
+      stopShowcase();
+      var trainButton=$('ai-train');if(trainButton)trainButton.hidden=false;
+      var stopButton=$('ai-stop-training');if(stopButton)stopButton.hidden=true;
       if(d.weights){
         aiStartingWeights=d.weights;
         try{localStorage.setItem(LS_AI_WEIGHTS,JSON.stringify(d.weights))}catch(_){}
@@ -1163,8 +1171,6 @@ function enterTrainingMode(){
   aiCurve.length=0;
   drawTrainingCurve();
   $('training-log').textContent='▶ Click "Train" to start.\nOnce you hit Train, self-play games accumulate in the background and the neural network updates.';
-  $('showside-score').textContent='score: —';
-  $('showside-moves').textContent='moves: —';
   $('showside-bar').style.width='0';
 }
 function startTraining(games,lr){
@@ -1224,7 +1230,7 @@ function sEmpty(g){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!g[r][c])
 function sHasMoves(g){for(var r=0;r<4;r++)for(var c=0;c<4;c++){if(!g[r][c])return true;if(c<3&&g[r][c]===g[r][c+1])return true;if(r<3&&g[r][c]===g[r+1][c])return true}return false}
 function sHeuristic(g){var e=sEmpty(g).length,sm=0,mg=0,mx=0,tc=0;var pw=new Set();for(var r=0;r<4;r++)for(var c=0;c<4;c++){var v=g[r][c];if(v){tc++;if(v>mx)mx=v;if(v>2)pw.add(Math.log2(v)|0);if(c<3){var o=g[r][c+1];if(o){sm-=Math.abs(Math.log2(v)-Math.log2(o));if(v===o)mg++;}}if(r<3){var o2=g[r+1][c];if(o2){sm-=Math.abs(Math.log2(v)-Math.log2(o2));if(v===o2)mg++;}}}}var sn=[[16,15,14,13],[9,10,11,12],[8,7,6,5],[1,2,3,4]];var st=0;for(var r2=0;r2<4;r2++)for(var c2=0;c2<4;c2++)st+=(g[r2][c2]?Math.log2(g[r2][c2]):0)*sn[r2][c2];var cu=mx>0&&Math.max(g[0][0],g[0][3],g[3][0],g[3][3])===mx?1:0;var fillPenalty=(tc-e)*30;return e*100+st*5+Math.log2(mx||1)*20+cu*150+sm*8+mg*120-fillPenalty;}
 function sPick(g){var b=-1,bv=-Infinity;for(var d=0;d<4;d++){var res=sMove(g,d);if(!res.ch)continue;var v=sHeuristic(res.next)+res.g;if(v>bv){bv=v;b=d}}return b}
-function sRender(){for(var r=0;r<4;r++)for(var c=0;c<4;c++){var el=sTiles[r*4+c];var v=sg[r][c];el.textContent=v||'';el.setAttribute('data-v',v||'');}var pct=sScore>0?Math.min(100,Math.round(Math.log2(Math.max(sScore,1))/11*100)):0;$('showside-score').textContent='score: '+sScore;$('showside-moves').textContent='moves: '+sMoves;$('showside-bar').style.width=pct+'%';if(document.getElementById('game-screen').classList.contains('ai-training-mode')){$('stat-score').textContent='🏆 '+sScore;$('stat-steps').textContent='👣 '+sMoves;}}
+function sRender(){for(var r=0;r<4;r++)for(var c=0;c<4;c++){var el=sTiles[r*4+c];var v=sg[r][c];el.textContent=v||'';el.setAttribute('data-v',v||'');}var pct=sScore>0?Math.min(100,Math.round(Math.log2(Math.max(sScore,1))/11*100)):0;$('showside-bar').style.width=pct+'%';if(document.getElementById('game-screen').classList.contains('ai-training-mode')){$('stat-score').textContent='🏆 '+sScore;$('stat-steps').textContent='👣 '+sMoves;}}
 function sMax(g){var m=0;for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(g[r][c]>m)m=g[r][c];return m}
 function sInitGame(){sg=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];sScore=0;sMoves=0;sGameCount++;for(var k=0;k<2;k++){var e=sEmpty(sg);var p=e[Math.random()*e.length|0];sg[p[0]][p[1]]=Math.random()<.9?2:4;}sRender();}
 function sTick(){if(!document.getElementById('showcase')||$('showcase').style.display==='none')return;var d=sPick(sg);if(d<0){sInitGame();return;}var res=sMove(sg,d);sg=res.next;sScore+=res.g;sMoves++;if(sMax(sg)>=2048){sRender();setTimeout(sInitGame,1200);return;}var e=sEmpty(sg);if(e.length){var p=e[Math.random()*e.length|0];sg[p[0]][p[1]]=Math.random()<.9?2:4;}sRender();if(!sHasMoves(sg))setTimeout(sInitGame,800);}
