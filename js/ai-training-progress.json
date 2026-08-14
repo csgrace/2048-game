@@ -1,0 +1,31 @@
+{
+  "active": false,
+  "done": true,
+  "version": 2,
+  "bestMaxTile": 2048,
+  "avgScore": 18506,
+  "trainTime": "3.5s",
+  "history": [
+    {
+      "game": 1,
+      "total": 2,
+      "loss": 0.000561,
+      "maxTile": 2048,
+      "score": 23212,
+      "avgScore": 23212,
+      "bestMax": 2048,
+      "version": 1
+    },
+    {
+      "game": 2,
+      "total": 2,
+      "loss": 0.000535,
+      "maxTile": 1024,
+      "score": 13800,
+      "avgScore": 18506,
+      "bestMax": 2048,
+      "version": 2
+    }
+  ],
+  "timestamp": 1786713579928
+}
