@@ -382,7 +382,7 @@ body::before{
           <span id="showside-score">score: 0</span>
           <span id="showside-moves">moves: 0</span>
           <div class="sc-bar"><i id="showside-bar"></i></div>
-          <span class="sc-help">后台正在自弈 + 训练。右上角棋盘同步演示 AI 实时走法。训练 50 局后自动启用价值网络。</span>
+          <span class="sc-help">点击 Train 后这里将同步显示 AI 实时自弈过程。训练 50 局后价值网络自动启用。</span>
         </div>
       </div>
     </div>
@@ -1156,8 +1156,10 @@ function enterTrainingMode(){
   var t2=$('ai-stop-training');if(t2)t2.hidden=true;
   aiCurve.length=0;
   drawTrainingCurve();
-  $('training-log').textContent='▶ Click "Train" to start.\nThe board above runs in idle demo mode using the heuristic AI.\nOnce you hit Train, self-play games accumulate in the background and the neural network updates.';
-  startShowcase();
+  $('training-log').textContent='▶ Click "Train" to start.\nOnce you hit Train, self-play games accumulate in the background and the neural network updates.';
+  $('showside-score').textContent='score: —';
+  $('showside-moves').textContent='moves: —';
+  $('showside-bar').style.width='0';
 }
 function startTraining(games,lr){
   var tp=$('training-panel');if(tp)tp.hidden=false;
@@ -1172,6 +1174,7 @@ function startTraining(games,lr){
   if(!stored)$('training-log').textContent='No cached model — starting fresh self-play...\nTip: leave this panel open to accumulate games.';
   else $('training-log').textContent=`Resuming from cached model (${stored.l1W?.length||0} weights). Training ${games} more games…`;
   drawTrainingCurve();
+  startShowcase();
   buildTrainingWorker();
 }
 function stopTraining(){
