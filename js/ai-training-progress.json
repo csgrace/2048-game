@@ -1,12 +1,10 @@
 {
-  "active": true,
-  "game": 40,
-  "total": 40,
-  "loss": 0.000676,
-  "maxTile": 1024,
-  "bestMax": 4096,
-  "avgScore": 20587,
+  "active": false,
+  "done": true,
   "version": 42,
+  "bestMaxTile": 4096,
+  "avgScore": 20587,
+  "trainTime": "354.5s",
   "history": [
     {
       "game": 1,
@@ -99,5 +97,5 @@
       "version": 42
     }
   ],
-  "timestamp": 1786714239802
+  "timestamp": 1786714241209
 }
