@@ -1262,7 +1262,7 @@ async function startTraining(){
     var resp=await ghApi('/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ref:'main',inputs:{games:'200'}})
+      body:JSON.stringify({ref:'main',inputs:{games:'100'}})
     });
     if(resp.status===204){
       log.textContent='✅ 训练已触发！等待 workflow 开始运行...\n';

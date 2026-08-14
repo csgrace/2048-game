@@ -187,7 +187,8 @@ function expectimax(grid, depth, isChance, table) {
     if (!empties.length) {
       value = expectimax(grid, depth - 1, false, table);
     } else {
-      var sample = empties.length > 4 ? empties.filter(function(_, i) { return i % Math.ceil(empties.length / 4) === 0; }) : empties;
+      // Sample at most 2 empty cells to limit branching
+      var sample = empties.length > 2 ? [empties[0], empties[empties.length - 1]] : empties;
       var total = 0;
       for (var i = 0; i < sample.length; i++) {
         var p = sample[i];
@@ -223,8 +224,7 @@ function getSearchDepth(grid) {
   var e = empty(grid).length;
   if (e >= 8) return 2;
   if (e >= 4) return 3;
-  if (e >= 2) return 4;
-  return 5;
+  return 3;  // cap at 3 to avoid exponential blowup
 }
 
 /* ---------- Self-play one game with Expectimax ---------- */
@@ -311,10 +311,10 @@ for (var g = 0; g < GAMES; g++) {
     console.log('[NN enabled at game ' + totalGamesTrained + ']');
   }
 
-  // Train 8 mini-batches per game (same as worker)
+  // Train 3 mini-batches per game (reduced from 8 for speed)
   var ls = 0;
-  for (var s = 0; s < 8; s++) ls += trainStep(LR, 64);
-  ls /= 8;
+  for (var s = 0; s < 3; s++) ls += trainStep(LR, 64);
+  ls /= 3;
 
   totalScore += result.score;
   if (result.maxTile > bestMaxTile) bestMaxTile = result.maxTile;
