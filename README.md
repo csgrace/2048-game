@@ -2,8 +2,9 @@
 
 A complete implementation of the 2048 number-puzzle game in **Java (Swing)**
 with optional **PostgreSQL** backing for user accounts, per-grid leaderboards,
-and per-grid saves.  A pure-HTML5 front-end is also provided for deployment to
-GitHub Pages / any static host.
+and per-grid saves. A pure-HTML5 front-end is also provided for deployment to
+GitHub Pages / any static host. The project includes an **AI Training Lab**
+featuring Expectimax search and neural network-based reinforcement learning.
 
 ---
 
@@ -17,6 +18,7 @@ GitHub Pages / any static host.
 | **4 – Gameplay** | ✅ | Keyboard **and** button controls, win/lose detection, undo (30-step) |
 | **5 – Swing GUI** | ✅ | Gradient backdrop + glass-morphism cards, arrow pad |
 | **6 – Advanced** | ✅ | WebAudio sound, **per-grid leaderboards**, **count-up / count-down timers**, settings panel |
+| **7 – AI Training Lab** | ✅ | Expectimax search + neural network TD(λ) learning, self-play, real-time visualization |
 
 Additional niceties:
 
@@ -29,6 +31,40 @@ Additional niceties:
   score board.
 * Two timer modes: **count-up** (stopwatch) and **count-down** (60s / 2 min / 5 min).
 * Sound generated programmatically – no external audio files required.
+
+---
+
+## AI Training Lab
+
+The HTML5 version includes a dedicated **AI Training Lab** accessible from the
+entry screen. It implements a complete reinforcement learning pipeline:
+
+### Architecture
+
+| Component | Details |
+|-----------|---------|
+| **Search** | Expectimax with adaptive depth (2–5 ply) |
+| **Evaluation** | MLP value network (256→96→48→16→1) with ReLU + Tanh |
+| **Learning** | TD(λ) with eligibility traces, λ=0.5, γ=0.95 |
+| **Optimizer** | Adam (β₁=0.9, β₂=0.999) |
+| **Replay Buffer** | 8,000 samples, mini-batch size 64 |
+| **Board Encoding** | One-hot log₂ per cell, 16 channels × 4×4 = 256 inputs |
+
+### Training Flow
+
+1. **Self-play**: Expectimax search plays complete games
+2. **TD Targets**: Each position gets a bootstrapped value target
+3. **Mini-batch Training**: Random samples from replay buffer update the network
+4. **Progressive NN Blend**: NN weight increases from 0% to 80% over 300 games
+5. **Weight Sharing**: Download `ai-weights.json` and commit to share trained model
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `js/ai-brain.js` | Neural network (ValueNet) + Trajectory (TD learning) |
+| `js/ai-trainer-worker.js` | Web Worker running self-play and training |
+| `js/ai-weights.json` | Trained weights (shared via Git) |
 
 ---
 
@@ -55,6 +91,10 @@ Additional niceties:
 │       ├── SaveManager.java     # File-based fallback persistence
 │       └── DatabaseManager.java # PostgreSQL: users, scores (per-grid), saves (per-grid)
 ├── sql/init.sql                 # Schema bootstrap script (v2: grid_size column)
+├── js/
+│   ├── ai-brain.js              # Neural network + TD learning
+│   ├── ai-trainer-worker.js     # Training worker (Expectimax + NN)
+│   └── ai-weights.json          # Trained weights (shared)
 ├── index.html                   # Static HTML5 version (GitHub Pages)
 └── data/                        # Runtime saves (created on first launch)
 ```
@@ -104,11 +144,13 @@ psql -U postgres -d game2048 -f sql/init.sql
 ## HTML5 version
 
 `index.html` is a zero-dependency single-file build that runs entirely
-in the browser.  Deploy it to **GitHub Pages** (enable Pages → source
+in the browser. Deploy it to **GitHub Pages** (enable Pages → source
 `main` branch → `/`) or open it locally – no server needed.
 
 All data (users, saves, per-grid leaderboards) lives in `localStorage`,
 scoped to the origin.
+
+**Live demo:** [csgrace.github.io/2048-game](https://csgrace.github.io/2048-game)
 
 ---
 
