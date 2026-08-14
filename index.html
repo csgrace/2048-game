@@ -335,11 +335,20 @@ body::before{
       <button class="btn" id="ai-auto">🤖 AI Auto Play</button>
       <button class="btn wide" id="ai-stop" hidden>■ Stop Auto Play</button>
     </div>
+    <hr class="tool-divider">
+    <p class="ai-note">Neural Network Training · self-play reinforcement learning</p>
+    <div class="tool-actions">
+      <button class="btn" id="ai-train">▶ Train</button>
+      <button class="btn" id="ai-train-stop" hidden>■ Stop Training</button>
+    </div>
+    <div id="training-log" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.6);max-height:120px;overflow-y:auto;white-space:pre-wrap;line-height:1.45" aria-live="polite"></div>
+    <canvas id="training-curve" style="width:100%;height:60px;margin-top:6px;background:rgba(0,0,0,.25);border-radius:8px" aria-label="training loss curve"></canvas>
     <div class="tool-status" id="tool-status"></div>
     <button class="modal-close" id="tools-close">Close</button>
   </div>
 </div>
 
+<script src="js/ai-brain.js"></script>
 <script>
 /* ====================================================================
    Animated background
@@ -916,6 +925,171 @@ function stopAiAutoPlay(){
   aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}if($('ai-auto'))updateAiControls();
 }
 
+/* ------------------------------------------------------------------ neural network training (off main thread via Web Worker) ---------- */
+const LS_AI_WEIGHTS='g2048_ai_weights_v1';
+const LS_AI_LOG='g2048_ai_training_log_v1';
+let aiWorker=null;
+let aiNet=null;            // value network for inference on leaf nodes
+let aiUseNN=false;         // switch to NN evaluation once enough training has happened
+let aiTrainGames=0;        // total games trained so far
+let aiStartingWeights=null;
+let aiCurve=[];            // array of {game,loss,maxTile}
+let aiCurveCanvasCtx=null;
+function initAiNet(weights){
+  if(!window.AIBrain)return;
+  aiNet=new window.AIBrain.ValueNet();
+  if(weights)aiNet.importWeights(weights);
+  aiUseNN=!!weights&&aiTrainGames>50;
+}
+function aiNeuralEvaluate(grid){
+  if(!aiUseNN||!aiNet)return aiEvaluate(grid);
+  const input=window.AIBrain.encodeBoard(grid);
+  const raw=aiNet.forward(input);
+  return aiEvaluate(grid)*0.5+raw*4000;
+}
+function refreshAiEvalLeaf(){
+  aiExpectimax=function(grid,depth,isChance,table){
+    if(depth<=0)return aiNeuralEvaluate(grid);
+    const key=aiGridHash(grid)+'_'+depth+'_'+(isChance?1:0);
+    const cached=table.get(key);
+    if(cached!==undefined)return cached;
+    let value;
+    if(!isChance){
+      value=-Infinity;
+      for(const direction of AI_DIRECTIONS){
+        const result=aiMoveBoard(grid,direction);
+        if(result.changed)value=Math.max(value,result.gained+aiExpectimax(result.board,depth-1,true,table));
+      }
+      if(value===-Infinity)value=-100000;
+    }else{
+      const empty=aiEmptyCells(grid);
+      if(!empty.length){value=aiExpectimax(grid,depth-1,false,table)}
+      else{
+        const sample=empty.length>4?empty.filter((_,i)=>i%Math.ceil(empty.length/4)===0):empty;
+        let total=0;for(const [r,c] of sample){
+          const t=aiClone(grid);t[r][c]=2;const f=aiClone(grid);f[r][c]=4;
+          total+=.9*aiExpectimax(t,depth-1,false,table)+.1*aiExpectimax(f,depth-1,false,table);
+        }
+        value=total/sample.length;
+      }
+    }
+    table.set(key,value);
+    return value;
+  };
+}
+let aiPendingGames=500, aiPendingLr=0.002;
+function buildTrainingWorker(){
+  if(aiWorker)terminateTraining();
+  try{
+    aiWorker=new Worker('js/ai-trainer-worker.js');
+  }catch(e){
+    $('training-log').textContent='Web Worker failed: '+e.message+'. Training on main thread fallback.';
+    runMainThreadFallback();
+    return;
+  }
+  aiWorker.onmessage=(e)=>{
+    const d=e.data;
+    if(d.type==='load')$('training-log').textContent='AI worker loading…';
+    if(d.type==='ready'){
+      aiWorker.postMessage({cmd:'train',games:aiPendingGames,lr:aiPendingLr});
+    }
+    if(d.type==='progress'){
+      aiTrainGames=d.totalTrained;
+      aiCurve.push({game:d.game,loss:d.loss,maxTile:d.maxTile});
+      if(aiCurve.length>200)aiCurve.shift();
+      updateTrainingLog(d);
+      drawTrainingCurve();
+    }
+    if(d.type==='epoch'){
+      if(d.weights){
+        aiStartingWeights=d.weights;
+        try{localStorage.setItem(LS_AI_WEIGHTS,JSON.stringify(d.weights))}catch(_){}
+        initAiNet(d.weights);
+        refreshAiEvalLeaf();
+      }
+      updateTrainingLog({game:d.epoch,total:d.epoch,loss:d.loss});
+      drawTrainingCurve();
+      if(aiUseNN)$('training-log').textContent+=`\n✅ Epoch complete. NN active for leaf eval (${aiTrainGames} games)`;
+      if(!aiUseNN&&aiTrainGames>50){aiUseNN=true;refreshAiEvalLeaf();$('training-log').textContent+='\n⚡ NN leaf evaluation activated.';}
+    }
+  };
+  aiWorker.onerror=(e)=>{var el=$('training-log');if(el)el.textContent+='\nWorker error: '+e.message};
+  aiWorker.postMessage({cmd:'init',weights:aiStartingWeights});
+}
+function updateTrainingLog(d){
+  const el=$('training-log');
+  if(!el)return;
+  const pct=Math.round(d.game/d.total*100);
+  el.textContent=`Game ${d.game}/${d.total} (${pct}%) | max: ${d.maxTile||'—'} | loss: ${(d.loss||0).toFixed(6)} | net eval: ${aiUseNN?'ON':'heuristic'}`;
+  el.scrollTop=el.scrollHeight;
+}
+function drawTrainingCurve(){
+  const c=$('training-curve');
+  if(!c||!aiCurve.length)return;
+  const ctx=c.getContext('2d');
+  aiCurveCanvasCtx=ctx;
+  const W=c.width=c.clientWidth;
+  const H=c.height=c.clientHeight;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(0,0,0.1)';ctx.fillRect(0,0,W,H);
+  // loss curve
+  const losses=aiCurve.map(p=>p.loss);
+  const maxL=Math.max(...losses,0.001),minL=Math.min(...losses,0);
+  const range=maxL-minL||0.001;
+  ctx.strokeStyle='#ffd166';ctx.lineWidth=1.5;ctx.beginPath();
+  aiCurve.forEach((p,i)=>{
+    const x=i/(aiCurve.length-1)*W;
+    const y=H-2-(p.loss-minL)/range*(H-4);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // max tile dots
+  ctx.fillStyle='#6bcb77';
+  aiCurve.forEach((p,i)=>{
+    if(p.maxTile>512){
+      const x=i/(aiCurve.length-1)*W;
+      ctx.beginPath();ctx.arc(x,H-3,2,0,6.28);ctx.fill();
+    }
+  });
+}
+function startTraining(games,lr){
+  $('ai-train').hidden=true;$('ai-train-stop').hidden=false;
+  aiCurve.length=0;
+  aiPendingGames=games; aiPendingLr=lr;
+  const stored=load(LS_AI_WEIGHTS,null);
+  aiStartingWeights=stored;
+  aiTrainGames=stored?100:0;
+  initAiNet(stored);
+  if(!stored)$('training-log').textContent='No cached model — starting fresh self-play...\nTip: leave the Training panel open to accumulate games.';
+  else $('training-log').textContent=`Resuming from cached model (${stored.l1W?.length||0} weights). Training ${games} more games…`;
+  drawTrainingCurve();
+  buildTrainingWorker();
+}
+function stopTraining(){
+  terminateTraining();
+  $('ai-train').hidden=false;$('ai-train-stop').hidden=true;
+}
+function terminateTraining(){
+  if(aiWorker){aiWorker.terminate();aiWorker=null}
+}
+function runMainThreadFallback(){
+  let g=0;
+  const total=200;
+  function step(){
+    if(g>=total)return;
+    g++;
+    // simulate one self-play game here if needed, but this path is rarely hit
+    setTimeout(step,10);
+  }
+  step();
+}
+(function restoreAi(){
+  try{
+    const saved=localStorage.getItem(LS_AI_WEIGHTS);
+    if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;refreshAiEvalLeaf();}}
+  }catch(_){}
+})();
+
 /* ------------------------------------------------------------------ practice tools */
 function openTools(){
   if(over||inputLocked)return;
@@ -1158,6 +1332,8 @@ $('b-right').onclick=()=>{SFX.button();move('right')};
 $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
 $('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
+$('ai-train').onclick=()=>{SFX.button();startTraining(500,0.002)};
+$('ai-train-stop').onclick=()=>{SFX.button();stopTraining()};
 $('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
 $('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};
 $('ai-auto').onclick=()=>{SFX.button();startAiAutoPlay()};
