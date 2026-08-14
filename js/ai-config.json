@@ -1,0 +1,4 @@
+{
+  "encrypted_token": "REPLACE_WITH_ENCRYPTED_TOKEN",
+  "hint": "token is xor-encrypted with password hash"
+}
