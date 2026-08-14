@@ -336,8 +336,8 @@ transition:all .25s ease;
     <button class="pt-entry" id="btn-playtest">
       <span class="pt-icon">🏆</span>
       <span class="pt-text">
-        <strong>AI 实战记录</strong>
-        <small>批量自动对弈 · 胜率统计 · 版本对比</small>
+        <strong>AI Playtest Arena</strong>
+        <small>Batch auto-play · Win rate stats · Version comparison</small>
       </span>
       <span class="pt-arrow">→</span>
     </button>
@@ -348,35 +348,35 @@ transition:all .25s ease;
     <button class="back-btn" id="btn-playtest-back">← Back</button>
     <div class="glass" style="width:100%;max-width:640px;padding:20px 24px">
       <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">🏆 AI 实战记录</div>
-      <div class="subtitle" style="text-align:center;margin-bottom:16px">批量自动对弈 · 胜率统计 · 版本对比</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:16px">Batch auto-play · Win rate stats · Version comparison</div>
 
       <!-- Batch auto-play controls -->
       <div style="padding:14px 16px;border:1px solid rgba(20,184,166,.25);border-radius:12px;background:rgba(20,184,166,.06);margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:14px;font-weight:600;color:#14b8a6">🎮 批量自动对弈</span>
-          <span id="playtest-version-tag" style="font-size:11px;padding:3px 8px;border-radius:8px;background:rgba(255,209,102,.15);color:#ffd166;border:1px solid rgba(255,209,102,.2)">权重: —</span>
+          <span style="font-size:14px;font-weight:600;color:#14b8a6">🎮 Batch Auto-Play</span>
+          <span id="playtest-version-tag" style="font-size:11px;padding:3px 8px;border-radius:8px;background:rgba(255,209,102,.15);color:#ffd166;border:1px solid rgba(255,209,102,.2)">Weights: —</span>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <label style="font-size:12px;color:rgba(255,255,255,.6)">局数</label>
+          <label style="font-size:12px;color:rgba(255,255,255,.6)">Games</label>
           <select id="playtest-batch-count" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
-            <option value="5">5 局</option>
-            <option value="10" selected>10 局</option>
-            <option value="20">20 局</option>
-            <option value="50">50 局</option>
+            <option value="5">5 games</option>
+            <option value="10" selected>10 games</option>
+            <option value="20">20 games</option>
+            <option value="50">50 games</option>
           </select>
-          <label style="font-size:12px;color:rgba(255,255,255,.6)">速度</label>
+          <label style="font-size:12px;color:rgba(255,255,255,.6)">Speed</label>
           <select id="playtest-speed" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
-            <option value="0">极速 (无延迟)</option>
-            <option value="100" selected>快速 (100ms)</option>
-            <option value="300">正常 (300ms)</option>
-            <option value="600">慢速 (600ms)</option>
+            <option value="0">Turbo (no delay)</option>
+            <option value="100" selected>Fast (100ms)</option>
+            <option value="300">Normal (300ms)</option>
+            <option value="600">Slow (600ms)</option>
           </select>
-          <button class="btn sm" id="playtest-batch-start" style="padding:8px 18px;font-size:13px;background:#14b8a6;color:#fff;border:none;border-radius:8px;cursor:pointer">▶ 开始</button>
-          <button class="btn sm" id="playtest-batch-stop" style="padding:8px 18px;font-size:13px;display:none">⏹ 停止</button>
+          <button class="btn sm" id="playtest-batch-start" style="padding:8px 18px;font-size:13px;background:#14b8a6;color:#fff;border:none;border-radius:8px;cursor:pointer">▶ Start</button>
+          <button class="btn sm" id="playtest-batch-stop" style="padding:8px 18px;font-size:13px;display:none">⏹ Stop</button>
         </div>
         <div id="playtest-batch-progress" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.6);display:none">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span id="playtest-batch-info">准备中...</span>
+            <span id="playtest-batch-info">Preparing...</span>
             <span id="playtest-batch-rate"></span>
           </div>
           <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden">
@@ -391,8 +391,8 @@ transition:all .25s ease;
 
       <!-- Records -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:11px;color:rgba(255,255,255,.5)">对战详情（最近 20 局）</span>
-        <button class="btn sm" id="ai-playtest-clear" style="padding:4px 10px;font-size:11px;opacity:.6">清空</button>
+        <span style="font-size:11px;color:rgba(255,255,255,.5)">Match details (last 20)</span>
+        <button class="btn sm" id="ai-playtest-clear" style="padding:4px 10px;font-size:11px;opacity:.6">Clear</button>
       </div>
       <div id="playtest-records" style="max-height:200px;overflow-y:auto;font-size:12px;border-radius:8px"></div>
     </div>
@@ -1447,7 +1447,7 @@ var recsEl=$('playtest-records');
 if(!statsEl||!recsEl)return;
 
 if(!records.length){
-statsEl.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4)">暂无实战记录。使用 AI Auto Play 后会自动记录每局结果。</span>';
+statsEl.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4)">No playtest records yet. Use AI Auto Play or batch auto-play to record game results.</span>';
 recsEl.innerHTML='';
 return;
 }
@@ -1472,9 +1472,9 @@ s.avgScore=Math.round(s.scores.reduce(function(a,b){return a+b},0)/s.scores.leng
 var rate=s.total>0?Math.round(s.wins/s.total*100):0;
 var rateColor=rate>=60?'#6bcb77':rate>=30?'#ffd166':'#ff6b6b';
 html+='<div style="padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);min-width:120px;flex:1">';
-html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px">'+v+' · '+s.total+'局</div>';
+html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px">'+v+' · '+s.total+' games</div>';
 html+='<div style="font-size:16px;font-weight:700;color:'+rateColor+'">'+rate+'%</div>';
-html+='<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">✅'+s.wins+' ❌'+s.fails+' · 最高分'+s.bestScore+' · 最大方块'+s.bestTile+'</div>';
+html+='<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">✅'+s.wins+' ❌'+s.fails+' · Best '+s.bestScore+' · Max tile '+s.bestTile+'</div>';
 html+='</div>';
 });
 statsEl.innerHTML=html;
@@ -1492,7 +1492,7 @@ var date=new Date(r.ts);
 var timeStr=date.toLocaleDateString()+' '+date.toLocaleTimeString().slice(0,5);
 recHtml+='<div style="padding:6px 10px;margin-bottom:4px;border-radius:6px;background:'+bg+';border:1px solid '+border+';display:flex;justify-content:space-between;align-items:center">';
 recHtml+='<span>'+icon+' <strong style="color:'+(isWin?'#6bcb77':'#ff6b6b')+'">'+(isWin?'Win':'Fail')+'</strong> <span style="color:rgba(255,255,255,.4);font-size:11px">'+r.version+'</span></span>';
-recHtml+='<span style="color:rgba(255,255,255,.6);font-size:11px">分数 '+r.score+' · 最大 '+r.maxTile+' · '+r.steps+'步 · '+fmtPlayTime(r.durationMs)+'</span>';
+recHtml+='<span style="color:rgba(255,255,255,.6);font-size:11px">Score '+r.score+' · Max '+r.maxTile+' · '+r.steps+' moves · '+fmtPlayTime(r.durationMs)+'</span>';
 recHtml+='</div>';
 });
 recsEl.innerHTML=recHtml;
@@ -1501,7 +1501,7 @@ recsEl.innerHTML=recHtml;
 /* Update version tag on playtest screen */
 function updatePlaytestVersionTag(){
 var tag=$('playtest-version-tag');if(!tag)return;
-tag.textContent='权重: '+getCurrentWeightVersion();
+tag.textContent='Weights: '+getCurrentWeightVersion();
 }
 
 /* ====================================================================
@@ -1621,10 +1621,10 @@ var version=getCurrentWeightVersion();
 
 for(var i=0;i<count;i++){
 if(batchCancelled){
-logEl.innerHTML+='⚠️ 已停止\n';
+logEl.innerHTML+='⚠️ Stopped\n';
 break;
 }
-infoEl.textContent='第 '+(i+1)+' / '+count+' 局...';
+infoEl.textContent='Game '+(i+1)+' / '+count+'...';
 barEl.style.width=((i/count)*100)+'%';
 
 // Yield to UI
@@ -1652,17 +1652,17 @@ savePlaytests(records);
 if(result.result==='win')wins++;else fails++;
 var icon=result.result==='win'?'✅':'❌';
 var color=result.result==='win'?'#6bcb77':'#ff6b6b';
-logEl.innerHTML+='<span style="color:'+color+'">'+icon+' 第'+(i+1)+'局: '+result.result+' · 分'+result.score+' · 最大'+result.maxTile+' · '+result.steps+'步</span>\n';
+logEl.innerHTML+='<span style="color:'+color+'">'+icon+' Game '+(i+1)+': '+result.result+' · Score '+result.score+' · Max '+result.maxTile+' · '+result.steps+' moves</span>\n';
 logEl.scrollTop=logEl.scrollHeight;
 
 var rate=Math.round(wins/(wins+fails)*100);
-rateEl.textContent='胜率 '+rate+'% ('+wins+'W/'+fails+'L)';
+rateEl.textContent='Win rate '+rate+'% ('+wins+'W/'+fails+'L)';
 barEl.style.width=((i+1)/count*100)+'%';
 
 renderPlaytestPanel();
 }
 
-infoEl.textContent='完成！ '+wins+'胜 '+fails+'负';
+infoEl.textContent='Done! '+wins+'W '+fails+'L';
 startBtn.style.display='';
 stopBtn.style.display='none';
 batchRunning=false;
@@ -2163,7 +2163,7 @@ $('ai-stop').onclick=()=>{SFX.button();stopAiAutoPlay();$('tool-status').textCon
 $('tools-close').onclick=()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')};
 $('ai-playtest-clear').onclick=()=>{
 SFX.button();
-if(confirm('确定清空所有实战记录？')){
+if(confirm('Clear all playtest records?')){
 savePlaytests([]);
 renderPlaytestPanel();
 }
