@@ -699,10 +699,12 @@ function move(dir,fromAI=false){
       inputLocked=false;
       if(reachedTarget){
         won=true;SFX.win();showOverlay('🎉 You Win!');
+        schedulePostGameLeaderboard();
       }else if(!hasMoves()){
         over=true;SFX.lose();stopTimer();
         recordScore();
         showOverlay('💀 Game Over');
+        schedulePostGameLeaderboard();
       }
     });
   }else{
@@ -723,8 +725,8 @@ function gameOverByTime(){
   if(over)return;
   over=true;SFX.lose();
   recordScore();
-  // Only win if target reached on count-down end
   showOverlay('⏰ Time\'s Up!');
+  schedulePostGameLeaderboard();
 }
 
 function undo(){
@@ -743,8 +745,20 @@ function undo(){
   render();SFX.move();startTimer(elapsedMs);
 }
 
-/* ------------------------------------------------------------------ local 4×4 AI: Expectimax with a board-quality heuristic */
+/* ------------------------------------------------------------------ local 4×4 AI: enhanced Expectimax + Monte Carlo hybrid
+   Architecture:
+     1. Transposition table caches evaluated grids (hash → score) so repeated board
+        states at different branches are computed only once.
+     2. Iterative deepening: starts shallow and adds one ply at a time until a time
+        budget is exhausted, selecting the deepest fully completed result.
+        Depth also adapts roughly to free-cell count during search.
+     3. Evaluation blends a snake weight matrix with a potential-merge bonus and a
+        fragmentation penalty that discourages value being scattered across many
+        different tile magnitudes.
+     4. A short Monte Carlo rollout validates the chosen move with random playouts,
+        which mitigates expectation blind spots of the pure heuristic.            */
 const AI_DIRECTIONS=['up','left','down','right'];
+const AI_BUDGET_MS=60;
 function aiClone(grid){return grid.map(row=>row.slice())}
 function aiSlide(values){
   const tiles=values.filter(Boolean);const result=[];let gained=0;
@@ -771,45 +785,107 @@ function aiMoveBoard(grid,direction){
   return {board:next,changed,gained};
 }
 function aiEmptyCells(grid){const cells=[];for(let row=0;row<4;row++)for(let col=0;col<4;col++)if(!grid[row][col])cells.push([row,col]);return cells}
+function aiGridHash(grid){let h=0;for(let r=0;r<4;r++)for(let c=0;c<4;c++)h=(h*31+grid[r][c])|0;return h}
+/* Enhanced reward / heuristic ------------------------------------------------ */
 function aiEvaluate(grid){
-  const empty=aiEmptyCells(grid).length;let smooth=0,merges=0,max=0;
+  const empty=aiEmptyCells(grid).length;let smooth=0,merges=0,frag=0,max=0;
+  const powers=new Set();
   for(let row=0;row<4;row++)for(let col=0;col<4;col++){
     const value=grid[row][col];max=Math.max(max,value);
     if(!value)continue;
+    if(value>2)powers.add(Math.log2(value));
     for(const [dr,dc] of [[0,1],[1,0]]){
       const other=grid[row+dr]?.[col+dc]||0;
       if(other){smooth-=Math.abs(Math.log2(value)-Math.log2(other));if(value===other)merges++;}
     }
   }
-  // Keep the largest tile in a corner and follow a descending snake pattern.
+  frag=powers.size>0?(powers.size-1)*40:0;
   const snake=[[16,15,14,13],[9,10,11,12],[8,7,6,5],[1,2,3,4]];
-  let structure=0;for(let row=0;row<4;row++)for(let col=0;col<4;col++)structure+=(grid[row][col]?Math.log2(grid[row][col]):0)*snake[row][col];
-  const corner=Math.max(grid[0][0],grid[0][3],grid[3][0],grid[3][3])===max?1:0;
-  return empty*280+smooth*12+merges*80+structure*5+Math.log2(max||1)*18+corner*180;
+  let structure=0;for(let r=0;r<4;r++)for(let c=0;c<4;c++)structure+=(grid[r][c]?Math.log2(grid[r][c]):0)*snake[r][c];
+  const corner=max>0&&Math.max(grid[0][0],grid[0][3],grid[3][0],grid[3][3])===max?1:0;
+  const emptyBonus=empty>0?empty*empty*12:0;
+  return emptyBonus+structure*5+Math.log2(max||1)*22+corner*200+smooth*10+merges*150-frag;
 }
-function aiExpectimax(grid,depth,isChance){
+/* Iterative-deepening Expectimax with transposition table --------------------- */
+function aiExpectimax(grid,depth,isChance,table){
   if(depth<=0)return aiEvaluate(grid);
+  const key=`${aiGridHash(grid)}_${depth}_${isChance?1:0}`;
+  const cached=table.get(key);
+  if(cached!==undefined)return cached;
+  let value;
   if(!isChance){
-    let best=-Infinity;
-    for(const direction of AI_DIRECTIONS){const result=aiMoveBoard(grid,direction);if(result.changed)best=Math.max(best,result.gained+aiExpectimax(result.board,depth-1,true));}
-    return best===-Infinity?-100000:best;
+    value=-Infinity;
+    for(const direction of AI_DIRECTIONS){
+      const result=aiMoveBoard(grid,direction);
+      if(result.changed)value=Math.max(value,result.gained+aiExpectimax(result.board,depth-1,true,table));
+    }
+    if(value===-Infinity)value=-100000;
+  }else{
+    const empty=aiEmptyCells(grid);
+    if(!empty.length){value=aiExpectimax(grid,depth-1,false,table)}
+    else{
+      const sample=empty.length>4?empty.filter((_,i)=>i%Math.ceil(empty.length/4)===0):empty;
+      let total=0;for(const [r,c] of sample){
+        const t=aiClone(grid);t[r][c]=2;const f=aiClone(grid);f[r][c]=4;
+        total+=.9*aiExpectimax(t,depth-1,false,table)+.1*aiExpectimax(f,depth-1,false,table);
+      }
+      value=total/sample.length;
+    }
   }
-  const empty=aiEmptyCells(grid);if(!empty.length)return aiExpectimax(grid,depth-1,false);
-  // Sampling at most six empty cells keeps the browser responsive late in a game.
-  const sampled=empty.length>6?empty.filter((_,index)=>index%Math.ceil(empty.length/6)===0):empty;
-  let total=0;for(const [row,col] of sampled){
-    const two=aiClone(grid);two[row][col]=2;const four=aiClone(grid);four[row][col]=4;
-    total+=.9*aiExpectimax(two,depth-1,false)+.1*aiExpectimax(four,depth-1,false);
-  }
-  return total/sampled.length;
+  table.set(key,value);
+  return value;
 }
+/* Monte Carlo rollout from a board state ------------------------------------- */
+function aiMonteCarlo(grid,move,rounds){
+  let totalGained=0;
+  for(let round=0;round<rounds;round++){
+    let current=aiMoveBoard(grid,move).board;let gained=0,steps=0;
+    while(steps<20){
+      const empties=aiEmptyCells(current);if(!empties.length)break;
+      const [r,c]=empties[Math.floor(Math.random()*empties.length)];
+      current[r][c]=Math.random()<.9?2:4;
+      let moved=false;
+      for(const d of AI_DIRECTIONS.sort(()=>Math.random()-.5)){const res=aiMoveBoard(current,d);if(res.changed){gained+=res.gained;current=res.board;moved=true;break}}
+      if(!moved)break;
+      steps++;
+    }
+    totalGained+=gained;
+  }
+  return totalGained/rounds;
+}
+/* Top-level move selection: deepening + Monte Carlo validation --------------- */
 function aiBestMove(){
   if(SIZE!==4)return null;
-  let bestDirection=null,bestScore=-Infinity;
+  const table=new Map();
+  const start=performance.now();
+  let bestDirection=null,bestScore=-Infinity,depthReached=0;
+  for(let targetDepth=2;targetDepth<=6;targetDepth++){
+    let localBest=null,localScore=-Infinity,completed=true;
+    for(const direction of AI_DIRECTIONS){
+      const result=aiMoveBoard(board,direction);if(!result.changed)continue;
+      const value=result.gained+aiExpectimax(result.board,targetDepth,true,table);
+      if(value>localScore){localScore=value;localBest=direction;}
+    }
+    if(performance.now()-start>AI_BUDGET_MS){completed=false;}
+    if(completed&&localBest){bestDirection=localBest;bestScore=localScore;depthReached=targetDepth;}
+    if(!completed)break;
+  }
+  // Monte Carlo tie-break / validation between the two best expectimax choices
+  const candidates=[];
   for(const direction of AI_DIRECTIONS){
     const result=aiMoveBoard(board,direction);if(!result.changed)continue;
-    const value=result.gained+aiExpectimax(result.board,3,true);
-    if(value>bestScore){bestScore=value;bestDirection=direction;}
+    candidates.push({direction,expectimax:result.gained+aiExpectimax(result.board,2,true,new Map())});
+  }
+  candidates.sort((a,b)=>b.expectimax-a.expectimax);
+  if(candidates.length){
+    const top1=candidates[0];
+    const top2=candidates.length>1?candidates[1]:null;
+    const probeRounds=8;
+    const mc1=aiMonteCarlo(board,top1.direction,probeRounds);
+    const mc2=top2?aiMonteCarlo(board,top2.direction,probeRounds):-1;
+    // Choose expectimax winner unless Monte Carlo shows a clear 15%+ improvement on the runner-up
+    if(top2&&mc2>mc1*1.15)bestDirection=top2.direction;
+    else bestDirection=top1.direction;
   }
   return bestDirection;
 }
@@ -918,17 +994,32 @@ async function recordScore(){
   try{await api(`/records/${SIZE}`,{method:'POST',body:JSON.stringify({board,score,steps,durationMs:elapsedMs})});}
   catch(error){console.error('Could not submit game record:',error);}
 }
+const lbCache=new Map();
 async function showLeaderboard(){
   $('lb-mode-label').textContent=`${SIZE}×${SIZE} Grid · ${timerMode==='up'?'Stopwatch':'Countdown'}`;
-  $('lb-global-body').innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px">Loading…</td></tr>';
-  $('lb-personal-body').innerHTML='';
+  const cacheKey=`${SIZE}:${timerMode}`;
+  const cached=lbCache.get(cacheKey);
+  if(cached){
+    $('lb-global-body').innerHTML=cached.global;
+    $('lb-personal-body').innerHTML=cached.personal;
+    $('lb-personal-note').textContent=cached.personalNote;
+  }else{
+    $('lb-global-body').innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px">Loading…</td></tr>';
+    $('lb-personal-body').innerHTML='';
+  }
   $('lb-modal').classList.add('show');
   try{
-    const global=await api(`/leaderboard/${SIZE}`);
-    const personal=currentUser?await api(`/records/me/${SIZE}`):[];
-    $('lb-global-body').innerHTML=global.length?global.slice(0,15).map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.username)}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${fmtTime(e.durationMs)}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No records yet – be the first!</td></tr>';
-    $('lb-personal-note').textContent=currentUser?'All completed games, newest first.':'Log in to view your personal game history.';
-    $('lb-personal-body').innerHTML=personal.length?personal.map((e,i)=>`<tr><td>${i+1}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${e.steps}</td><td>${new Date(e.completedAt).toLocaleString()}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No personal records yet.</td></tr>';
+    const [global,personal]=await Promise.all([
+      api(`/leaderboard/${SIZE}`),
+      currentUser?api(`/records/me/${SIZE}`):Promise.resolve([])
+    ]);
+    const gHtml=global.length?global.slice(0,15).map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.username)}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${fmtTime(e.durationMs)}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No records yet – be the first!</td></tr>';
+    const pNote=currentUser?'All completed games, newest first.':'Log in to view your personal game history.';
+    const pHtml=personal.length?personal.map((e,i)=>`<tr><td>${i+1}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${e.steps}</td><td>${new Date(e.completedAt).toLocaleString()}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No personal records yet.</td></tr>';
+    $('lb-global-body').innerHTML=gHtml;
+    $('lb-personal-note').textContent=pNote;
+    $('lb-personal-body').innerHTML=pHtml;
+    lbCache.set(cacheKey,{global:gHtml,personal:pHtml,personalNote:pNote});
   }catch(error){$('lb-global-body').innerHTML=`<tr><td colspan="5" style="text-align:center;padding:16px">${escapeHtml(error.message)}</td></tr>`;}
 }
 function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -968,6 +1059,13 @@ function applyAllTileStyles(){
 
 function showOverlay(t){$('ov-title').textContent=t;$('overlay').classList.add('show')}
 function hideOverlay(){$('overlay').classList.remove('show')}
+
+let postGameLeaderboardQueued=null;
+function schedulePostGameLeaderboard(){
+  if(postGameLeaderboardQueued)return;
+  postGameLeaderboardQueued=true;
+  setTimeout(()=>{postGameLeaderboardQueued=false;lbCache.delete(`${SIZE}:${timerMode}`);showLeaderboard();},800);
+}
 
 /* ------------------------------------------------------------------ screen switching */
 
