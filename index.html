@@ -93,6 +93,12 @@ body::before{
 .training-actions{display:flex;gap:8px}
 .btn.sm{padding:6px 14px;font-size:13px}
 
+/* ================================================================== AI training mode: hide game controls */
+.ai-training-mode .sides,
+.ai-training-mode .arrows,
+.ai-training-mode #b-tools{display:none}
+.ai-training-mode .board-wrap{transform:scale(0.7);margin-top:-30px}
+
 /* ================================================================== settings grid */
 .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px;margin:12px 0}
 .setting-group{display:flex;flex-direction:column;gap:6px}
@@ -1302,6 +1308,7 @@ function exitGame(){
   terminateTraining();
   cancelToolSelection();
   hideOverlay();
+  $('game-screen').classList.remove('ai-training-mode');
   currentUser=null;
   authToken=null;
   localStorage.removeItem(LS_SESSION);
@@ -1313,7 +1320,7 @@ function exitGame(){
    ==================================================================== */
 $('btn-user').onclick=()=>{SFX.button();show('auth-screen')};
 $('btn-guest').onclick=()=>{SFX.button();currentUser=null;showSettings()};
-$('btn-ai-training').onclick=()=>{SFX.button();currentUser=null;show('game-screen');init(4);setTimeout(()=>startTraining(500,0.002),300)};
+$('btn-ai-training').onclick=()=>{SFX.button();currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);setTimeout(()=>startTraining(500,0.002),300)};
 $('btn-auth-back').onclick=()=>{SFX.button();show('entry-screen')};
 
 $('btn-settings-back').onclick=()=>{SFX.button();
