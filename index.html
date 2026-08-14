@@ -103,28 +103,29 @@ body::before{
 .ai-training-mode{align-items:center;justify-content:center;flex-direction:column;display:flex}
 #stat-ai{display:none}
 .ai-training-mode #stat-ai{display:inline-flex;align-items:center;font-weight:600;letter-spacing:1px}
+.ai-training-mode #who-label,.ai-training-mode #stat-mode{display:none}
 /* showcase mini-board */
 #showcase{display:none;align-items:stretch;gap:12px;margin-top:8px}
 .ai-training-mode #showcase{display:flex}
-#showcase-board{width:132px;height:132px;flex:none;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:3px;padding:4px;background:rgba(0,0,0,.3);border-radius:8px}
-.sc-tile{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border-radius:4px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.35);transition:background .12s,transform .12s}
+#showcase-board{width:160px;height:160px;flex:none;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:4px;padding:5px;background:rgba(0,0,0,.3);border-radius:10px}
+.sc-tile{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border-radius:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.35);transition:background .12s,transform .12s}
 .sc-tile[data-v="2"]{background:#eee4da;color:#776e65}
 .sc-tile[data-v="4"]{background:#ede0c8;color:#776e65}
 .sc-tile[data-v="8"]{background:#f2b179;color:#f9f6f2}
 .sc-tile[data-v="16"]{background:#f59563;color:#f9f6f2}
 .sc-tile[data-v="32"]{background:#f67c5f;color:#f9f6f2}
 .sc-tile[data-v="64"]{background:#f65e3b;color:#f9f6f2}
-.sc-tile[data-v="128"]{background:#edcf72;color:#f9f6f2;font-size:10px}
-.sc-tile[data-v="256"]{background:#edcc61;color:#f9f6f2;font-size:10px}
-.sc-tile[data-v="512"]{background:#edc850;color:#f9f6f2;font-size:10px}
-.sc-tile[data-v="1024"]{background:#edc53f;color:#f9f6f2;font-size:9px}
-.sc-tile[data-v="2048"]{background:#edc22e;color:#f9f6f2;font-size:9px}
-#showcase-side{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;font-size:11px;color:rgba(255,255,255,.7)}
-#showcase-side .sl-big{font-size:13px;font-weight:700;color:#ffd166;letter-spacing:.5px}
+.sc-tile[data-v="128"]{background:#edcf72;color:#f9f6f2;font-size:12px}
+.sc-tile[data-v="256"]{background:#edcc61;color:#f9f6f2;font-size:12px}
+.sc-tile[data-v="512"]{background:#edc850;color:#f9f6f2;font-size:12px}
+.sc-tile[data-v="1024"]{background:#edc53f;color:#f9f6f2;font-size:11px}
+.sc-tile[data-v="2048"]{background:#edc22e;color:#f9f6f2;font-size:11px}
+#showcase-side{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;font-size:12px;color:rgba(255,255,255,.7)}
+#showcase-side .sl-big{font-size:15px;font-weight:700;color:#ffd166;letter-spacing:.5px}
 #showside-score,#showside-moves{color:#fff}
-.sc-bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:auto}
+.sc-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:auto}
 .sc-bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd166,#06d6a0);transition:width .2s}
-.sc-help{font-size:10px;line-height:1.5;color:rgba(255,255,255,.45);max-width:240px}
+.sc-help{font-size:11px;line-height:1.6;color:rgba(255,255,255,.5);max-width:300px}
 
 /* ================================================================== settings grid */
 .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px;margin:12px 0}
@@ -1149,6 +1150,15 @@ function drawTrainingCurve(){
     }
   });
 }
+function enterTrainingMode(){
+  var tp=$('training-panel');if(tp)tp.hidden=false;
+  var t1=$('ai-train');if(t1)t1.hidden=false;
+  var t2=$('ai-stop-training');if(t2)t2.hidden=true;
+  aiCurve.length=0;
+  drawTrainingCurve();
+  $('training-log').textContent='▶ Click "Train" to start.\nThe board above runs in idle demo mode using the heuristic AI.\nOnce you hit Train, self-play games accumulate in the background and the neural network updates.';
+  startShowcase();
+}
 function startTraining(games,lr){
   var tp=$('training-panel');if(tp)tp.hidden=false;
   var t1=$('ai-train');if(t1)t1.hidden=true;
@@ -1162,7 +1172,6 @@ function startTraining(games,lr){
   if(!stored)$('training-log').textContent='No cached model — starting fresh self-play...\nTip: leave this panel open to accumulate games.';
   else $('training-log').textContent=`Resuming from cached model (${stored.l1W?.length||0} weights). Training ${games} more games…`;
   drawTrainingCurve();
-  startShowcase();
   buildTrainingWorker();
 }
 function stopTraining(){
@@ -1392,7 +1401,7 @@ hideOverlay();
    ==================================================================== */
 $('btn-user').onclick=()=>{SFX.button();show('auth-screen')};
 $('btn-guest').onclick=()=>{SFX.button();currentUser=null;showSettings()};
-$('btn-ai-training').onclick=()=>{SFX.button();currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);setTimeout(()=>startTraining(500,0.002),300)};
+$('btn-ai-training').onclick=()=>{SFX.button();currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();};
 $('btn-auth-back').onclick=()=>{SFX.button();show('entry-screen')};
 
 $('btn-settings-back').onclick=()=>{SFX.button();
