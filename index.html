@@ -85,6 +85,27 @@ body::before{
   .ai-entry .ai-arrow{display:none}
 }
 
+/* playtest entry on entry-screen (same style as ai-entry but teal) */
+.pt-entry{
+display:flex;align-items:center;gap:14px;width:100%;max-width:450px;
+margin:10px auto 0;padding:16px 22px;text-align:left;
+background:linear-gradient(135deg,rgba(20,184,166,.22),rgba(15,118,110,.18));
+backdrop-filter:blur(10px);color:#fff;border-radius:var(--radius);
+cursor:pointer;border:1px solid rgba(20,184,166,.3);
+transition:all .25s ease;
+}
+.pt-entry:hover{background:linear-gradient(135deg,rgba(20,184,166,.38),rgba(15,118,110,.32));transform:translateY(-3px);box-shadow:0 8px 28px rgba(20,184,166,.2)}
+.pt-entry .pt-icon{font-size:32px;flex-shrink:0}
+.pt-entry .pt-text strong{display:block;font-size:17px;font-weight:700;margin-bottom:2px}
+.pt-entry .pt-text small{font-size:12.5px;opacity:.72;line-height:1.4}
+.pt-entry .pt-arrow{margin-left:auto;font-size:22px;opacity:.6}
+@media(max-width:400px){
+.pt-entry{padding:10px 14px;font-size:14px}
+.pt-entry .pt-icon{font-size:26px}
+.pt-entry .pt-text strong{font-size:15px}
+.pt-entry .pt-arrow{display:none}
+}
+
 /* ================================================================== training panel (game screen) */
 #training-panel{
   width:100%;margin:10px auto 0;padding:12px 14px;
@@ -312,6 +333,69 @@ body::before{
       </span>
       <span class="ai-arrow">→</span>
     </button>
+    <button class="pt-entry" id="btn-playtest">
+      <span class="pt-icon">🏆</span>
+      <span class="pt-text">
+        <strong>AI 实战记录</strong>
+        <small>批量自动对弈 · 胜率统计 · 版本对比</small>
+      </span>
+      <span class="pt-arrow">→</span>
+    </button>
+  </div>
+
+  <!-- ============ PLAYTEST ============ -->
+  <div class="screen" id="playtest-screen">
+    <button class="back-btn" id="btn-playtest-back">← Back</button>
+    <div class="glass" style="width:100%;max-width:640px;padding:20px 24px">
+      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">🏆 AI 实战记录</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:16px">批量自动对弈 · 胜率统计 · 版本对比</div>
+
+      <!-- Batch auto-play controls -->
+      <div style="padding:14px 16px;border:1px solid rgba(20,184,166,.25);border-radius:12px;background:rgba(20,184,166,.06);margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:14px;font-weight:600;color:#14b8a6">🎮 批量自动对弈</span>
+          <span id="playtest-version-tag" style="font-size:11px;padding:3px 8px;border-radius:8px;background:rgba(255,209,102,.15);color:#ffd166;border:1px solid rgba(255,209,102,.2)">权重: —</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:12px;color:rgba(255,255,255,.6)">局数</label>
+          <select id="playtest-batch-count" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
+            <option value="5">5 局</option>
+            <option value="10" selected>10 局</option>
+            <option value="20">20 局</option>
+            <option value="50">50 局</option>
+          </select>
+          <label style="font-size:12px;color:rgba(255,255,255,.6)">速度</label>
+          <select id="playtest-speed" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
+            <option value="0">极速 (无延迟)</option>
+            <option value="100" selected>快速 (100ms)</option>
+            <option value="300">正常 (300ms)</option>
+            <option value="600">慢速 (600ms)</option>
+          </select>
+          <button class="btn sm" id="playtest-batch-start" style="padding:8px 18px;font-size:13px;background:#14b8a6;color:#fff;border:none;border-radius:8px;cursor:pointer">▶ 开始</button>
+          <button class="btn sm" id="playtest-batch-stop" style="padding:8px 18px;font-size:13px;display:none">⏹ 停止</button>
+        </div>
+        <div id="playtest-batch-progress" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.6);display:none">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span id="playtest-batch-info">准备中...</span>
+            <span id="playtest-batch-rate"></span>
+          </div>
+          <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden">
+            <div id="playtest-batch-bar" style="height:100%;background:linear-gradient(90deg,#14b8a6,#6bcb77);width:0%;transition:width .3s"></div>
+          </div>
+        </div>
+        <div id="playtest-batch-log" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.5);max-height:100px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
+      </div>
+
+      <!-- Stats -->
+      <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+
+      <!-- Records -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;color:rgba(255,255,255,.5)">对战详情（最近 20 局）</span>
+        <button class="btn sm" id="ai-playtest-clear" style="padding:4px 10px;font-size:11px;opacity:.6">清空</button>
+      </div>
+      <div id="playtest-records" style="max-height:200px;overflow-y:auto;font-size:12px;border-radius:8px"></div>
+    </div>
   </div>
 
   <!-- ============ AUTH ============ -->
@@ -441,17 +525,6 @@ body::before{
     <p>⑥ <strong>自动部署</strong>：训练完成后，GitHub Actions 自动 commit 更新 <code>js/ai-weights.json</code>，所有用户刷新页面即可使用最新的 AI。</p>
     <p>⑦ <strong>增量训练</strong>：每次训练会加载上一版本的权重继续训练，AI 会持续变强。</p>
       </section>
-
-      <!-- AI Playtest Records -->
-      <div id="playtest-panel" style="margin-top:10px;padding:14px 16px;border:1px solid rgba(147,112,219,.22);border-radius:12px;background:rgba(0,0,0,.16)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:14px;font-weight:600;color:#ffd166;letter-spacing:.4px">🏆 AI 实战记录</span>
-          <button class="btn sm" id="ai-playtest-clear" style="padding:4px 10px;font-size:11px;opacity:.6">清空</button>
-        </div>
-        <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"></div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">对战详情（点击展开）</div>
-        <div id="playtest-records" style="max-height:180px;overflow-y:auto;font-size:12px;border-radius:8px"></div>
-      </div>
     </div>
     <div class="sides">
       <button class="btn" id="b-save">💾 Save</button>
@@ -1172,7 +1245,6 @@ function enterTrainingMode(){
   // Check if a training run is in progress by polling progress file
   checkTrainingProgress();
   $('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong>▶ Train</strong> 在云端启动训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练在 GitHub Actions 云端运行，每 20 局自动推送进度，前端自动刷新图表。</span>';
-  renderPlaytestPanel();
 }
 /* Load training history from ai-weights.json for charts & stats */
 var aiHistory=[];
@@ -1424,6 +1496,176 @@ recHtml+='<span style="color:rgba(255,255,255,.6);font-size:11px">分数 '+r.sco
 recHtml+='</div>';
 });
 recsEl.innerHTML=recHtml;
+}
+
+/* Update version tag on playtest screen */
+function updatePlaytestVersionTag(){
+var tag=$('playtest-version-tag');if(!tag)return;
+tag.textContent='权重: '+getCurrentWeightVersion();
+}
+
+/* ====================================================================
+Batch AI auto-play — runs N games headless and records results
+==================================================================== */
+let batchRunning=false;
+let batchCancelled=false;
+
+function cloneBoard(b){return b.map(r=>[...r])}
+function boardEmpty(b){return b.every(r=>r.every(v=>!v))}
+
+/* Headless game simulation (no DOM) */
+function simulateGame(){
+var simBoard=Array.from({length:4},()=>Array(4).fill(0));
+// init: one 2 + one 4
+var cells=[];
+for(var r=0;r<4;r++)for(var c=0;c<4;c++)cells.push([r,c]);
+var pick=cells.splice(Math.floor(Math.random()*cells.length),1)[0];
+simBoard[pick[0]][pick[1]]=2;
+pick=cells.splice(Math.floor(Math.random()*cells.length),1)[0];
+simBoard[pick[0]][pick[1]]=4;
+
+var simScore=0,simSteps=0,simWon=false,simOver=false;
+var maxDepth=6,timeBudget=1500;
+var directions=['up','down','left','right'];
+
+function simEmpty(b){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!b[r][c])e.push([r,c]);return e}
+function simMoveBoard(b,dir){
+var n=b.map(r=>[...r]),changed=false,gained=0;
+function slide(line){
+var t=line.filter(Boolean),r=[],g=0;
+for(var i=0;i<t.length;i++){if(t[i]===t[i+1]){var v=t[i]*2;r.push(v);g+=v;i++;}else r.push(t[i]);}
+while(r.length<4)r.push(0);return{line:r,g:g};
+}
+for(var i=0;i<4;i++){
+var ln,orig;
+if(dir==='left'){ln=n[i].slice();orig=n[i].slice();}
+else if(dir==='right'){ln=n[i].slice().reverse();orig=n[i].slice();}
+else if(dir==='up'){ln=[n[0][i],n[1][i],n[2][i],n[3][i]];orig=[n[0][i],n[1][i],n[2][i],n[3][i]];}
+else{ln=[n[0][i],n[1][i],n[2][i],n[3][i]].reverse();orig=[n[0][i],n[1][i],n[2][i],n[3][i]];}
+var res=slide(ln);
+if(dir==='right'||dir==='down')res.line=res.line.reverse();
+if(res.line.some((v,k)=>v!==orig[k]))changed=true;
+gained+=res.g;
+if(dir==='left'||dir==='right')n[i]=res.line;
+else for(var r=0;r<4;r++)n[r][i]=res.line[r];
+}
+return{board:n,changed:changed,gained:gained};
+}
+function simHasMoves(b){
+for(var r=0;r<4;r++)for(var c=0;c<4;c++){
+if(!b[r][c])return true;
+if(c<3&&b[r][c]===b[r][c+1])return true;
+if(r<3&&b[r][c]===b[r+1][c])return true;
+}
+return false;
+}
+function simMaxTile(b){var m=0;for(var r=0;r<4;r++)for(var c=0;c<4;c++)m=Math.max(m,b[r][c]);return m}
+
+// Use the same aiExpectimax + aiBestMove from the game (they operate on global `board`)
+// We need to temporarily set board to simBoard
+var savedBoard=board;
+var savedSize=SIZE;
+SIZE=4;
+board=simBoard;
+
+function simStep(){
+if(simWon||simOver||batchCancelled)return 'done';
+var dir=aiBestMove();
+if(!dir){simOver=true;return 'fail';}
+var res=simMoveBoard(simBoard,dir);
+if(!res.changed){simOver=true;return 'fail';}
+simBoard=res.board;simScore+=res.gained;simSteps++;
+if(!simWon&&simBoard.flat().includes(2048)){simWon=true;return 'win';}
+var empties=simEmpty(simBoard);
+if(!empties.length){simOver=true;return 'fail';}
+var rc=empties[Math.floor(Math.random()*empties.length)];
+simBoard[rc[0]][rc[1]]=Math.random()<0.9?2:4;
+if(!simHasMoves(simBoard)){simOver=true;return 'fail';}
+return 'continue';
+}
+var result='continue',safety=0;
+while(result==='continue'&&safety<5000){
+result=simStep();
+safety++;
+}
+board=savedBoard;SIZE=savedSize;
+var maxT=simMaxTile(simBoard);
+return{
+result:simWon?'win':'fail',
+score:simScore,
+maxTile:maxT,
+steps:simSteps,
+boardSize:4
+};
+}
+
+async function runBatchPlaytest(){
+if(batchRunning)return;
+batchRunning=true;batchCancelled=false;
+var count=parseInt($('playtest-batch-count').value);
+var speed=parseInt($('playtest-speed').value);
+var startBtn=$('playtest-batch-start');
+var stopBtn=$('playtest-batch-stop');
+var progDiv=$('playtest-batch-progress');
+var infoEl=$('playtest-batch-info');
+var rateEl=$('playtest-batch-rate');
+var barEl=$('playtest-batch-bar');
+var logEl=$('playtest-batch-log');
+
+startBtn.style.display='none';
+stopBtn.style.display='';
+progDiv.style.display='';
+logEl.innerHTML='';
+var wins=0,fails=0;
+var version=getCurrentWeightVersion();
+
+for(var i=0;i<count;i++){
+if(batchCancelled){
+logEl.innerHTML+='⚠️ 已停止\n';
+break;
+}
+infoEl.textContent='第 '+(i+1)+' / '+count+' 局...';
+barEl.style.width=((i/count)*100)+'%';
+
+// Yield to UI
+await new Promise(function(resolve){
+if(speed===0)resolve();
+else setTimeout(resolve,speed);
+});
+
+var result=simulateGame();
+var rec={
+ts:Date.now(),
+version:version,
+result:result.result,
+score:result.score,
+maxTile:result.maxTile,
+steps:result.steps,
+durationMs:0,
+boardSize:4
+};
+var records=loadPlaytests();
+records.push(rec);
+if(records.length>500)records=records.slice(-500);
+savePlaytests(records);
+
+if(result.result==='win')wins++;else fails++;
+var icon=result.result==='win'?'✅':'❌';
+var color=result.result==='win'?'#6bcb77':'#ff6b6b';
+logEl.innerHTML+='<span style="color:'+color+'">'+icon+' 第'+(i+1)+'局: '+result.result+' · 分'+result.score+' · 最大'+result.maxTile+' · '+result.steps+'步</span>\n';
+logEl.scrollTop=logEl.scrollHeight;
+
+var rate=Math.round(wins/(wins+fails)*100);
+rateEl.textContent='胜率 '+rate+'% ('+wins+'W/'+fails+'L)';
+barEl.style.width=((i+1)/count*100)+'%';
+
+renderPlaytestPanel();
+}
+
+infoEl.textContent='完成！ '+wins+'胜 '+fails+'负';
+startBtn.style.display='';
+stopBtn.style.display='none';
+batchRunning=false;
 }
 /* Update stat cards from live data */
 function updateLiveStats(d){
@@ -1827,6 +2069,8 @@ hideOverlay();
 $('btn-user').onclick=()=>{SFX.button();show('auth-screen')};
 $('btn-guest').onclick=()=>{SFX.button();currentUser=null;showSettings()};
 $('btn-ai-training').onclick=()=>{SFX.button();currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();};
+$('btn-playtest').onclick=()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updatePlaytestVersionTag();};
+$('btn-playtest-back').onclick=()=>{SFX.button();show('entry-screen')};
 $('btn-auth-back').onclick=()=>{SFX.button();show('entry-screen')};
 
 $('btn-settings-back').onclick=()=>{SFX.button();
@@ -1924,6 +2168,8 @@ savePlaytests([]);
 renderPlaytestPanel();
 }
 };
+$('playtest-batch-start').onclick=()=>{SFX.button();runBatchPlaytest()};
+$('playtest-batch-stop').onclick=()=>{SFX.button();batchCancelled=true};
 $('b-restart').onclick=()=>{SFX.button();init(boardSize)};
 $('b-save').onclick=()=>{SFX.button();doSave()};
 $('b-load').onclick=()=>{SFX.button();doLoad()};
