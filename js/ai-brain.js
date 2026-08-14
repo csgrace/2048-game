@@ -219,6 +219,7 @@
     encodeBoard: encodeBoard,
     INPUT_SIZE: INPUT_SIZE,
     CHANNELS: CHANNELS,
-    adamReset: adamReset
+    adamReset: adamReset,
+    adamStep: adamStep
   };
 })(typeof self !== 'undefined' ? self : this);

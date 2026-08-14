@@ -1,0 +1,43 @@
+name: AI Training
+
+on:
+  # 手动触发（在 GitHub 仓库 Actions 页面点 "Run workflow"）
+  workflow_dispatch:
+    inputs:
+      games:
+        description: 'Number of games to train'
+        required: false
+        default: '200'
+        type: string
+  # 定时触发：每 12 小时训练一次（UTC 0:00 和 12:00）
+  schedule:
+    - cron: '0 0,12 * * *'
+
+permissions:
+  contents: write  # 需要 push 权限来更新 ai-weights.json
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run AI training
+        run: node scripts/train-ai.js --games ${{ github.event.inputs.games || '200' }}
+
+      - name: Commit updated weights
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add js/ai-weights.json
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore(ai): update trained weights via GitHub Actions [skip ci]"
+          git push
