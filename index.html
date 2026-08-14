@@ -398,6 +398,7 @@ body::before{
     <p>③ <strong>TD(λ) 训练目标</strong>：每局结束后，用 TD(λ=0.5, γ=0.95) 计算每个局面的折扣价值目标。</p>
     <p>④ <strong>经验回放 + mini-batch</strong>：数据进入 8,000 条缓冲区，每局随机抽样 64 条做 Adam 梯度下降。</p>
     <p>⑤ <strong>渐进式 NN 融合</strong>：前 30 局纯启发式热身，之后 NN 评估权重随训练局数逐渐增加到 80%。</p>
+    <p>⑥ <strong>权重分享</strong>：训练完成后下载 <code>ai-weights.json</code>，替换仓库中的文件并 commit，所有用户都能使用训练后的 AI。</p>
       </section>
     </div>
     <div class="sides">
@@ -1039,6 +1040,7 @@ function stopAiAutoPlay(){
 /* ------------------------------------------------------------------ neural network training (off main thread via Web Worker) ---------- */
 const LS_AI_WEIGHTS='g2048_ai_weights_v1';
 const LS_AI_LOG='g2048_ai_training_log_v1';
+const WEIGHTS_URL='js/ai-weights.json';
 let aiWorker=null;
 let aiNet=null;            // value network for inference on leaf nodes
 let aiUseNN=false;         // switch to NN evaluation once enough training has happened
@@ -1046,6 +1048,28 @@ let aiTrainGames=0;        // total games trained so far
 let aiStartingWeights=null;
 let aiCurve=[];            // array of {game,loss,maxTile}
 let aiCurveCanvasCtx=null;
+function downloadWeights(weights){
+  weights.version=aiTrainGames;
+  const blob=new Blob([JSON.stringify(weights,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='ai-weights.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function showDownloadButton(weights){
+  var log=$('training-log');
+  if(!log)return;
+  log.textContent+='\n📦 训练完成！';
+  // 创建下载按钮
+  var btn=document.createElement('button');
+  btn.textContent='⬇ 下载权重文件 (ai-weights.json)';
+  btn.className='btn sm';
+  btn.style.marginTop='8px';
+  btn.style.width='100%';
+  btn.onclick=function(){downloadWeights(weights);};
+  log.parentNode.insertBefore(btn,log.nextSibling);
+}
 function initAiNet(weights){
   if(!window.AIBrain)return;
   aiNet=new window.AIBrain.ValueNet();
@@ -1126,6 +1150,8 @@ function buildTrainingWorker(){
           try{localStorage.setItem(LS_AI_WEIGHTS,JSON.stringify(d.weights))}catch(_){}
           initAiNet(d.weights);
           refreshAiEvalLeaf();
+          // 训练完成后提供下载权重按钮
+          showDownloadButton(d.weights);
         }
         updateTrainingLog({game:d.epoch,total:d.epoch,loss:d.loss});
         drawTrainingCurve();
@@ -1185,6 +1211,9 @@ function enterTrainingMode(){
   drawTrainingCurve();
   $('training-log').textContent='▶ 点击 Train 开始训练\n系统将使用 Expectimax 搜索 + 神经网络评估进行自弈';
   $('showside-bar').style.width='0';
+  // 移除旧的下载按钮
+  var oldBtn=$('training-log').parentNode.querySelector('button:not(#ai-train):not(#ai-stop-training)');
+  if(oldBtn&&oldBtn.textContent.includes('下载'))oldBtn.remove();
 }
 function startTraining(games,lr){
   var tp=$('training-panel');if(tp)tp.hidden=false;
@@ -1230,10 +1259,24 @@ function runMainThreadFallback(){
   step();
 }
 (function restoreAi(){
-  try{
-    const saved=localStorage.getItem(LS_AI_WEIGHTS);
-    if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;refreshAiEvalLeaf();}}
-  }catch(_){}
+  // 优先从仓库的 ai-weights.json 加载
+  fetch(WEIGHTS_URL+'?t='+Date.now())
+    .then(r=>r.json())
+    .then(w=>{
+      if(w&&w.l1W&&w.l1W.length>100){
+        initAiNet(w);aiTrainGames=w.version||100;refreshAiEvalLeaf();
+        console.log('AI weights loaded from repo:',w.l1W.length,'weights');
+      }else{
+        throw new Error('No valid weights in repo file');
+      }
+    })
+    .catch(()=>{
+      // Fallback 到 localStorage
+      try{
+        const saved=localStorage.getItem(LS_AI_WEIGHTS);
+        if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;refreshAiEvalLeaf();}}
+      }catch(_){}
+    });
 })();
 
 /* ====================================================================
