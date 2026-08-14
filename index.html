@@ -382,9 +382,8 @@ body::before{
       <div class="training-head">
         <span>🧠 <strong>AI Training Lab</strong></span>
         <div class="training-actions">
-          <button class="btn sm" id="ai-train">▶ Train on GitHub</button>
+          <button class="btn sm" id="ai-train">▶ Train</button>
           <button class="btn sm" id="ai-stop-training" hidden>↻ Refresh</button>
-          <button class="btn sm" id="ai-set-token" style="display:none">🔑 Token</button>
         </div>
       </div>
 
@@ -1068,27 +1067,14 @@ function stopAiAutoPlay(){
 const LS_AI_WEIGHTS='g2048_ai_weights_v1';
 const LS_AI_LOG='g2048_ai_training_log_v1';
 const WEIGHTS_URL='js/ai-weights.json';
-/* ---------- GitHub Actions AI Training ---------- */
-/* Repository info — change these to match your repo */
-const GH_OWNER='csgrace';
-const GH_REPO='2048-game';
-const GH_WORKFLOW_ID='ai-train.yml';
-/* Users can set their own token to trigger training.
-   Without a token, the UI still shows run status (read-only). */
-const GH_TOKEN_KEY='github_pat_2048';
-function getGitHubToken(){try{return localStorage.getItem(GH_TOKEN_KEY)||''}catch(e){return ''}}
-function setGitHubToken(t){try{localStorage.setItem(GH_TOKEN_KEY,t)}catch(e){}}
-function ghApi(path,opts){
-  const token=getGitHubToken();
-  const headers={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
-  if(token)headers['Authorization']='Bearer '+token;
-  return fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+path,Object.assign({},opts,{headers:Object.assign({},headers,opts?.headers||{})}));
-}
+/* ---------- Cloud AI Training via Render (SSE real-time) ---------- */
+/* Render server URL — change this after you deploy */
+const TRAIN_SERVER='https://2048-ai-trainer.onrender.com';
+let aiSSE=null;
+let aiLiveHistory=[]; // live training data from SSE
 let aiNet=null;
 let aiUseNN=false;
 let aiTrainGames=0;
-let aiPollTimer=null;
-let aiCurrentRunId=null;
 function initAiNet(weights){
   if(!window.AIBrain)return;
   aiNet=new window.AIBrain.ValueNet();
@@ -1137,21 +1123,15 @@ function enterTrainingMode(){
   var t1=$('ai-train');if(t1)t1.hidden=false;
   var t2=$('ai-stop-training');if(t2)t2.hidden=false;
   t2.textContent='↻ Refresh';
-  // Show/hide token button
-  var tb=$('ai-set-token');if(tb)tb.style.display='inline-block';
+  var tb=$('ai-set-token');if(tb)tb.style.display='none';
   // Load existing weights history for visualization
   loadTrainingStatsFromWeights();
   drawTrainingCurve();
   drawMaxTileChart();
-  // Check if token is set
-  if(!getGitHubToken()){
-    $('training-log').innerHTML='⚠ 尚未设置 GitHub Token，无法触发训练。<br><br>请先设置一个有 repo 和 workflow 权限的 Personal Access Token：<br><button class="btn sm" id="gh-set-token" style="margin-top:8px">🔑 设置 Token</button>';
-    var btn=$('gh-set-token');if(btn)btn.onclick=function(){promptForToken()};
-  }else{
-    $('training-log').textContent='✅ Token 已设置。点击 "Train on GitHub" 开始后台训练。\n训练在 GitHub 云端服务器上运行，完成后自动更新权重。';
-  }
-  // Show recent runs
-  fetchWorkflowRuns();
+  // Check server status & connect SSE
+  checkServerStatus();
+  connectSSE();
+  $('training-log').innerHTML='☁️ 云端训练就绪。点击 <strong>▶ Train</strong> 开始训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练在 Render 云端运行，前端实时显示进度。</span>';
 }
 /* Load training history from ai-weights.json for charts & stats */
 var aiHistory=[];
@@ -1241,114 +1221,109 @@ function drawMaxTileChart(){
     ctx.fillRect(x,y,barW,h);
   });
 }
-function promptForToken(){
-  var existing=getGitHubToken();
-  var input=prompt('请输入 GitHub Personal Access Token (需要 repo 和 workflow 权限):\n\n获取方式: GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens\n权限: Contents (Read and write), Actions (Read and write)\n\n当前Token: '+(existing?existing.substring(0,8)+'...':'无'),'');
-  if(input!==null){
-    setGitHubToken(input.trim());
-    enterTrainingMode(); // refresh
+/* Check if Render server is up */
+async function checkServerStatus(){
+  var jobsEl=$('training-jobs');if(!jobsEl)return;
+  try{
+    var resp=await fetch(TRAIN_SERVER+'/status');
+    var data=await resp.json();
+    if(data.active){
+      $('ai-train').disabled=true;
+      $('ai-train').textContent='⏳ Training...';
+      aiLiveHistory=data.progress||[];
+      if(aiLiveHistory.length){
+        aiHistory=aiLiveHistory;
+        drawTrainingCurve();drawMaxTileChart();updateLiveStats();
+      }
+    }
+    jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:'+(data.active?'rgba(255,209,102,.08)':'rgba(107,203,119,.06)')+';border:1px solid '+(data.active?'rgba(255,209,102,.2)':'rgba(107,203,119,.15)')+'"><span style="font-size:13px;font-weight:600;color:'+(data.active?'#ffd166':'#6bcb77')+'">'+(data.active?'⏳ '+data.status:'✅ 服务器空闲')+'</span>'+(data.active?'<span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.currentGame+'/'+data.games+'</span>':'')+'</div>';
+  }catch(e){
+    jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.15)"><span style="font-size:13px;color:#ff6b6b">⚠ 云端服务未响应</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">请稍后重试</span></div>';
   }
+}
+/* Connect SSE for real-time updates */
+function connectSSE(){
+  if(aiSSE){aiSSE.close();aiSSE=null}
+  try{
+    aiSSE=new EventSource(TRAIN_SERVER+'/stream');
+    aiSSE.addEventListener('status',function(e){
+      var d=JSON.parse(e.data);
+      if(d.active){
+        $('ai-train').disabled=true;
+        $('ai-train').textContent='⏳ Training...';
+      }else if(d.status==='done'||d.status==='idle'){
+        $('ai-train').disabled=false;
+        $('ai-train').textContent='▶ Train';
+      }
+    });
+    aiSSE.addEventListener('start',function(e){
+      var d=JSON.parse(e.data);
+      aiLiveHistory=[];aiHistory=aiLiveHistory;
+      $('training-log').innerHTML='🚀 <strong>训练已开始！</strong> '+d.games+' 局，从 v'+d.version+' 继续。<br><span style="font-size:11px;color:#ffd166">实时数据接收中...</span>';
+      drawTrainingCurve();drawMaxTileChart();
+    });
+    aiSSE.addEventListener('progress',function(e){
+      var d=JSON.parse(e.data);
+      aiLiveHistory.push(d);aiHistory=aiLiveHistory;
+      updateLiveStats(d);
+      drawTrainingCurve();drawMaxTileChart();
+      var pct=Math.round(d.game/d.total*100);
+      $('training-log').innerHTML='⏳ <strong>训练中 '+pct+'%</strong> — Game '+d.game+'/'+d.total+'<br><span style="font-size:11px;color:rgba(255,255,255,.5)">loss: '+d.loss.toFixed(6)+' · maxTile: '+d.maxTile+' · bestMax: '+d.bestMax+' · avgScore: '+d.avgScore+'</span>';
+    });
+    aiSSE.addEventListener('nn_enabled',function(e){
+      var d=JSON.parse(e.data);
+      $('training-log').innerHTML+='<br><span style="font-size:11px;color:#6bcb77">⚡ NN leaf evaluation activated at game '+d.game+'</span>';
+    });
+    aiSSE.addEventListener('complete',function(e){
+      var d=JSON.parse(e.data);
+      $('ai-train').disabled=false;
+      $('ai-train').textContent='▶ Train';
+      if(d.committed){
+        $('training-log').innerHTML='✅ <strong>训练完成！</strong><br>版本 v'+d.weights.version+' · 最高方块 '+d.weights.bestMaxTile+' · 平均分 '+d.weights.avgScore+' · 耗时 '+d.weights.trainTime+'<br><span style="font-size:11px;color:#6bcb77">'+d.commitMessage+'</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">正在重新加载权重...</span>';
+        setTimeout(reloadWeightsFromRepo,2000);
+      }else{
+        $('training-log').innerHTML='✅ <strong>训练完成！</strong> 但未能自动提交到仓库。<br><span style="font-size:11px;color:#ffaaaa">'+d.commitMessage+'</span>';
+      }
+    });
+    aiSSE.addEventListener('error',function(){/* auto-reconnect */});
+  }catch(e){
+    $('training-log').innerHTML='⚠ 无法连接到云端训练服务: '+e.message;
+  }
+}
+/* Update stat cards from live data */
+function updateLiveStats(d){
+  if(!aiLiveHistory.length)return;
+  var last=d||aiLiveHistory[aiLiveHistory.length-1];
+  setStat('ts-version','v'+last.version);
+  setStat('ts-games',last.game+'/'+last.total);
+  setStat('ts-best',last.bestMax);
+  setStat('ts-avg',last.avgScore);
+  setStat('ts-loss',last.loss.toFixed(6));
 }
 async function startTraining(){
   var log=$('training-log');
-  var token=getGitHubToken();
-  if(!token){
-    promptForToken();
-    return;
-  }
   $('ai-train').disabled=true;
-  log.textContent='⏳ 正在触发 GitHub Actions workflow...';
+  log.innerHTML='⏳ 正在启动云端训练...';
   try{
-    var resp=await ghApi('/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches',{
+    var resp=await fetch(TRAIN_SERVER+'/start',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ref:'main',inputs:{games:'100'}})
+      body:JSON.stringify({games:100})
     });
-    if(resp.status===204){
-      log.textContent='✅ 训练已触发！等待 workflow 开始运行...\n';
-      // Poll for the new run
-      setTimeout(fetchWorkflowRuns,3000);
-      setTimeout(fetchWorkflowRuns,8000);
-    }else{
-      var err=await resp.json().catch(function(){return{}});
-      log.textContent='❌ 触发失败 (HTTP '+resp.status+'): '+(err.message||resp.statusText)+'\n\n请检查 Token 权限是否包含 repo 和 workflow。';
-      $('ai-train').disabled=false;
-    }
-  }catch(e){
-    log.textContent='❌ 网络错误: '+e.message+'\n\n可能是 CORS 限制，请尝试在 GitHub 网站上手动触发。';
-    $('ai-train').disabled=false;
-  }
-}
-async function fetchWorkflowRuns(){
-  var log=$('training-log');
-  var jobsEl=$('training-jobs');
-  if(!jobsEl)return;
-  try{
-    var resp=await ghApi('/actions/workflows/'+GH_WORKFLOW_ID+'/runs?per_page=5');
-    if(!resp.ok){
-      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4)">无法获取训练记录 (HTTP '+resp.status+')。</p>';
-      if(resp.status===401)jobsEl.innerHTML+='<p style="font-size:11px;color:#ffaaaa">Token 无效或已过期，请点击 🔑 Token 重新设置。</p>';
-      return;
-    }
-    var data=await resp.json();
-    if(!data.workflow_runs||!data.workflow_runs.length){
-      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4)">暂无训练记录。</p>';
-      return;
-    }
-    var html='';
-    for(var i=0;i<data.workflow_runs.length;i++){
-      var run=data.workflow_runs[i];
-      var isRunning=run.status!=='completed';
-      var isOk=!isRunning&&run.conclusion==='success';
-      var statusIcon=isOk?'✅':(!isRunning?'🔄':'❌');
-      var time=new Date(run.created_at).toLocaleString('zh-CN');
-      var commitMsg=run.head_commit?run.head_commit.message.split('\n')[0]:'';
-      var color=isOk?'#6bcb77':(isRunning?'#ffd166':'#ff6b6b');
-      var bg=isOk?'rgba(107,203,119,.08)':(isRunning?'rgba(255,209,102,.08)':'rgba(255,107,107,.06)');
-      var bd=isOk?'rgba(107,203,119,.2)':(isRunning?'rgba(255,209,102,.2)':'rgba(255,107,107,.15)');
-      html+='<div style="padding:8px 10px;margin-bottom:6px;border-radius:8px;background:'+bg+';border:1px solid '+bd+'">';
-      html+='<div style="display:flex;align-items:center;gap:8px;font-size:13px">';
-      html+='<span style="font-size:15px">'+statusIcon+'</span>';
-      html+='<span style="color:'+color+';font-weight:600">'+escapeHtml(run.conclusion||run.status)+'</span>';
-      html+='<span style="color:rgba(255,255,255,.4);font-size:11px;margin-left:auto">'+time+'</span>';
-      html+='</div>';
-      html+='<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(commitMsg)+'</div>';
-      if(isRunning){
-        // Progress bar animation
-        html+='<div style="margin-top:5px;height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden">';
-        html+='<div style="height:100%;width:40%;border-radius:2px;background:linear-gradient(90deg,#ffd166,#ff9f43);animation:pulse-bar 1.5s ease-in-out infinite"></div>';
-        html+='</div>';
-        html+='<div style="font-size:10px;color:#ffd166;margin-top:3px">⏳ '+escapeHtml(run.status)+'...</div>';
-      }
-      html+='</div>';
-    }
-    jobsEl.innerHTML=html;
-    // Check if there's a running workflow
-    var running=data.workflow_runs.find(function(r){return r.status!=='completed'});
-    if(running){
-      aiCurrentRunId=running.id;
+    if(resp.ok){
+      var data=await resp.json();
+      log.innerHTML='🚀 <strong>训练已触发！</strong> '+data.games+' 局自对弈。<br><span style="font-size:11px;color:#ffd166">等待实时数据...</span>';
+    }else if(resp.status===409){
+      log.innerHTML='⚠ 已有训练正在进行中，请等待完成。';
       $('ai-train').disabled=true;
       $('ai-train').textContent='⏳ Training...';
-      log.innerHTML='🔄 <strong>训练进行中</strong><br>'+escapeHtml(running.head_commit?running.head_commit.message.split('\n')[0]:'')+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">开始: '+new Date(running.created_at).toLocaleString('zh-CN')+'</span>';
-      // Auto-poll every 10 seconds
-      if(!aiPollTimer){
-        aiPollTimer=setInterval(fetchWorkflowRuns,10000);
-      }
     }else{
-      aiCurrentRunId=null;
-      if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null}
+      log.innerHTML='❌ 启动失败 (HTTP '+resp.status+')';
       $('ai-train').disabled=false;
-      $('ai-train').textContent='▶ Train on GitHub';
-      // Check if the latest run just completed
-      var latest=data.workflow_runs[0];
-      if(latest&&latest.status==='completed'&&latest.conclusion==='success'){
-        log.innerHTML='✅ <strong>训练完成！</strong> 正在重新加载 AI 权重...<br><span style="font-size:11px;color:rgba(255,255,255,.4)">'+escapeHtml(latest.head_commit?latest.head_commit.message.split('\n')[0]:'')+'</span>';
-        // Reload weights
-        reloadWeightsFromRepo();
-      }
     }
   }catch(e){
-    jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.4)">获取训练记录失败: '+escapeHtml(e.message)+'</p>';
+    log.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请检查云端服务是否在线。</span>';
+    $('ai-train').disabled=false;
   }
 }
 function escapeHtml(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''
@@ -1373,9 +1348,9 @@ async function reloadWeightsFromRepo(){
   }
 }
 function stopTraining(){
-  if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null}
+  if(aiSSE){aiSSE.close();aiSSE=null}
   $('ai-train').disabled=false;
-  $('ai-train').textContent='▶ Train on GitHub';
+  $('ai-train').textContent='▶ Train';
   $('game-screen').classList.remove('ai-training-mode');
   $('training-panel').hidden=true;
   init(boardSize);
@@ -1627,8 +1602,8 @@ stopTimer();
 $('lb-modal').classList.remove('show');
 $('tools-modal').classList.remove('show');
 stopAiAutoPlay();
-if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null}
-cancelToolSelection();
+  if(aiSSE){aiSSE.close();aiSSE=null}
+  cancelToolSelection();
 hideOverlay();
   $('game-screen').classList.remove('ai-training-mode');
   currentUser=null;
@@ -1709,9 +1684,8 @@ $('b-left').onclick=()=>{SFX.button();move('left')};
 $('b-right').onclick=()=>{SFX.button();move('right')};
 $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
-$('ai-train').onclick=()=>{SFX.button();startTraining()};
-$('ai-stop-training').onclick=()=>{SFX.button();fetchWorkflowRuns()};
-$('ai-set-token').onclick=()=>{SFX.button();promptForToken()};
+  $('ai-train').onclick=()=>{SFX.button();startTraining()};
+  $('ai-stop-training').onclick=()=>{SFX.button();checkServerStatus()};
 $('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
 $('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
 $('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};

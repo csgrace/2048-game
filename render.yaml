@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: 2048-ai-trainer
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: GH_OWNER
+        value: csgrace
+      - key: GH_REPO
+        value: 2048-game
+      - key: GH_TOKEN
+        sync: false

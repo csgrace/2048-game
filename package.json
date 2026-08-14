@@ -1,0 +1,16 @@
+{
+  "name": "2048-ai-trainer",
+  "version": "1.0.0",
+  "description": "2048 AI training server with real-time SSE streaming",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "train": "node scripts/train-ai.js --games 100"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -3,10 +3,14 @@
    Runs the same self-play + TD(λ) training as the browser Web Worker,
    then writes updated weights to js/ai-weights.json.
 
-   Usage:
-     node scripts/train-ai.js [--games 200] [--lr 0.002] [--warmup 30]
+   Usage (CLI):
+     node scripts/train-ai.js [--games 100] [--lr 0.002] [--warmup 30]
 
-   This script is designed to run in GitHub Actions CI.
+   Usage (Module — used by server.js for Render cloud training):
+     var train = require('./scripts/train-ai.js');
+     train.run({ games: 100, onProgress: function(data) {...}, onComplete: function(weights) {...} });
+
+   This script is designed to run in GitHub Actions CI and Render cloud.
    The core logic is extracted verbatim from ai-trainer-worker.js —
    only the Web Worker communication layer (postMessage / self.onmessage)
    has been replaced with direct function calls and fs.writeFileSync.
@@ -18,9 +22,6 @@ var fs = require('fs');
 var path = require('path');
 
 /* ---------- load ai-brain.js (same file the browser uses) ---------- */
-// ai-brain.js is an IIFE that does: (function(root){ ... root.AIBrain = {...}; })(typeof self !== 'undefined' ? self : this)
-// In Node.js there is no `self`, so it falls back to `this`.
-// We use Node's vm module to run it in a context where `this` is our sandbox.
 var vm = require('vm');
 var brainSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'ai-brain.js'), 'utf8');
 var sandbox = {};
@@ -33,53 +34,7 @@ if (!AIBrain) {
   process.exit(1);
 }
 
-/* ---------- parse CLI args ---------- */
-var argv = process.argv.slice(2);
-var GAMES = 200;
-var LR = 0.002;
-var WARMUP = 30;
-for (var i = 0; i < argv.length; i++) {
-  if (argv[i] === '--games' && argv[i + 1]) { GAMES = parseInt(argv[++i], 10); }
-  if (argv[i] === '--lr' && argv[i + 1]) { LR = parseFloat(argv[++i]); }
-  if (argv[i] === '--warmup' && argv[i + 1]) { WARMUP = parseInt(argv[++i], 10); }
-}
-
-/* ---------- training state (same as worker) ---------- */
-var net = new AIBrain.ValueNet();
-var buffer = [];
-var bufferMax = 8000;
-var netOut = function (input) { return net.forward(input); };
-var totalGamesTrained = 0;
-var useNNLeaf = false;
-
-/* ---------- load existing weights for incremental training ---------- */
-var weightsPath = path.join(__dirname, '..', 'js', 'ai-weights.json');
-try {
-  var existing = JSON.parse(fs.readFileSync(weightsPath, 'utf8'));
-  if (existing && existing.l1W && existing.l1W.length > 100) {
-    net.importWeights(existing);
-    totalGamesTrained = existing.version || 0;
-    useNNLeaf = totalGamesTrained >= WARMUP;
-    console.log('Loaded existing weights (v' + totalGamesTrained + '), NN leaf: ' + useNNLeaf);
-  } else {
-    console.log('No existing weights found, starting fresh training.');
-  }
-} catch (e) {
-  console.log('No existing weights file, starting fresh training.');
-}
-
-/* ---------- fix Adam optimiser initial state ----------
-   In ai-brain.js, ADAM_B1_T starts at 1, making the bias correction
-   denominator (1 - ADAM_B1_T) = 0 on the first applyGradients call,
-   which produces NaN. We call adamReset() then adamStep() to advance
-   ADAM_B1_T to 0.9 before any training happens.
-*/
-AIBrain.adamReset();
-AIBrain.adamStep();
-
-/* ========================================================================
-   Game-logic replicas — copied verbatim from ai-trainer-worker.js
-   ======================================================================== */
+/* ---------- Game-logic replicas — copied verbatim from ai-trainer-worker.js ---------- */
 
 function slide(values) {
   var tiles = values.filter(Boolean); var res = []; var gained = 0;
@@ -156,213 +111,279 @@ function heuristicValue(grid) {
   return emptyBonus + structure * 5 + Math.log2(max || 1) * 22 + corner * 200 + smooth * 10 + merges * 150 - frag;
 }
 
-/* ---------- Neural network leaf evaluation ---------- */
-function nnEvaluate(grid) {
-  if (!useNNLeaf || !net) return heuristicValue(grid);
-  var input = AIBrain.encodeBoard(grid);
-  var raw = net.forward(input);
-  return heuristicValue(grid) * 0.3 + raw * 5000;
-}
+/* ========================================================================
+   Core training function — shared by CLI and module modes.
+   opts: { games, lr, warmup, onProgress, onComplete, onError, existingWeights }
+   ======================================================================== */
+function runTraining(opts) {
+  var GAMES = opts.games || 100;
+  var LR = opts.lr || 0.002;
+  var WARMUP = opts.warmup || 30;
+  var onProgress = opts.onProgress || function () {};
+  var onComplete = opts.onComplete || function () {};
+  var onError = opts.onError || function () {};
 
-/* ---------- Expectimax Search ---------- */
-function expectimax(grid, depth, isChance, table) {
-  if (depth <= 0) return nnEvaluate(grid);
-  var key = gridHash(grid) + '_' + depth + '_' + (isChance ? 1 : 0);
-  var cached = table.get(key);
-  if (cached !== undefined) return cached;
+  /* ---------- training state ---------- */
+  var net = new AIBrain.ValueNet();
+  var buffer = [];
+  var bufferMax = 8000;
+  var netOut = function (input) { return net.forward(input); };
+  var totalGamesTrained = 0;
+  var useNNLeaf = false;
 
-  var value;
-  if (!isChance) {
-    value = -Infinity;
+  /* ---------- load existing weights ---------- */
+  if (opts.existingWeights && opts.existingWeights.l1W && opts.existingWeights.l1W.length > 100) {
+    net.importWeights(opts.existingWeights);
+    totalGamesTrained = opts.existingWeights.version || 0;
+    useNNLeaf = totalGamesTrained >= WARMUP;
+    console.log('Loaded existing weights (v' + totalGamesTrained + '), NN leaf: ' + useNNLeaf);
+  }
+
+  /* ---------- fix Adam optimiser ---------- */
+  AIBrain.adamReset();
+  AIBrain.adamStep();
+
+  /* ---------- Neural network leaf evaluation ---------- */
+  function nnEvaluate(grid) {
+    if (!useNNLeaf || !net) return heuristicValue(grid);
+    var input = AIBrain.encodeBoard(grid);
+    var raw = net.forward(input);
+    return heuristicValue(grid) * 0.3 + raw * 5000;
+  }
+
+  /* ---------- Expectimax Search ---------- */
+  function expectimax(grid, depth, isChance, table) {
+    if (depth <= 0) return nnEvaluate(grid);
+    var key = gridHash(grid) + '_' + depth + '_' + (isChance ? 1 : 0);
+    var cached = table.get(key);
+    if (cached !== undefined) return cached;
+    var value;
+    if (!isChance) {
+      value = -Infinity;
+      for (var d = 0; d < 4; d++) {
+        var res = move(grid, d);
+        if (res.changed) {
+          var v = res.gained + expectimax(res.next, depth - 1, true, table);
+          if (v > value) value = v;
+        }
+      }
+      if (value === -Infinity) value = -100000;
+    } else {
+      var empties = empty(grid);
+      if (!empties.length) {
+        value = expectimax(grid, depth - 1, false, table);
+      } else {
+        var sample = empties.length > 4 ? empties.filter(function (_, i) { return i % Math.ceil(empties.length / 4) === 0; }) : empties;
+        var total = 0;
+        for (var i = 0; i < sample.length; i++) {
+          var p = sample[i];
+          var g2 = grid.map(function (r) { return r.slice(); });
+          g2[p[0]][p[1]] = 2;
+          var g4 = grid.map(function (r) { return r.slice(); });
+          g4[p[0]][p[1]] = 4;
+          total += 0.9 * expectimax(g2, depth - 1, false, table) + 0.1 * expectimax(g4, depth - 1, false, table);
+        }
+        value = total / sample.length;
+      }
+    }
+    table.set(key, value);
+    return value;
+  }
+
+  function pickMoveExpectimax(grid, maxDepth) {
+    var table = new Map();
+    var best = -1, bestScore = -Infinity;
     for (var d = 0; d < 4; d++) {
       var res = move(grid, d);
-      if (res.changed) {
-        var v = res.gained + expectimax(res.next, depth - 1, true, table);
-        if (v > value) value = v;
+      if (!res.changed) continue;
+      var score = res.gained + expectimax(res.next, maxDepth, true, table);
+      if (score > bestScore) { bestScore = score; best = d; }
+    }
+    return best;
+  }
+
+  function getSearchDepth(grid) {
+    var e = empty(grid).length;
+    if (e >= 8) return 2;
+    if (e >= 4) return 3;
+    return 3;
+  }
+
+  /* ---------- Self-play one game ---------- */
+  function playOneGame() {
+    var g = initRandom();
+    var traj = new AIBrain.Trajectory();
+    var score = 0;
+    var maxTile = 0;
+    while (true) {
+      var h = heuristicValue(g);
+      traj.add(g, 0);
+      var depth = getSearchDepth(g);
+      var dir = pickMoveExpectimax(g, depth);
+      if (dir < 0) break;
+      var res = move(g, dir);
+      g = res.next;
+      score += res.gained;
+      for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
+        if (g[r][c] > maxTile) maxTile = g[r][c];
       }
+      var e = empty(g); if (!e.length) break;
+      var p = e[Math.random() * e.length | 0];
+      g[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
+      traj.rewards[traj.rewards.length - 1] = res.gained / 200 + (heuristicValue(g) - h) / 5000;
+      if (!hasMoves(g)) break;
     }
-    if (value === -Infinity) value = -100000;
-  } else {
-    var empties = empty(grid);
-    if (!empties.length) {
-      value = expectimax(grid, depth - 1, false, table);
-    } else {
-      // Sample at most 2 empty cells to limit branching
-      var sample = empties.length > 2 ? [empties[0], empties[empties.length - 1]] : empties;
-      var total = 0;
-      for (var i = 0; i < sample.length; i++) {
-        var p = sample[i];
-        var g2 = grid.map(function(r) { return r.slice(); });
-        g2[p[0]][p[1]] = 2;
-        var g4 = grid.map(function(r) { return r.slice(); });
-        g4[p[0]][p[1]] = 4;
-        total += 0.9 * expectimax(g2, depth - 1, false, table) + 0.1 * expectimax(g4, depth - 1, false, table);
-      }
-      value = total / sample.length;
+    return { traj: traj, score: score, maxTile: maxTile };
+  }
+
+  /* ---------- Train one mini-batch step ---------- */
+  function trainStep(lr, batchSize) {
+    if (buffer.length < batchSize) return 0;
+    var totalLoss = 0;
+    for (var i = 0; i < batchSize; i++) {
+      var idx = Math.random() * buffer.length | 0;
+      var sample = buffer[idx];
+      totalLoss += net.trainStep([{ input: sample.input, target: sample.target, weight: 1 }], lr);
     }
+    return totalLoss / batchSize;
   }
-  table.set(key, value);
-  return value;
-}
 
-/* ---------- Pick best move using Expectimax ---------- */
-function pickMoveExpectimax(grid, maxDepth) {
-  var table = new Map();
-  var best = -1, bestScore = -Infinity;
-
-  for (var d = 0; d < 4; d++) {
-    var res = move(grid, d);
-    if (!res.changed) continue;
-    var score = res.gained + expectimax(res.next, maxDepth, true, table);
-    if (score > bestScore) { bestScore = score; best = d; }
+  /* ---------- Add trajectory to buffer with TD(λ) targets ---------- */
+  function learnFromGame() {
+    var result = playOneGame();
+    var targets = result.traj.computeTargets(0.95, 0.5, netOut);
+    for (var i = 0; i < result.traj.positions.length; i++) {
+      buffer.push({ input: result.traj.positions[i], target: targets[i] });
+      if (buffer.length > bufferMax) buffer.shift();
+    }
+    return { score: result.score, maxTile: result.maxTile };
   }
-  return best;
-}
 
-/* ---------- Adaptive depth based on board state ---------- */
-function getSearchDepth(grid) {
-  var e = empty(grid).length;
-  if (e >= 8) return 2;
-  if (e >= 4) return 3;
-  return 3;  // cap at 3 to avoid exponential blowup
-}
+  /* ========================================================================
+     Main training loop
+     ======================================================================== */
+  var startTime = Date.now();
+  var totalScore = 0;
+  var bestMaxTile = 0;
+  var trainingHistory = [];
 
-/* ---------- Self-play one game with Expectimax ---------- */
-function playOneGame() {
-  var g = initRandom();
-  var traj = new AIBrain.Trajectory();
-  var score = 0;
-  var maxTile = 0;
+  console.log('');
+  console.log('========================================================');
+  console.log('  2048 AI Training');
+  console.log('  Games: ' + GAMES + ' | LR: ' + LR + ' | Warmup: ' + WARMUP);
+  console.log('  Existing version: v' + totalGamesTrained);
+  console.log('========================================================');
+  console.log('');
 
-  while (true) {
-    var h = heuristicValue(g);
-    traj.add(g, 0);
+  onProgress({ type: 'start', games: GAMES, version: totalGamesTrained });
 
-    var depth = getSearchDepth(g);
-    var dir = pickMoveExpectimax(g, depth);
+  for (var g = 0; g < GAMES; g++) {
+    var result = learnFromGame();
+    totalGamesTrained++;
 
-    if (dir < 0) break;
-    var res = move(g, dir);
-    g = res.next;
-    score += res.gained;
-
-    for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
-      if (g[r][c] > maxTile) maxTile = g[r][c];
+    if (!useNNLeaf && totalGamesTrained >= WARMUP) {
+      useNNLeaf = true;
+      console.log('[NN enabled at game ' + totalGamesTrained + ']');
+      onProgress({ type: 'nn_enabled', game: totalGamesTrained });
     }
 
-    var e = empty(g); if (!e.length) break;
-    var p = e[Math.random() * e.length | 0];
-    g[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
+    var ls = 0;
+    for (var s = 0; s < 3; s++) ls += trainStep(LR, 64);
+    ls /= 3;
 
-    traj.rewards[traj.rewards.length - 1] = res.gained / 200 + (heuristicValue(g) - h) / 5000;
-    if (!hasMoves(g)) break;
-  }
-  return { traj: traj, score: score, maxTile: maxTile };
-}
+    totalScore += result.score;
+    if (result.maxTile > bestMaxTile) bestMaxTile = result.maxTile;
 
-/* ---------- Train one mini-batch step ---------- */
-function trainStep(lr, batchSize) {
-  if (buffer.length < batchSize) return 0;
-  var totalLoss = 0;
-  for (var i = 0; i < batchSize; i++) {
-    var idx = Math.random() * buffer.length | 0;
-    var sample = buffer[idx];
-    totalLoss += net.trainStep([{ input: sample.input, target: sample.target, weight: 1 }], lr);
-  }
-  return totalLoss / batchSize;
-}
+    if (g % 5 === 0 || g === GAMES - 1) {
+      var dataPoint = {
+        game: g + 1,
+        total: GAMES,
+        loss: parseFloat(ls.toFixed(6)),
+        maxTile: result.maxTile,
+        score: result.score,
+        avgScore: Math.round(totalScore / (g + 1)),
+        bestMax: bestMaxTile,
+        version: totalGamesTrained
+      };
+      trainingHistory.push(dataPoint);
+      onProgress(Object.assign({ type: 'progress' }, dataPoint));
+    }
 
-/* ---------- Add trajectory to buffer with TD(λ) targets ---------- */
-function learnFromGame() {
-  var result = playOneGame();
-  var targets = result.traj.computeTargets(0.95, 0.5, netOut);
-  for (var i = 0; i < result.traj.positions.length; i++) {
-    buffer.push({ input: result.traj.positions[i], target: targets[i] });
-    if (buffer.length > bufferMax) buffer.shift();
+    if (g % 20 === 0 || g === GAMES - 1) {
+      var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      var avgScore = (totalScore / (g + 1)).toFixed(0);
+      console.log(
+        'Game ' + (g + 1) + '/' + GAMES +
+        ' | maxTile=' + result.maxTile +
+        ' | bestMax=' + bestMaxTile +
+        ' | avgScore=' + avgScore +
+        ' | loss=' + ls.toFixed(6) +
+        ' | ' + elapsed + 's'
+      );
+    }
   }
-  return { score: result.score, maxTile: result.maxTile };
+
+  /* ---------- save weights ---------- */
+  var weights = net.exportWeights();
+  weights.version = totalGamesTrained;
+  weights.description = '2048 AI trained weights - trained ' + totalGamesTrained + ' games';
+  weights.history = trainingHistory;
+  weights.bestMaxTile = bestMaxTile;
+  weights.avgScore = Math.round(totalScore / GAMES);
+  weights.trainTime = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+
+  var totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log('');
+  console.log('========================================================');
+  console.log('  Training complete!');
+  console.log('  Total games trained: ' + totalGamesTrained);
+  console.log('  Best max tile: ' + bestMaxTile);
+  console.log('  Average score: ' + (totalScore / GAMES).toFixed(0));
+  console.log('  Time: ' + totalTime + 's');
+  console.log('========================================================');
+
+  onComplete(weights);
+  return weights;
 }
 
 /* ========================================================================
-   Main training loop — same logic as the worker's train command,
-   but synchronous and writes results to file instead of postMessage.
+   Module exports — server.js uses run() with callbacks for SSE streaming.
    ======================================================================== */
+module.exports = {
+  run: runTraining,
+  AIBrain: AIBrain
+};
 
-console.log('');
-console.log('========================================================');
-console.log('  2048 AI Training');
-console.log('  Games: ' + GAMES + ' | LR: ' + LR + ' | Warmup: ' + WARMUP);
-console.log('  Existing version: v' + totalGamesTrained);
-console.log('========================================================');
-console.log('');
-
-var startTime = Date.now();
-var totalScore = 0;
-var bestMaxTile = 0;
-var trainingHistory = [];  // array of {game, loss, maxTile, score, avgScore}
-
-for (var g = 0; g < GAMES; g++) {
-  var result = learnFromGame();
-  totalGamesTrained++;
-
-  // Enable NN leaf evaluation after warmup
-  if (!useNNLeaf && totalGamesTrained >= WARMUP) {
-    useNNLeaf = true;
-    console.log('[NN enabled at game ' + totalGamesTrained + ']');
+/* ========================================================================
+   CLI mode — when run directly: `node scripts/train-ai.js --games 100`
+   ======================================================================== */
+if (require.main === module) {
+  var argv = process.argv.slice(2);
+  var GAMES = 100;
+  var LR = 0.002;
+  var WARMUP = 30;
+  for (var i = 0; i < argv.length; i++) {
+    if (argv[i] === '--games' && argv[i + 1]) { GAMES = parseInt(argv[++i], 10); }
+    if (argv[i] === '--lr' && argv[i + 1]) { LR = parseFloat(argv[i + 1]); }
+    if (argv[i] === '--warmup' && argv[i + 1]) { WARMUP = parseInt(argv[i + 1], 10); }
   }
 
-  // Train 3 mini-batches per game (reduced from 8 for speed)
-  var ls = 0;
-  for (var s = 0; s < 3; s++) ls += trainStep(LR, 64);
-  ls /= 3;
+  /* Load existing weights from file */
+  var weightsPath = path.join(__dirname, '..', 'js', 'ai-weights.json');
+  var existingWeights = null;
+  try {
+    existingWeights = JSON.parse(fs.readFileSync(weightsPath, 'utf8'));
+    if (!existingWeights || !existingWeights.l1W || existingWeights.l1W.length < 100) existingWeights = null;
+  } catch (e) { /* no file */ }
 
-  totalScore += result.score;
-  if (result.maxTile > bestMaxTile) bestMaxTile = result.maxTile;
-
-  // Record training data point every 5 games (for visualization)
-  if (g % 5 === 0 || g === GAMES - 1) {
-    trainingHistory.push({
-      game: g + 1,
-      loss: parseFloat(ls.toFixed(6)),
-      maxTile: result.maxTile,
-      score: result.score,
-      avgScore: Math.round(totalScore / (g + 1))
-    });
-  }
-
-  // Log progress every 20 games
-  if (g % 20 === 0 || g === GAMES - 1) {
-    var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    var avgScore = (totalScore / (g + 1)).toFixed(0);
-    console.log(
-      'Game ' + (g + 1) + '/' + GAMES +
-      ' | maxTile=' + result.maxTile +
-      ' | bestMax=' + bestMaxTile +
-      ' | avgScore=' + avgScore +
-      ' | loss=' + ls.toFixed(6) +
-      ' | ' + elapsed + 's'
-    );
-  }
+  runTraining({
+    games: GAMES,
+    lr: LR,
+    warmup: WARMUP,
+    existingWeights: existingWeights,
+    onComplete: function (weights) {
+      fs.writeFileSync(weightsPath, JSON.stringify(weights, null, 2));
+      console.log('Weights saved to: js/ai-weights.json');
+    }
+  });
 }
-
-/* ---------- save weights + training history ---------- */
-var weights = net.exportWeights();
-weights.version = totalGamesTrained;
-weights.description = '2048 AI trained weights - trained ' + totalGamesTrained + ' games via GitHub Actions';
-weights.history = trainingHistory;
-weights.bestMaxTile = bestMaxTile;
-weights.avgScore = Math.round(totalScore / GAMES);
-weights.trainTime = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
-
-fs.writeFileSync(weightsPath, JSON.stringify(weights, null, 2));
-
-var totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-console.log('');
-console.log('========================================================');
-console.log('  Training complete!');
-console.log('  Total games trained: ' + totalGamesTrained);
-console.log('  Best max tile: ' + bestMaxTile);
-console.log('  Average score: ' + (totalScore / GAMES).toFixed(0));
-console.log('  Time: ' + totalTime + 's');
-console.log('  Weights saved to: js/ai-weights.json');
-console.log('========================================================');
