@@ -1316,10 +1316,10 @@ async function startTraining(){
         'Content-Type':'application/json',
         'Authorization':'Bearer '+(window.GH_TOKEN||'')
       },
-      body:JSON.stringify({ref:'main',inputs:{games:'100'}})
+      body:JSON.stringify({ref:'main',inputs:{games:'200'}})
     });
     if(resp.status===204){
-      log.innerHTML='🚀 <strong>训练已触发！</strong> 100 局自对弈。<br><span style="font-size:11px;color:#ffd166">GitHub Actions 正在启动...</span>';
+      log.innerHTML='🚀 <strong>训练已触发！</strong> 200 局自对弈。<br><span style="font-size:11px;color:#ffd166">GitHub Actions 正在启动...</span>';
       // Start polling after a short delay
       setTimeout(startPollingProgress,15000);
     }else if(resp.status===401||resp.status===403){

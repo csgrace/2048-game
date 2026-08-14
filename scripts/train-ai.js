@@ -206,7 +206,8 @@ function runTraining(opts) {
     var e = empty(grid).length;
     if (e >= 8) return 2;
     if (e >= 4) return 3;
-    return 3;
+    if (e >= 2) return 4;
+    return 5;
   }
 
   /* ---------- Self-play one game ---------- */
@@ -288,8 +289,8 @@ function runTraining(opts) {
     }
 
     var ls = 0;
-    for (var s = 0; s < 3; s++) ls += trainStep(LR, 64);
-    ls /= 3;
+    for (var s = 0; s < 8; s++) ls += trainStep(LR, 64);
+    ls /= 8;
 
     totalScore += result.score;
     if (result.maxTile > bestMaxTile) bestMaxTile = result.maxTile;
