@@ -375,30 +375,22 @@ body::before{
     </div>
     <div id="training-panel" hidden>
       <div class="training-head">
-        <span>🧠 <strong>AI Training</strong></span>
+        <span>🧠 <strong>AI Training Lab</strong></span>
         <div class="training-actions">
-          <button class="btn sm" id="ai-train">▶ Train</button>
-          <button class="btn sm" id="ai-stop-training">■ Stop</button>
+          <button class="btn sm" id="ai-train">▶ Train on GitHub</button>
+          <button class="btn sm" id="ai-stop-training" hidden>↻ Refresh Status</button>
         </div>
       </div>
-      <div id="training-log" style="margin-top:6px;font-size:11px;color:rgba(255,255,255,.6);max-height:90px;overflow-y:auto;white-space:pre-wrap;line-height:1.4" aria-live="polite"></div>
-      <canvas id="training-curve" style="width:100%;height:56px;margin-top:5px;background:rgba(0,0,0,.25);border-radius:8px" aria-label="training loss curve"></canvas>
-      <div id="showcase" aria-label="AI self-play showcase">
-        <div id="showcase-board"></div>
-        <div id="showcase-side">
-          <span class="sl-big">AI Self-Play</span>
-          <div class="sc-bar"><i id="showside-bar"></i></div>
-          <span class="sc-help">点击 Train 后，这里将显示一局实时自弈；顶栏同步展示该局的得分和步数。</span>
-        </div>
-      </div>
+      <div id="training-log" style="margin-top:6px;font-size:12px;color:rgba(255,255,255,.7);max-height:200px;overflow-y:auto;white-space:pre-wrap;line-height:1.5" aria-live="polite">点击 Train on GitHub 开始后台训练。</div>
+      <div id="training-jobs" style="margin-top:8px"></div>
       <section class="training-details" aria-label="训练逻辑说明">
-        <h3>训练逻辑</h3>
-    <p>① <strong>Expectimax 搜索自对弈</strong>：Max 节点选最优移动，Chance 节点计算随机生成 2(90%)/4(10%) 的期望值，搜索深度根据空格数自适应（2-5 层）。</p>
-    <p>② <strong>神经网络叶节点评估</strong>：搜索到底后，使用 MLP 价值网络评估局面，混合启发式保证初期稳定性。</p>
-    <p>③ <strong>TD(λ) 训练目标</strong>：每局结束后，用 TD(λ=0.5, γ=0.95) 计算每个局面的折扣价值目标。</p>
-    <p>④ <strong>经验回放 + mini-batch</strong>：数据进入 8,000 条缓冲区，每局随机抽样 64 条做 Adam 梯度下降。</p>
-    <p>⑤ <strong>渐进式 NN 融合</strong>：前 30 局纯启发式热身，之后 NN 评估权重随训练局数逐渐增加到 80%。</p>
-    <p>⑥ <strong>权重分享</strong>：训练完成后下载 <code>ai-weights.json</code>，替换仓库中的文件并 commit，所有用户都能使用训练后的 AI。</p>
+        <h3>训练流程</h3>
+    <p>① <strong>点击 Train</strong>：前端通过 GitHub API 触发 Actions workflow，在云端服务器上运行训练。</p>
+    <p>② <strong>Expectimax 自对弈</strong>：Max 节点选最优移动，Chance 节点计算随机生成 2(90%)/4(10%) 的期望值，搜索深度根据空格数自适应（2-5 层）。</p>
+    <p>③ <strong>神经网络 TD(λ) 训练</strong>：MLP 256→96→48→16→1 价值网络，用 TD(λ=0.5, γ=0.95) 计算目标，Adam 优化器 + 经验回放。</p>
+    <p>④ <strong>渐进式融合</strong>：前 30 局纯启发式热身，之后 NN 评估权重逐渐增加到 80%。</p>
+    <p>⑤ <strong>自动部署</strong>：训练完成后，GitHub Actions 自动 commit 更新 <code>js/ai-weights.json</code>，所有用户刷新页面即可使用最新的 AI。</p>
+    <p>⑥ <strong>增量训练</strong>：每次训练会加载上一版本的权重继续训练，AI 会持续变强。</p>
       </section>
     </div>
     <div class="sides">
@@ -1041,35 +1033,27 @@ function stopAiAutoPlay(){
 const LS_AI_WEIGHTS='g2048_ai_weights_v1';
 const LS_AI_LOG='g2048_ai_training_log_v1';
 const WEIGHTS_URL='js/ai-weights.json';
-let aiWorker=null;
-let aiNet=null;            // value network for inference on leaf nodes
-let aiUseNN=false;         // switch to NN evaluation once enough training has happened
-let aiTrainGames=0;        // total games trained so far
-let aiStartingWeights=null;
-let aiCurve=[];            // array of {game,loss,maxTile}
-let aiCurveCanvasCtx=null;
-function downloadWeights(weights){
-  weights.version=aiTrainGames;
-  const blob=new Blob([JSON.stringify(weights,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='ai-weights.json';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+/* ---------- GitHub Actions AI Training ---------- */
+/* Repository info — change these to match your repo */
+const GH_OWNER='csgrace';
+const GH_REPO='2048-game';
+const GH_WORKFLOW_ID='ai-train.yml';
+/* Users can set their own token to trigger training.
+   Without a token, the UI still shows run status (read-only). */
+const GH_TOKEN_KEY='github_pat_2048';
+function getGitHubToken(){try{return localStorage.getItem(GH_TOKEN_KEY)||''}catch(e){return ''}}
+function setGitHubToken(t){try{localStorage.setItem(GH_TOKEN_KEY,t)}catch(e){}}
+function ghApi(path,opts){
+  const token=getGitHubToken();
+  const headers={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+  if(token)headers['Authorization']='Bearer '+token;
+  return fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+path,Object.assign({},opts,{headers:Object.assign({},headers,opts?.headers||{})}));
 }
-function showDownloadButton(weights){
-  var log=$('training-log');
-  if(!log)return;
-  log.textContent+='\n📦 训练完成！';
-  // 创建下载按钮
-  var btn=document.createElement('button');
-  btn.textContent='⬇ 下载权重文件 (ai-weights.json)';
-  btn.className='btn sm';
-  btn.style.marginTop='8px';
-  btn.style.width='100%';
-  btn.onclick=function(){downloadWeights(weights);};
-  log.parentNode.insertBefore(btn,log.nextSibling);
-}
+let aiNet=null;
+let aiUseNN=false;
+let aiTrainGames=0;
+let aiPollTimer=null;
+let aiCurrentRunId=null;
 function initAiNet(weights){
   if(!window.AIBrain)return;
   aiNet=new window.AIBrain.ValueNet();
@@ -1080,8 +1064,6 @@ function aiNeuralEvaluate(grid){
   if(!aiUseNN||!aiNet)return aiEvaluate(grid);
   const input=window.AIBrain.encodeBoard(grid);
   const raw=aiNet.forward(input);
-  // 混合策略：启发式提供稳定性，神经网络提供学习信号
-  // 随着训练进行，逐渐增加 NN 权重
   const nnWeight=Math.min(0.8,aiTrainGames/300);
   return aiEvaluate(grid)*(1-nnWeight)+raw*5000*nnWeight;
 }
@@ -1093,7 +1075,6 @@ function refreshAiEvalLeaf(){
     if(cached!==undefined)return cached;
     let value;
     if(!isChance){
-      // Max 节点：选择最大收益
       value=-Infinity;
       for(const direction of AI_DIRECTIONS){
         const result=aiMoveBoard(grid,direction);
@@ -1101,11 +1082,9 @@ function refreshAiEvalLeaf(){
       }
       if(value===-Infinity)value=-100000;
     }else{
-      // Chance 节点：计算随机生成 2/4 的期望值
       const empty=aiEmptyCells(grid);
       if(!empty.length){value=aiExpectimax(grid,depth-1,false,table)}
       else{
-        // 空位太多时采样加速
         const sample=empty.length>4?empty.filter((_,i)=>i%Math.ceil(empty.length/4)===0):empty;
         let total=0;for(const [r,c] of sample){
           const t=aiClone(grid);t[r][c]=2;const f=aiClone(grid);f[r][c]=4;
@@ -1118,145 +1097,146 @@ function refreshAiEvalLeaf(){
     return value;
   };
 }
-let aiPendingGames=100, aiPendingLr=0.002;
-function buildTrainingWorker(){
-  if(aiWorker)terminateTraining();
-  try{
-    aiWorker=new Worker('js/ai-trainer-worker.js');
-  }catch(e){
-    $('training-log').textContent='Web Worker failed: '+e.message+'. Training on main thread fallback.';
-    runMainThreadFallback();
-    return;
-  }
-  aiWorker.onmessage=(e)=>{
-    const d=e.data;
-    if(d.type==='load')$('training-log').textContent='AI worker loading…';
-    if(d.type==='ready'){
-      aiWorker.postMessage({cmd:'train',games:aiPendingGames,lr:aiPendingLr,warmupGames:30});
-    }
-    if(d.type==='progress'){
-      aiTrainGames=d.totalTrained;
-      aiCurve.push({game:d.game,loss:d.loss,maxTile:d.maxTile});
-      if(aiCurve.length>200)aiCurve.shift();
-      updateTrainingLog(d);
-      drawTrainingCurve();
-    }
-      if(d.type==='epoch'){
-        stopShowcase();
-        var trainButton=$('ai-train');if(trainButton)trainButton.hidden=false;
-        var stopButton=$('ai-stop-training');if(stopButton)stopButton.hidden=true;
-        if(d.weights){
-          aiStartingWeights=d.weights;
-          try{localStorage.setItem(LS_AI_WEIGHTS,JSON.stringify(d.weights))}catch(_){}
-          initAiNet(d.weights);
-          refreshAiEvalLeaf();
-          // 训练完成后提供下载权重按钮
-          showDownloadButton(d.weights);
-        }
-        updateTrainingLog({game:d.epoch,total:d.epoch,loss:d.loss});
-        drawTrainingCurve();
-        if(aiUseNN)$('training-log').textContent+=`\n✅ Epoch complete. Expectimax + NN active (${aiTrainGames} games)`;
-      }
-      if(d.type==='nnEnabled'){
-        aiUseNN=true;
-        refreshAiEvalLeaf();
-        if($('training-log'))$('training-log').textContent+='\n⚡ NN leaf evaluation activated for self-play.';
-      }
-  };
-  aiWorker.onerror=(e)=>{var el=$('training-log');if(el)el.textContent+='\nWorker error: '+e.message};
-  aiWorker.postMessage({cmd:'init',weights:aiStartingWeights,useNN:aiUseNN});
-}
-function updateTrainingLog(d){
-  const el=$('training-log');
-  if(!el)return;
-  const tot=d.totalGames||aiPendingGames||'?';
-  const pct=d.totalGames?Math.round(d.game/d.totalGames*100):'?';
-  el.textContent=`Game ${d.game}/${tot} (${pct}%) | max: ${d.maxTile||'—'} | loss: ${(d.loss||0).toFixed(6)} | net eval: ${aiUseNN?'ON':'heuristic'}`;
-  el.scrollTop=el.scrollHeight;
-}
-function drawTrainingCurve(){
-  const c=$('training-curve');
-  if(!c||!aiCurve.length)return;
-  const ctx=c.getContext('2d');
-  aiCurveCanvasCtx=ctx;
-  const W=c.width=c.clientWidth;
-  const H=c.height=c.clientHeight;
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='rgba(0,0,0.1)';ctx.fillRect(0,0,W,H);
-  // loss curve
-  const losses=aiCurve.map(p=>p.loss);
-  const maxL=Math.max(...losses,0.001),minL=Math.min(...losses,0);
-  const range=maxL-minL||0.001;
-  ctx.strokeStyle='#ffd166';ctx.lineWidth=1.5;ctx.beginPath();
-  aiCurve.forEach((p,i)=>{
-    const x=i/(aiCurve.length-1)*W;
-    const y=H-2-(p.loss-minL)/range*(H-4);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });
-  ctx.stroke();
-  // max tile dots
-  ctx.fillStyle='#6bcb77';
-  aiCurve.forEach((p,i)=>{
-    if(p.maxTile>512){
-      const x=i/(aiCurve.length-1)*W;
-      ctx.beginPath();ctx.arc(x,H-3,2,0,6.28);ctx.fill();
-    }
-  });
-}
 function enterTrainingMode(){
   var tp=$('training-panel');if(tp)tp.hidden=false;
   var t1=$('ai-train');if(t1)t1.hidden=false;
-  var t2=$('ai-stop-training');if(t2)t2.hidden=true;
-  aiCurve.length=0;
-  drawTrainingCurve();
-  $('training-log').textContent='▶ 点击 Train 开始训练\n系统将使用 Expectimax 搜索 + 神经网络评估进行自弈';
-  $('showside-bar').style.width='0';
-  // 移除旧的下载按钮
-  var oldBtn=$('training-log').parentNode.querySelector('button:not(#ai-train):not(#ai-stop-training)');
-  if(oldBtn&&oldBtn.textContent.includes('下载'))oldBtn.remove();
-}
-function startTraining(games,lr){
-  var tp=$('training-panel');if(tp)tp.hidden=false;
-  var t1=$('ai-train');if(t1)t1.hidden=true;
   var t2=$('ai-stop-training');if(t2)t2.hidden=false;
-  aiCurve.length=0;
-  aiPendingGames=games; aiPendingLr=lr;
-  const stored=load(LS_AI_WEIGHTS,null);
-  aiStartingWeights=stored;
-  aiTrainGames=stored?100:0;
-  initAiNet(stored);
-  if(!stored)$('training-log').textContent='No cached model — starting fresh self-play...\nTip: leave this panel open to accumulate games.';
-  else $('training-log').textContent=`Resuming from cached model (${stored.l1W?.length||0} weights). Training ${games} more games…`;
-  drawTrainingCurve();
-  startShowcase();
-  buildTrainingWorker();
+  t2.textContent='↻ Refresh Status';
+  // Check if token is set
+  if(!getGitHubToken()){
+    $('training-log').innerHTML='⚠ 尚未设置 GitHub Token，无法触发训练。<br><br>请先设置一个有 repo 和 workflow 权限的 Personal Access Token：<br><button class="btn sm" id="gh-set-token" style="margin-top:8px">🔑 设置 Token</button>';
+    var btn=$('gh-set-token');if(btn)btn.onclick=function(){promptForToken()};
+  }else{
+    $('training-log').textContent='✅ Token 已设置。点击 "Train on GitHub" 开始后台训练。\n训练在 GitHub 云端服务器上运行，完成后自动更新权重。';
+  }
+  // Show recent runs
+  fetchWorkflowRuns();
 }
-function resetTrainingUI(){
-  stopShowcase();
-  terminateTraining();
-  var t1=$('ai-train');if(t1)t1.hidden=false;
-  var t2=$('ai-stop-training');if(t2)t2.hidden=true;
-  var tp=$('training-panel');if(tp)tp.hidden=true;
-  $('game-screen').classList.remove('ai-training-mode');
+function promptForToken(){
+  var existing=getGitHubToken();
+  var input=prompt('请输入 GitHub Personal Access Token (需要 repo 和 workflow 权限):\n\n获取方式: GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens\n权限: Contents (Read and write), Actions (Read and write)\n\n当前Token: '+(existing?existing.substring(0,8)+'...':'无'),'');
+  if(input!==null){
+    setGitHubToken(input.trim());
+    enterTrainingMode(); // refresh
+  }
+}
+async function startTraining(){
+  var log=$('training-log');
+  var token=getGitHubToken();
+  if(!token){
+    promptForToken();
+    return;
+  }
+  $('ai-train').disabled=true;
+  log.textContent='⏳ 正在触发 GitHub Actions workflow...';
+  try{
+    var resp=await ghApi('/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ref:'main',inputs:{games:'200'}})
+    });
+    if(resp.status===204){
+      log.textContent='✅ 训练已触发！等待 workflow 开始运行...\n';
+      // Poll for the new run
+      setTimeout(fetchWorkflowRuns,3000);
+      setTimeout(fetchWorkflowRuns,8000);
+    }else{
+      var err=await resp.json().catch(function(){return{}});
+      log.textContent='❌ 触发失败 (HTTP '+resp.status+'): '+(err.message||resp.statusText)+'\n\n请检查 Token 权限是否包含 repo 和 workflow。';
+      $('ai-train').disabled=false;
+    }
+  }catch(e){
+    log.textContent='❌ 网络错误: '+e.message+'\n\n可能是 CORS 限制，请尝试在 GitHub 网站上手动触发。';
+    $('ai-train').disabled=false;
+  }
+}
+async function fetchWorkflowRuns(){
+  var log=$('training-log');
+  var jobsEl=$('training-jobs');
+  if(!jobsEl)return;
+  try{
+    var resp=await ghApi('/actions/workflows/'+GH_WORKFLOW_ID+'/runs?per_page=5');
+    if(!resp.ok){
+      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.5)">无法获取训练记录 (HTTP '+resp.status+')。'+'</p>';
+      if(resp.status===401)jobsEl.innerHTML+='<p style="font-size:12px;color:#ffaaaa">Token 无效或已过期。</p>';
+      return;
+    }
+    var data=await resp.json();
+    if(!data.workflow_runs||!data.workflow_runs.length){
+      jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.5)">暂无训练记录。</p>';
+      return;
+    }
+    var html='';
+    for(var i=0;i<data.workflow_runs.length;i++){
+      var run=data.workflow_runs[i];
+      var statusIcon=run.status==='completed'?(run.conclusion==='success'?'✅':'❌'):'🔄';
+      var time=new Date(run.created_at).toLocaleString('zh-CN');
+      var commitMsg=run.head_commit?run.head_commit.message.split('\n')[0]:'';
+      var color=run.status==='completed'?(run.conclusion==='success'?'#6bcb77':'#ff6b6b'):'#ffd166';
+      html+='<div style="padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.1)">';
+      html+='<div style="display:flex;align-items:center;gap:8px;font-size:13px">';
+      html+='<span>'+statusIcon+'</span>';
+      html+='<span style="color:'+color+';font-weight:600">'+run.conclusion||run.status+'</span>';
+      html+='<span style="color:rgba(255,255,255,.5);font-size:11px">'+time+'</span>';
+      html+='</div>';
+      html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">'+escapeHtml(commitMsg)+'</div>';
+      if(run.status!=='completed'){
+        html+='<div style="font-size:11px;color:#ffd166;margin-top:3px">⏳ '+run.status+'...</div>';
+      }
+      html+='</div>';
+    }
+    jobsEl.innerHTML=html;
+    // Check if there's a running workflow
+    var running=data.workflow_runs.find(function(r){return r.status!=='completed'});
+    if(running){
+      aiCurrentRunId=running.id;
+      $('ai-train').disabled=true;
+      $('ai-train').textContent='⏳ Training...';
+      log.textContent='🔄 训练进行中: '+running.head_commit.message.split('\n')[0]+'\n开始时间: '+new Date(running.created_at).toLocaleString('zh-CN');
+      // Auto-poll every 10 seconds
+      if(!aiPollTimer){
+        aiPollTimer=setInterval(fetchWorkflowRuns,10000);
+      }
+    }else{
+      aiCurrentRunId=null;
+      if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null}
+      $('ai-train').disabled=false;
+      $('ai-train').textContent='▶ Train on GitHub';
+      // Check if the latest run just completed
+      var latest=data.workflow_runs[0];
+      if(latest&&latest.status==='completed'&&latest.conclusion==='success'){
+        log.textContent='✅ 训练完成！正在重新加载 AI 权重...\n\n最新 commit: '+escapeHtml(latest.head_commit.message.split('\n')[0]);
+        // Reload weights
+        reloadWeightsFromRepo();
+      }
+    }
+  }catch(e){
+    jobsEl.innerHTML='<p style="font-size:12px;color:rgba(255,255,255,.5)">获取训练记录失败: '+escapeHtml(e.message)+'</p>';
+  }
+}
+function escapeHtml(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''
+}
+async function reloadWeightsFromRepo(){
+  try{
+    var resp=await fetch(WEIGHTS_URL+'?t='+Date.now());
+    var w=await resp.json();
+    if(w&&w.l1W&&w.l1W.length>100){
+      initAiNet(w);aiTrainGames=w.version||100;refreshAiEvalLeaf();
+      console.log('AI weights reloaded from repo:',w.l1W.length,'weights, v'+(w.version||0));
+      $('training-log').textContent+='✅ 权重已更新！版本 v'+(w.version||0)+'，包含 '+w.l1W.length+' 个参数。';
+    }
+  }catch(e){
+    // Weight file not ready yet, will load on next page refresh
+  }
 }
 function stopTraining(){
-  resetTrainingUI();
+  if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null}
+  $('ai-train').disabled=false;
+  $('ai-train').textContent='▶ Train on GitHub';
+  $('game-screen').classList.remove('ai-training-mode');
+  $('training-panel').hidden=true;
   init(boardSize);
   show('entry-screen');
-}
-function terminateTraining(){
-  if(aiWorker){aiWorker.terminate();aiWorker=null}
-}
-function runMainThreadFallback(){
-  let g=0;
-  const total=200;
-  function step(){
-    if(g>=total)return;
-    g++;
-    // simulate one self-play game here if needed, but this path is rarely hit
-    setTimeout(step,10);
-  }
-  step();
 }
 (function restoreAi(){
   // 优先从仓库的 ai-weights.json 加载
@@ -1504,8 +1484,7 @@ stopTimer();
 $('lb-modal').classList.remove('show');
 $('tools-modal').classList.remove('show');
 stopAiAutoPlay();
-stopShowcase();
-terminateTraining();
+if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null}
 cancelToolSelection();
 hideOverlay();
   $('game-screen').classList.remove('ai-training-mode');
@@ -1587,8 +1566,8 @@ $('b-left').onclick=()=>{SFX.button();move('left')};
 $('b-right').onclick=()=>{SFX.button();move('right')};
 $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
-$('ai-train').onclick=()=>{SFX.button();startTraining(100,0.002)};
-$('ai-stop-training').onclick=()=>{SFX.button();stopTraining()};
+$('ai-train').onclick=()=>{SFX.button();startTraining()};
+$('ai-stop-training').onclick=()=>{SFX.button();fetchWorkflowRuns()};
 $('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
 $('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
 $('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};
