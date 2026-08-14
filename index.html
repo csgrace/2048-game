@@ -197,7 +197,7 @@ transition:all .25s ease;
 .training-details h3{margin:0 0 8px;color:#ffd166;font-size:14px;letter-spacing:.4px}
 .training-details p{margin:4px 0;font-size:12px;line-height:1.65;color:rgba(255,255,255,.62)}
 @keyframes pulse-bar{0%,100%{transform:translateX(-30%);opacity:.6}50%{transform:translateX(120%);opacity:1}}
-.ai-training-mode .top-bar{justify-content:center;margin-bottom:12px}
+.ai-training-mode .top-bar{display:none}
 .ai-training-mode{align-items:center;justify-content:center;flex-direction:column;display:flex}
 #stat-ai{display:none}
 .ai-training-mode #stat-ai{display:inline-flex;align-items:center;font-weight:600;letter-spacing:1px}
@@ -566,7 +566,6 @@ transition:all .25s ease;
       <div class="training-head">
         <span>🧠 <strong>AI Training Lab</strong></span>
         <div class="training-actions">
-          <button class="btn sm" id="ai-token-btn" title="输入密码授权">🔑 授权</button>
           <button class="btn sm" id="ai-train">▶ Train</button>
           <button class="btn sm" id="ai-stop-training" hidden>↻ Refresh</button>
         </div>
@@ -1335,17 +1334,22 @@ function refreshAiEvalLeaf(){
   };
 }
 function enterTrainingMode(){
-  var tp=$('training-panel');if(tp)tp.hidden=false;
-  var t1=$('ai-train');if(t1)t1.hidden=false;
-  var t2=$('ai-stop-training');if(t2)t2.hidden=false;
-  t2.textContent='↻ Refresh';
-  // Load existing weights history for visualization
-  loadTrainingStatsFromWeights();
-  drawTrainingCurve();
-  drawMaxTileChart();
-  // Check if a training run is in progress by polling progress file
-  checkTrainingProgress();
-  $('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong>▶ Train</strong> 在云端启动训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练在 GitHub Actions 云端运行，每 20 局自动推送进度，前端自动刷新图表。</span>';
+var tp=$('training-panel');if(tp)tp.hidden=false;
+var t1=$('ai-train');if(t1)t1.hidden=false;
+var t2=$('ai-stop-training');if(t2)t2.hidden=false;
+t2.textContent='↻ Refresh';
+// If training was recently triggered, keep button disabled
+if(isTrainingTriggeredLocally()){
+  $('ai-train').disabled=true;
+  $('ai-train').textContent='⏳ Training...';
+}
+// Load existing weights history for visualization
+loadTrainingStatsFromWeights();
+drawTrainingCurve();
+drawMaxTileChart();
+// Check if a training run is in progress by polling progress file
+checkTrainingProgress();
+$('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong>▶ Train</strong> 在云端启动训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练在 GitHub Actions 云端运行，每 20 局自动推送进度，前端自动刷新图表。</span>';
 }
 /* Load training history from ai-weights.json for charts & stats */
 var aiHistory=[];
@@ -1435,16 +1439,30 @@ function drawMaxTileChart(){
     ctx.fillRect(x,y,barW,h);
   });
 }
+/* Check if training was recently triggered (within last 5 min) to keep button banned */
+function isTrainingTriggeredLocally(){
+  var ts=sessionStorage.getItem('ai-training-triggered');
+  if(!ts)return false;
+  return (Date.now()-parseInt(ts,10))<300000; // 5 min window
+}
 /* Check training progress by polling the progress JSON file */
 async function checkTrainingProgress(){
   var jobsEl=$('training-jobs');if(!jobsEl)return;
   try{
     var resp=await fetch(PROGRESS_URL+'?t='+Date.now());
-    if(!resp.ok)throw new Error('No progress file');
+    if(!resp.ok){
+      // Progress file not found — but if we recently triggered, keep button disabled
+      if(isTrainingTriggeredLocally()){
+        $('ai-train').disabled=true;
+        $('ai-train').textContent='⏳ Training...';
+      }
+      throw new Error('No progress file');
+    }
     var data=await resp.json();
     if(data.active){
       $('ai-train').disabled=true;
       $('ai-train').textContent='⏳ Training...';
+      sessionStorage.setItem('ai-training-triggered',Date.now());
       aiLiveHistory=data.history||[];
       if(aiLiveHistory.length){
         aiHistory=aiLiveHistory;
@@ -1486,6 +1504,7 @@ function startPollingProgress(){
       }else{
         // Training done!
         stopPollingProgress();
+        sessionStorage.removeItem('ai-training-triggered');
         $('ai-train').disabled=false;
         $('ai-train').textContent='▶ Train';
         aiLiveHistory=data.history||[];
@@ -1848,6 +1867,7 @@ async function startTraining(){
   }
   $('ai-train').disabled=true;
   $('ai-train').textContent='⏳ 触发中...';
+  sessionStorage.setItem('ai-training-triggered',Date.now());
   log.innerHTML='⏳ 正在触发 GitHub Actions 训练...';
   try{
     var apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches';
@@ -1867,19 +1887,22 @@ async function startTraining(){
     }else if(resp.status===401||resp.status===403){
       // Token expired, clear and ask for password again
       setGHToken('');
+      sessionStorage.removeItem('ai-training-triggered');
       log.innerHTML='❌ Token 已过期，请重新输入密码授权。';
       openTokenModal();
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
     }else{
+      sessionStorage.removeItem('ai-training-triggered');
       log.innerHTML='❌ 启动失败 (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
     }
   }catch(e){
+    sessionStorage.removeItem('ai-training-triggered');
     log.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
-    $('ai-train').disabled=false;
-    $('ai-train').textContent='▶ Train';
+      $('ai-train').disabled=false;
+      $('ai-train').textContent='▶ Train';
   }
 }
 function escapeHtml(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''
@@ -2243,21 +2266,20 @@ $('b-left').onclick=()=>{SFX.button();move('left')};
 $('b-right').onclick=()=>{SFX.button();move('right')};
 $('b-undo').onclick=()=>{SFX.button();undo()};
 $('b-tools').onclick=()=>{SFX.button();openTools()};
-  $('ai-train').onclick=()=>{SFX.button();startTraining()};
-  $('ai-stop-training').onclick=()=>{SFX.button();checkTrainingProgress()};
-  $('ai-token-btn').onclick=()=>{SFX.button();openTokenModal()};
-  $('token-save').onclick=async()=>{
-    SFX.button();
-    var pw=$('token-input').value;
-    if(!pw)return;
-    $('token-save').textContent='验证中...';
-    $('token-save').disabled=true;
-    var ok=await verifyPasswordAndLoadToken(pw);
-    $('token-save').textContent='确认';
-    $('token-save').disabled=false;
-    if(ok){closeTokenModal();$('training-log').innerHTML='✅ 授权成功！点击 <strong>▶ Train</strong> 开始训练。';}
-    else{$('token-err').style.display='block';$('token-input').value='';$('token-input').focus();}
-  };
+$('ai-train').onclick=()=>{SFX.button();openTokenModal()};
+$('ai-stop-training').onclick=()=>{SFX.button();checkTrainingProgress()};
+$('token-save').onclick=async()=>{
+SFX.button();
+var pw=$('token-input').value;
+if(!pw)return;
+$('token-save').textContent='验证中...';
+$('token-save').disabled=true;
+var ok=await verifyPasswordAndLoadToken(pw);
+$('token-save').textContent='确认';
+$('token-save').disabled=false;
+if(ok){closeTokenModal();startTraining();}
+else{$('token-err').style.display='block';$('token-input').value='';$('token-input').focus();}
+};
   $('token-close').onclick=()=>{SFX.button();closeTokenModal()};
   $('token-modal').onclick=(e)=>{if(e.target.id==='token-modal')closeTokenModal()};
   $('token-input').addEventListener('keydown',async(e)=>{if(e.key==='Enter'){$('token-save').click();}});
