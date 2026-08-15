@@ -203,10 +203,7 @@ function runTraining(opts) {
   }
 
   function getSearchDepth(grid) {
-    var e = empty(grid).length;
-    if (e >= 6) return 2;
-    if (e >= 3) return 3;
-    return 4; // deeper only when board is nearly full
+    return 2; // fixed shallow search for fast training throughput
   }
 
   /* ---------- Self-play one game ---------- */
