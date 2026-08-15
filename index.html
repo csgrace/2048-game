@@ -776,6 +776,7 @@ let aiTimer=null; // 'up' | 'down-60' | 'down-120' | 'down-300'
 const undoStack=[];
 const MAX_UNDO=30;
 let currentUser=null;     // null = guest
+let gameReturnScreen='entry-screen';
 let cells=[];
 let gameTimerInterval=null;
 let boardSize=4;          // current board dimension
@@ -1658,6 +1659,7 @@ let batchCancelled=false;
 let batchGameResults=[];
 let playtestPollTimer=null;
 var isTokenModalOpen=false;
+var tokenModalAction='train';
 const PLAYTEST_PROGRESS_URL='js/ai-playtest-progress.json';
 const PLAYTEST_WORKFLOW_ID='playtest.yml';
 const LS_PLAYTEST_TRIGGERED='ai-playtest-triggered';
@@ -1665,25 +1667,18 @@ const PLAYTEST_TRIGGER_WINDOW=300000; // 5 min
 
 /* Trigger cloud playtest (password-protected) */
 function startBatchPlaytest(){
-  if(batchPlaytestMode)return;
-  if(isTokenModalOpen)return; // Already showing password modal
+  if(batchPlaytestMode||isTokenModalOpen)return;
   batchCancelled=false;
   batchPlaytestTotal=parseInt($('playtest-batch-count').value);
-  // Validate: max 6 hours worth
   if(batchPlaytestTotal>200){
     alert('Maximum 200 games per test run.');
     return;
   }
-  // Check password/token
-  var token=getGHToken();
-  if(!token){
-    tokenModalAction='playtest';
-    openTokenModal();
-    var statusEl=$('playtest-cloud-status');
-    if(statusEl)statusEl.innerHTML='🔑 需要输入密码授权才能触发云端测试。';
-    return;
-  }
-  dispatchPlaytestWorkflow();
+  // Every cloud test requires an explicit password confirmation before dispatching.
+  tokenModalAction='playtest';
+  openTokenModal();
+  var statusEl=$('playtest-cloud-status');
+  if(statusEl)statusEl.innerHTML='🔑 输入密码后即可启动 '+batchPlaytestTotal+' 局云端测试。';
 }
 
 /* Dispatch GitHub Actions workflow */
@@ -1986,11 +1981,19 @@ function xorDecrypt(encrypted, keyHex){
 
 /* Password modal handlers */
 function openTokenModal(){
-  if(isTokenModalOpen)return; // Prevent opening modal if already open
+  var m=$('token-modal');
+  // The modal starts inside the training panel. Move it to <body> so it can also
+  // appear above the Playtest screen (a hidden game screen would otherwise hide it).
+  if(m.parentElement!==document.body)document.body.appendChild(m);
+  if(isTokenModalOpen){
+    if(m.style.display==='flex')$('token-input').focus();
+    return;
+  }
   isTokenModalOpen=true;
-  var m=$('token-modal');m.style.display='flex';
+  m.style.display='flex';
   var inp=$('token-input');inp.value='';
   $('token-err').style.display='none';
+  $('token-modal-title').textContent=tokenModalAction==='playtest'?'🔑 云端测试授权':'🔑 训练授权';
   setTimeout(function(){inp.focus();},100);
 }
 function closeTokenModal(){$('token-modal').style.display='none';isTokenModalOpen=false;}
@@ -2339,19 +2342,19 @@ function show(s){
   $(s).classList.add('active');
 }
 function exitGame(){
-clearPendingGameTimers();
-stopTimer();
-$('lb-modal').classList.remove('show');
-$('tools-modal').classList.remove('show');
-stopAiAutoPlay();
+  clearPendingGameTimers();
+  stopTimer();
+  stopAiAutoPlay();
   stopPollingProgress();
+  stopPollingPlaytestProgress();
   cancelToolSelection();
-hideOverlay();
+  hideOverlay();
+  $('lb-modal').classList.remove('show');
+  $('tools-modal').classList.remove('show');
+  closeTokenModal();
   $('game-screen').classList.remove('ai-training-mode');
-  currentUser=null;
-  authToken=null;
-  localStorage.removeItem(LS_SESSION);
-  show('entry-screen');
+  // Back leaves the game only; it must not silently log the player out.
+  show(gameReturnScreen);
 }
 
 /* ====================================================================
@@ -2359,9 +2362,9 @@ hideOverlay();
    ==================================================================== */
 $('btn-user').onclick=()=>{SFX.button();show('auth-screen')};
 $('btn-guest').onclick=()=>{SFX.button();currentUser=null;showSettings()};
-$('btn-ai-training').onclick=()=>{SFX.button();currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();};
+$('btn-ai-training').onclick=()=>{SFX.button();gameReturnScreen='entry-screen';currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();};
 $('btn-playtest').onclick=()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();};
-$('btn-playtest-back').onclick=()=>{SFX.button();show('entry-screen')};
+$('btn-playtest-back').onclick=()=>{SFX.button();closeTokenModal();stopPollingPlaytestProgress();show('entry-screen')};
 $('btn-auth-back').onclick=()=>{SFX.button();show('entry-screen')};
 
 $('btn-settings-back').onclick=()=>{SFX.button();
@@ -2378,6 +2381,7 @@ function showSettings(){
 
 $('btn-start-game').onclick=()=>{
   SFX.button();
+  gameReturnScreen='settings-screen';
   resetTrainingUI();
   const g=parseInt($('sel-grid').value);
   const t=$('sel-timer').value;
