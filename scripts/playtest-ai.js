@@ -53,7 +53,7 @@ var aiNet = new AIBrain.ValueNet();
 var aiUseNN = false;
 if (weights && weights.l1W && weights.l1W.length > 100) {
   aiNet.importWeights(weights);
-  aiUseNN = aiTrainGames > 50;
+  aiUseNN = aiTrainGames > 30; // match training threshold (WARMUP=30)
 }
 var INPUT_SIZE = AIBrain.INPUT_SIZE;
 

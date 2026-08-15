@@ -1292,7 +1292,7 @@ function initAiNet(weights){
   if(!window.AIBrain)return;
   aiNet=new window.AIBrain.ValueNet();
   if(weights){aiNet.importWeights(weights);if(aiNet)aiNet._meta=weights;}
-  aiUseNN=!!weights&&aiTrainGames>50;
+  aiUseNN=!!weights&&aiTrainGames>30; // match training threshold (WARMUP=30)
 }
 function aiNeuralEvaluate(grid){
   if(!aiUseNN||!aiNet)return aiEvaluate(grid);
