@@ -1,0 +1,47 @@
+name: AI Playtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      games:
+        description: 'Number of playtest games'
+        required: false
+        default: '20'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  playtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours max
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run AI playtest (${{ github.event.inputs.games || '20' }} games)
+        run: node scripts/playtest-ai.js --games ${{ github.event.inputs.games || '20' }} --batch 5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show progress file
+        run: cat js/ai-playtest-progress.json | head -30
+
+      - name: Commit playtest progress
+        run: |
+          git add js/ai-playtest-progress.json 2>/dev/null || true
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore(ai): playtest progress update via GitHub Actions [skip ci]"
+          git push
