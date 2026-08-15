@@ -175,7 +175,10 @@ function expectimax(grid, depth, isChance, table) {
 function selectMove(grid) {
   var table = new Map();
   var bestDir = null;
-  for (var depth = 2; depth <= 5; depth++) {
+  // Adaptive depth: shallow when many empties (branching factor high), deeper when few
+  var emptiesCount = empty(grid).length;
+  var maxDepth = emptiesCount > 8 ? 2 : emptiesCount > 4 ? 3 : 4;
+  for (var depth = 1; depth <= maxDepth; depth++) {
     var localBest = null, localScore = -Infinity;
     for (var d = 0; d < DIRECTIONS.length; d++) {
       var result = move(grid, DIRECTIONS[d]);
@@ -256,9 +259,22 @@ function persistProgress(allResults, active) {
   }
 }
 
+/* ---------- Push progress to git so frontend can poll ---------- */
+var allResults = [];
+var execSync = require('child_process').execSync;
+function gitPushProgress() {
+  try {
+    execSync('git add ' + OUTPUT_FILE, { stdio: 'ignore' });
+    execSync('git commit -m "chore(ai): playtest progress ' + allResults.length + '/' + GAMES + ' [skip ci]"', { stdio: 'ignore' });
+    execSync('git push', { stdio: 'ignore' });
+    console.log('  ↳ Pushed progress to git (' + allResults.length + '/' + GAMES + ')');
+  } catch (e) {
+    console.log('  ↳ Git push skipped: ' + (e.message || 'no changes'));
+  }
+}
+
 /* ---------- Main loop ---------- */
 console.log('=== AI Playtest (' + GAMES + ' games, batch=' + BATCH_SIZE + ') ===');
-var allResults = [];
 persistProgress(allResults, true);
 
 for (var i = 1; i <= GAMES; i++) {
@@ -266,8 +282,12 @@ for (var i = 1; i <= GAMES; i++) {
   allResults.push(result);
   console.log('Game ' + i + '/' + GAMES + ': ' + (result.result === 'win' ? 'WIN' : 'LOSS') + ' score=' + result.score + ' max=' + result.maxTile + ' steps=' + result.steps + ' time=' + result.duration + 'ms');
 
+  // Write progress after every game so the frontend can see incremental results
+  persistProgress(allResults, true);
+
+  // Push to git every BATCH_SIZE games so frontend can poll
   if (i % BATCH_SIZE === 0) {
-    persistProgress(allResults, true);
+    gitPushProgress();
   }
 }
 

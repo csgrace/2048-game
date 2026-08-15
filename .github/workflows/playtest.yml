@@ -32,12 +32,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run AI playtest (${{ github.event.inputs.games || '20' }} games)
-        run: node scripts/playtest-ai.js --games ${{ github.event.inputs.games || '20' }} --batch 5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Show progress file
-        run: cat js/ai-playtest-progress.json | head -30
+        run: node scripts/playtest-ai.js --games=${{ github.event.inputs.games || '20' }}
 
       - name: Commit playtest progress
         run: |
