@@ -417,7 +417,7 @@ transition:all .25s ease;
   <!-- ============ PLAYTEST ARENA ============ -->
   <div class="screen" id="playtest-screen">
     <button class="back-btn" id="btn-playtest-back">← Back</button>
-    <div class="glass" style="width:100%;max-width:920px;padding:22px 24px 26px">
+    <div class="glass" style="width:100%;max-width:1000px;padding:22px 24px 26px">
       <div class="title-big" style="font-size:26px;text-align:center;margin-bottom:2px">🏆 AI Playtest Arena</div>
       <div class="subtitle" style="text-align:center;margin-bottom:18px;font-size:13px">Batch auto-play · Live board preview · Win-rate stats</div>
 
@@ -1820,16 +1820,17 @@ function renderBatchGameResults(){
     html+='<span style="width:40px;text-align:right;font-size:10.5px;white-space:nowrap">'+fmtPlayTime(totalTime)+'</span>';
     html+='</div>';
   }
-  // Header row (full width, spans both columns) — below summary, above game cards
+  // Header row for each column (one per grid column)
   if(batchGameResults.length){
-    html+='<div style="grid-column:1/-1;display:flex;gap:6px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px">';
-    html+='<span style="width:28px">#</span>';
-    html+='<span style="width:72px">Result</span>';
-    html+='<span style="flex:1;text-align:right">Score</span>';
-    html+='<span style="width:52px;text-align:right">Max Tile</span>';
-    html+='<span style="width:40px;text-align:right">Steps</span>';
-    html+='<span style="width:40px;text-align:right">Time</span>';
-    html+='</div>';
+    var headerHtml='<div style="display:flex;gap:6px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px">';
+    headerHtml+='<span style="width:28px">#</span>';
+    headerHtml+='<span style="width:72px">Result</span>';
+    headerHtml+='<span style="flex:1;text-align:right">Score</span>';
+    headerHtml+='<span style="width:52px;text-align:right">Max Tile</span>';
+    headerHtml+='<span style="width:40px;text-align:right">Steps</span>';
+    headerHtml+='<span style="width:40px;text-align:right">Time</span>';
+    headerHtml+='</div>';
+    html+=headerHtml+headerHtml;
   }
   // Game result cards (2 per row via CSS grid)
   batchGameResults.forEach(function(g){
