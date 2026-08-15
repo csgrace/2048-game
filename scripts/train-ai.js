@@ -126,7 +126,7 @@ function runTraining(opts) {
   /* ---------- training state ---------- */
   var net = new AIBrain.ValueNet();
   var buffer = [];
-  var bufferMax = 8000;
+    var bufferMax = 16000; // larger replay buffer for more training data
   var netOut = function (input) { return net.forward(input); };
   var totalGamesTrained = 0;
   var useNNLeaf = false;
@@ -204,10 +204,9 @@ function runTraining(opts) {
 
   function getSearchDepth(grid) {
     var e = empty(grid).length;
-    if (e >= 8) return 2;
-    if (e >= 4) return 3;
-    if (e >= 2) return 4;
-    return 5;
+    if (e >= 6) return 2;
+    if (e >= 3) return 3;
+    return 4; // deeper only when board is nearly full
   }
 
   /* ---------- Self-play one game ---------- */
@@ -289,8 +288,8 @@ function runTraining(opts) {
     }
 
     var ls = 0;
-    for (var s = 0; s < 8; s++) ls += trainStep(LR, 64);
-    ls /= 8;
+    for (var s = 0; s < 4; s++) ls += trainStep(LR, 64); // fewer steps per game = faster
+    ls /= 4;
 
     totalScore += result.score;
     if (result.maxTile > bestMaxTile) bestMaxTile = result.maxTile;
