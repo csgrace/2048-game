@@ -417,7 +417,7 @@ transition:all .25s ease;
   <!-- ============ PLAYTEST ARENA ============ -->
   <div class="screen" id="playtest-screen">
     <button class="back-btn" id="btn-playtest-back">← Back</button>
-    <div class="glass" style="width:100%;max-width:840px;padding:22px 24px 26px">
+    <div class="glass" style="width:100%;max-width:920px;padding:22px 24px 26px">
       <div class="title-big" style="font-size:26px;text-align:center;margin-bottom:2px">🏆 AI Playtest Arena</div>
       <div class="subtitle" style="text-align:center;margin-bottom:18px;font-size:13px">Batch auto-play · Live board preview · Win-rate stats</div>
 
@@ -1804,6 +1804,17 @@ async function fetchPlaytestProgress(){
 function renderBatchGameResults(){
   var el=$('pt-game-list');if(!el)return;
   var html='';
+  // Header row (full width, spans both columns)
+  if(batchGameResults.length){
+    html+='<div style="grid-column:1/-1;display:flex;gap:6px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px">';
+    html+='<span style="width:28px">#</span>';
+    html+='<span style="width:46px">Result</span>';
+    html+='<span style="flex:1;text-align:right">Score</span>';
+    html+='<span style="width:52px;text-align:right">Max Tile</span>';
+    html+='<span style="width:40px;text-align:right">Steps</span>';
+    html+='<span style="width:40px;text-align:right">Time</span>';
+    html+='</div>';
+  }
   // Summary row (full width, spans both columns)
   if(batchGameResults.length>1){
     var totalScore=batchGameResults.reduce(function(a,b){return a+b.score},0);
@@ -1811,13 +1822,13 @@ function renderBatchGameResults(){
     var totalTime=batchGameResults.reduce(function(a,b){return a+b.duration},0);
     var bestMax=Math.max.apply(null,batchGameResults.map(function(g){return g.maxTile}));
     var winCount=batchGameResults.filter(function(g){return g.result==='win'}).length;
-    html+='<div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.15);font-size:11px;color:rgba(255,255,255,.6);margin-bottom:4px">';
-    html+='<span style="font-weight:700;color:#14b8a6">Avg</span>';
-    html+='<span style="color:#14b8a6;font-weight:600">'+Math.round(winCount/batchGameResults.length*100)+'% WR</span>';
-    html+='<span style="flex:1;text-align:right;font-weight:600;color:#14b8a6">'+Math.round(totalScore/batchGameResults.length).toLocaleString()+'</span>';
-    html+='<span style="width:60px;text-align:right;color:#ffd166;font-weight:600">'+bestMax+'</span>';
-    html+='<span style="width:48px;text-align:right">'+Math.round(totalSteps/batchGameResults.length)+'</span>';
-    html+='<span style="width:48px;text-align:right;font-size:10.5px">'+fmtPlayTime(totalTime)+'</span>';
+    html+='<div style="grid-column:1/-1;display:flex;gap:6px;padding:6px 8px;border-radius:6px;background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.15);font-size:11px;color:rgba(255,255,255,.6);margin-bottom:2px">';
+    html+='<span style="width:28px;font-weight:700;color:#14b8a6">Avg</span>';
+    html+='<span style="width:46px;color:#14b8a6;font-weight:600">'+Math.round(winCount/batchGameResults.length*100)+'% win rate</span>';
+    html+='<span style="flex:1;text-align:right;font-weight:600;color:#14b8a6">'+Math.round(totalScore/batchGameResults.length).toLocaleString()+' <span style="font-size:9px;color:rgba(255,255,255,.4)">avg score</span></span>';
+    html+='<span style="width:52px;text-align:right;color:#ffd166;font-weight:600">'+bestMax+' <span style="font-size:9px;color:rgba(255,255,255,.4)">best</span></span>';
+    html+='<span style="width:40px;text-align:right">'+Math.round(totalSteps/batchGameResults.length)+' <span style="font-size:9px;color:rgba(255,255,255,.4)">avg</span></span>';
+    html+='<span style="width:40px;text-align:right;font-size:10.5px">'+fmtPlayTime(totalTime)+'</span>';
     html+='</div>';
   }
   // Game result cards (2 per row via CSS grid)
@@ -1841,7 +1852,7 @@ function renderBatchGameResults(){
   if(batchGameResults.length){
     var wins=batchGameResults.filter(function(g){return g.result==='win'}).length;
     var badge=$('pt-summary-badge');
-    if(badge)badge.textContent=wins+'W/'+(batchGameResults.length-wins)+'L · '+Math.round(wins/batchGameResults.length*100)+'% WR';
+    if(badge)badge.textContent=wins+' win / '+(batchGameResults.length-wins)+' lose · '+Math.round(wins/batchGameResults.length*100)+'% win rate';
   }
 }
 
