@@ -1264,9 +1264,11 @@ stopAiAutoPlay();
 stopPollingProgress();
 cancelToolSelection();
 var tp=$('training-panel');if(tp)tp.hidden=true;
-var t1=$('ai-train');if(t1){t1.disabled=false;t1.textContent='▶ Train';}
-var t2=$('ai-stop-training');if(t2)t2.hidden=true;
+var t1=$('ai-train');if(t1){t1.disabled=false;t1.textContent='▶ Train';t1.classList.remove('training');t1.style.pointerEvents='auto';}
+var t2=$('ai-stop-training');if(t2){t2.hidden=true;t2.disabled=false;}
 $('game-screen').classList.remove('ai-training-mode');
+batchPlaytestMode=false;
+batchCancelled=false;
 }
 
 /* ------------------------------------------------------------------ neural network training (off main thread via Web Worker) ---------- */
@@ -1334,12 +1336,13 @@ var t1=$('ai-train');if(t1)t1.hidden=false;
 var t2=$('ai-stop-training');if(t2)t2.hidden=false;
 t2.textContent='↻ Refresh';
 // Reset button state first
-if(t1){t1.disabled=false;t1.textContent='▶ Train';t1.classList.remove('training');}
+if(t1){t1.disabled=false;t1.textContent='▶ Train';t1.classList.remove('training');t1.style.pointerEvents='auto';}
 // If training was recently triggered, keep button disabled
 if(isTrainingTriggeredLocally()){
   $('ai-train').disabled=true;
   $('ai-train').textContent='⏳ Training...';
   $('ai-train').classList.add('training');
+  $('ai-train').style.pointerEvents='none';
 }
 // Prevent opening token modal if one is already open
 window.isTokenModalOpen = isTokenModalOpen;
@@ -1664,6 +1667,7 @@ const PLAYTEST_TRIGGER_WINDOW=300000; // 5 min
 function startBatchPlaytest(){
   if(batchPlaytestMode)return;
   if(isTokenModalOpen)return; // Already showing password modal
+  batchCancelled=false;
   batchPlaytestTotal=parseInt($('playtest-batch-count').value);
   // Validate: max 6 hours worth
   if(batchPlaytestTotal>200){
@@ -1864,14 +1868,15 @@ function renderBatchGameResults(){
 
 function finishBatchPlaytest(){
   batchPlaytestMode=false;
+  batchCancelled=false;
   stopPollingPlaytestProgress();
   var startBtn=$('playtest-batch-start');
   var stopBtn=$('playtest-batch-stop');
   var infoEl=$('playtest-batch-info');
   var statusEl=$('playtest-cloud-status');
   var barEl=$('playtest-batch-bar');
-  if(startBtn){startBtn.style.display='';startBtn.textContent='▶ Start Cloud Test';}
-  if(stopBtn)stopBtn.style.display='none';
+  if(startBtn){startBtn.style.display='';startBtn.textContent='▶ Start Cloud Test';startBtn.disabled=false;startBtn.classList.remove('testing');startBtn.style.pointerEvents='auto';}
+  if(stopBtn){stopBtn.style.display='none';stopBtn.disabled=false;}
   if(barEl)barEl.style.width='100%';
   if(infoEl)infoEl.textContent='Done! '+batchPlaytestWins+'W '+batchPlaytestFails+'L';
   if(statusEl)statusEl.innerHTML='✅ <strong>Playtest 完成！</strong> '+batchPlaytestWins+' wins, '+batchPlaytestFails+' losses ('+Math.round(batchPlaytestWins/batchPlaytestTotal*100)+'% win rate).<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Results saved to <code>ai-playtest-progress.json</code>.</span>';
@@ -1882,6 +1887,7 @@ function finishBatchPlaytest(){
 /* Stop button handler */
 function cancelBatchPlaytest(){
   batchCancelled=true;
+  batchPlaytestMode=false;
   var statusEl=$('playtest-cloud-status');
   if(statusEl)statusEl.innerHTML='⏹ <strong>已取消。</strong> GitHub Actions 工作流将在当前局结束后停止。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">可到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions" target="_blank" style="color:#ffd166">Actions 页面</a>手动取消工作流。</span>';
   finishBatchPlaytest();
@@ -1917,8 +1923,8 @@ if(statusEl)statusEl.innerHTML='🔄 <strong>云端测试正在进行中...</str
 startPollingPlaytestProgress();
 // Keep stop button visible, show Testing... state
 var startBtn=$('playtest-batch-start');
-if(startBtn){startBtn.style.display='none';startBtn.textContent='⏳ Testing...';}
-if($('playtest-batch-stop'))$('playtest-batch-stop').style.display='';
+if(startBtn){startBtn.style.display='none';startBtn.textContent='⏳ Testing...';startBtn.disabled=true;startBtn.classList.add('testing');}
+if($('playtest-batch-stop')){$('playtest-batch-stop').style.display='';$('playtest-batch-stop').disabled=false;}
 if($('playtest-batch-progress'))$('playtest-batch-progress').style.display='';
 batchPlaytestMode=true;
         }else{
