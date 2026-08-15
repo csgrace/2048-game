@@ -227,10 +227,24 @@ function runTraining(opts) {
       var e = empty(g); if (!e.length) break;
       var p = e[Math.random() * e.length | 0];
       g[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
-      traj.rewards[traj.rewards.length - 1] = res.gained / 200 + (heuristicValue(g) - h) / 5000;
-      if (!hasMoves(g)) break;
+    // Reward: small step reward + heuristic delta + big bonus for reaching 2048
+    var stepReward = res.gained / 200 + (heuristicValue(g) - h) / 5000;
+    // Bonus for crossing 2048 threshold (the main goal!)
+    if (maxTile >= 2048 && traj.rewards.length > 0) {
+      stepReward += 0.5; // big positive reward for reaching 2048
     }
-    return { traj: traj, score: score, maxTile: maxTile };
+    traj.rewards[traj.rewards.length - 1] = stepReward;
+    if (!hasMoves(g)) {
+      // Terminal penalty: if we never reached 2048, penalize heavily
+      if (maxTile < 2048) {
+        traj.rewards[traj.rewards.length - 1] -= 0.3;
+      } else {
+        traj.rewards[traj.rewards.length - 1] += 0.2; // bonus for surviving past 2048
+      }
+      break;
+    }
+  }
+  return { traj: traj, score: score, maxTile: maxTile };
   }
 
   /* ---------- Train one mini-batch step ---------- */
