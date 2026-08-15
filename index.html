@@ -1789,16 +1789,7 @@ async function fetchPlaytestProgress(){
       var pct=Math.round(batchPlaytestCurrent/batchPlaytestTotal*100);
       if(barEl)barEl.style.width=pct+'%';
       if(infoEl)infoEl.textContent='Game '+batchPlaytestCurrent+' / '+batchPlaytestTotal+' ('+pct+'%)';
-      if(rateEl)rateEl.textContent='Win rate '+(data.winRate||Math.round(batchPlaytestWins/batchPlaytestCurrent*100))+'% ('+batchPlaytestWins+'W/'+batchPlaytestFails+'L)';
-
-      var logHtml='';
-      data.results.slice(-3).forEach(function(g){
-        var icon=g.result==='win'?'✅':'❌';
-        var color=g.result==='win'?'#6bcb77':'#ff6b6b';
-        logHtml+='<span style="color:'+color+'">'+icon+' Game '+g.game+': '+(g.result==='win'?'win':'fail')+' · Score '+g.score+' · Max '+g.maxTile+' · '+g.steps+' steps · '+fmtPlayTime(g.duration)+'</span>\n';
-      });
-      if(logEl)logEl.innerHTML=logHtml;
-      if(logEl)logEl.scrollTop=logEl.scrollHeight;
+      if(rateEl)rateEl.textContent='Win rate '+(data.winRate||Math.round(batchPlaytestWins/batchPlaytestCurrent*100))+'% ('+batchPlaytestWins+' win / '+batchPlaytestFails+' lose)';
 
       if(!data.active){
         // Test completed
@@ -1816,7 +1807,7 @@ function renderBatchGameResults(){
   // Table header
   html+='<div style="display:flex;gap:8px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06)">';
   html+='<span style="width:36px">#</span>';
-  html+='<span style="width:42px">Result</span>';
+  html+='<span style="width:50px">Result</span>';
   html+='<span style="flex:1;text-align:right">Score</span>';
   html+='<span style="width:60px;text-align:right">Max Tile</span>';
   html+='<span style="width:48px;text-align:right">Steps</span>';
@@ -1828,7 +1819,7 @@ function renderBatchGameResults(){
     var icon=isWin?'✅':'❌';
     html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:rgba(0,0,0,.15);font-size:11.5px;border-left:3px solid '+color+'">';
     html+='<span style="width:36px;color:rgba(255,255,255,.5)">#'+g.game+'</span>';
-    html+='<span style="width:42px;color:'+color+';font-weight:600">'+icon+' '+(isWin?'W':'L')+'</span>';
+    html+='<span style="width:50px;color:'+color+';font-weight:600">'+icon+' '+(isWin?'win':'lose')+'</span>';
     html+='<span style="flex:1;text-align:right;font-weight:600;color:rgba(255,255,255,.9)">'+g.score.toLocaleString()+'</span>';
     html+='<span style="width:60px;text-align:right;color:#ffd166;font-weight:600">'+g.maxTile+'</span>';
     html+='<span style="width:48px;text-align:right;color:rgba(255,255,255,.6)">'+g.steps+'</span>';
@@ -1843,7 +1834,7 @@ function renderBatchGameResults(){
     var bestMax=Math.max.apply(null,batchGameResults.map(function(g){return g.maxTile}));
     html+='<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;margin-top:2px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(255,255,255,.5)">';
     html+='<span style="width:36px;font-weight:600">Avg</span>';
-    html+='<span style="width:42px;color:#14b8a6;font-weight:600">'+Math.round(batchGameResults.filter(function(g){return g.result==='win'}).length/batchGameResults.length*100)+'%</span>';
+    html+='<span style="width:50px;color:#14b8a6;font-weight:600">'+Math.round(batchGameResults.filter(function(g){return g.result==='win'}).length/batchGameResults.length*100)+'% WR</span>';
     html+='<span style="flex:1;text-align:right;font-weight:600;color:#14b8a6">'+Math.round(totalScore/batchGameResults.length).toLocaleString()+'</span>';
     html+='<span style="width:60px;text-align:right;color:#ffd166;font-weight:600">'+bestMax+'</span>';
     html+='<span style="width:48px;text-align:right">'+Math.round(totalSteps/batchGameResults.length)+'</span>';
