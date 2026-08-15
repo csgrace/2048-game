@@ -1,7 +1,7 @@
 {
-  "active": true,
-  "timestamp": "2026-08-15T13:40:00.282Z",
-  "totalGames": 2,
+  "active": false,
+  "timestamp": "2026-08-15T15:05:37.861Z",
+  "totalGames": null,
   "completedGames": 0,
   "wins": 0,
   "fails": 0,
