@@ -2360,16 +2360,35 @@ function exitGame(){
 /* ====================================================================
    Flow
    ==================================================================== */
-$('btn-user').onclick=()=>{SFX.button();show('auth-screen')};
-$('btn-guest').onclick=()=>{SFX.button();currentUser=null;showSettings()};
-$('btn-ai-training').onclick=()=>{SFX.button();gameReturnScreen='entry-screen';currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();};
-$('btn-playtest').onclick=()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();};
-$('btn-playtest-back').onclick=()=>{SFX.button();closeTokenModal();stopPollingPlaytestProgress();show('entry-screen')};
-$('btn-auth-back').onclick=()=>{SFX.button();show('entry-screen')};
+bind('btn-user',()=>{SFX.button();show('auth-screen')});
+bind('btn-guest',()=>{SFX.button();currentUser=null;showSettings()});
+bind('btn-ai-training',()=>{SFX.button();gameReturnScreen='entry-screen';currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();});
+bind('btn-playtest',()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();});
+bind('btn-playtest-back',()=>{SFX.button();closeTokenModal();stopPollingPlaytestProgress();show('entry-screen')});
+bind('btn-auth-back',()=>{SFX.button();show('entry-screen')});
 
-$('btn-settings-back').onclick=()=>{SFX.button();
+bind('btn-settings-back',()=>{SFX.button();
   if(currentUser)show('auth-screen');else show('entry-screen');
-};
+});
+
+bind('btn-start-game',()=>{
+  SFX.button();
+  gameReturnScreen='settings-screen';
+  resetTrainingUI();
+  const g=parseInt($('sel-grid').value);
+  const t=$('sel-timer').value;
+  boardSize=g;timerMode=t;
+  save('g2048_last_settings',{grid:g,timer:t});
+  $('who-label').textContent=currentUser?('👤 '+currentUser):'🎮 Guest';
+  $('stat-mode').textContent=`${g}×${g}`;
+  $('b-save').disabled=!currentUser;
+  $('b-save').style.opacity=currentUser?'1':'.35';
+  $('b-save').style.pointerEvents=currentUser?'auto':'none';
+  $('b-load').disabled=!currentUser;
+  $('b-load').style.opacity=currentUser?'1':'.35';
+  $('b-load').style.pointerEvents=currentUser?'auto':'none';
+  show('game-screen');init(g);
+});
 
 function showSettings(){
   // restore defaults from storage if any
@@ -2379,26 +2398,7 @@ function showSettings(){
   show('settings-screen');
 }
 
-$('btn-start-game').onclick=()=>{
-  SFX.button();
-  gameReturnScreen='settings-screen';
-  resetTrainingUI();
-  const g=parseInt($('sel-grid').value);
-  const t=$('sel-timer').value;
-  boardSize=g;timerMode=t;
-  save('g2048_last_settings',{grid:g,timer:t});
-  // set up game screen labels
-  $('who-label').textContent=currentUser?('👤 '+currentUser):'🎮 Guest';
-  $('stat-mode').textContent=`${g}×${g}`;
-  // disable save/load for guest
-  $('b-save').disabled=!currentUser;
-  $('b-save').style.opacity=currentUser?'1':'.35';
-  $('b-save').style.pointerEvents=currentUser?'auto':'none';
-  $('b-load').disabled=!currentUser;
-  $('b-load').style.opacity=currentUser?'1':'.35';
-  $('b-load').style.pointerEvents=currentUser?'auto':'none';
-  show('game-screen');init(g);
-};
+/* (btn-start-game is bound above via bind()) */
 
 /* ====================================================================
    Auth
@@ -2407,34 +2407,59 @@ function establishSession(data){
   currentUser=data.user.username;authToken=data.token;
   save(LS_SESSION,{username:currentUser,token:authToken});
 }
-$('btn-login').onclick=async()=>{
+bind('btn-login',async()=>{
   SFX.button();
+  const btn=$('btn-login');
+  if(btn){btn.textContent='Logging in...';btn.disabled=true;}
   const username=$('auth-user').value.trim(),password=$('auth-pass').value;
-  if(!username||!password){$('auth-status').textContent='Enter username and password';return}
-  try{establishSession(await api('/auth/login',{method:'POST',body:JSON.stringify({username,password})}));SFX.merge();showSettings();}
-  catch(error){$('auth-status').textContent=error.message;}
-};
+  if(!username||!password){
+    $('auth-status').textContent='Enter username and password';
+    if(btn){btn.textContent='Login';btn.disabled=false;}
+    return;
+  }
+  try{
+    establishSession(await api('/auth/login',{method:'POST',body:JSON.stringify({username,password})}));
+    SFX.merge();showSettings();
+  }catch(error){
+    $('auth-status').textContent=error.message;
+  }
+  if(btn){btn.textContent='Login';btn.disabled=false;}
+});
 
-$('btn-register').onclick=async()=>{
+bind('btn-register',async()=>{
   SFX.button();
+  const btn=$('btn-register');
+  if(btn){btn.textContent='Registering...';btn.disabled=true;}
   const username=$('auth-user').value.trim(),password=$('auth-pass').value;
-  if(!username||!password){$('auth-status').textContent='Enter username and password';return}
-  try{establishSession(await api('/auth/register',{method:'POST',body:JSON.stringify({username,password})}));SFX.merge();showSettings();}
-  catch(error){$('auth-status').textContent=error.message;}
-};
+  if(!username||!password){
+    $('auth-status').textContent='Enter username and password';
+    if(btn){btn.textContent='Register';btn.disabled=false;}
+    return;
+  }
+  try{
+    establishSession(await api('/auth/register',{method:'POST',body:JSON.stringify({username,password})}));
+    SFX.merge();showSettings();
+  }catch(error){
+    $('auth-status').textContent=error.message;
+  }
+  if(btn){btn.textContent='Register';btn.disabled=false;}
+});
 
 /* ====================================================================
-   Game buttons
+   Game buttons — safe binding (null-safe so one missing element can't break the rest)
    ==================================================================== */
-$('b-up').onclick=()=>{SFX.button();move('up')};
-$('b-down').onclick=()=>{SFX.button();move('down')};
-$('b-left').onclick=()=>{SFX.button();move('left')};
-$('b-right').onclick=()=>{SFX.button();move('right')};
-$('b-undo').onclick=()=>{SFX.button();undo()};
-$('b-tools').onclick=()=>{SFX.button();openTools()};
-$('ai-train').onclick=()=>{SFX.button();tokenModalAction='train';openTokenModal()};
-$('ai-stop-training').onclick=()=>{SFX.button();checkTrainingProgress()};
-$('token-save').onclick=async()=>{
+function bind(id,handler){var el=$(id);if(el)el.onclick=handler;else console.warn('[bind] element not found: '+id);}
+
+bind('b-up',()=>{SFX.button();move('up')});
+bind('b-down',()=>{SFX.button();move('down')});
+bind('b-left',()=>{SFX.button();move('left')});
+bind('b-right',()=>{SFX.button();move('right')});
+bind('b-undo',()=>{SFX.button();undo()});
+bind('b-tools',()=>{SFX.button();openTools()});
+bind('ai-train',()=>{SFX.button();tokenModalAction='train';openTokenModal()});
+bind('ai-stop-training',()=>{SFX.button();checkTrainingProgress()});
+
+bind('token-save',async()=>{
 SFX.button();
 var pw=$('token-input').value;
 if(!pw)return;
@@ -2445,33 +2470,29 @@ $('token-save').textContent='确认';
 $('token-save').disabled=false;
 if(ok){closeTokenModal(); if(tokenModalAction==='playtest'){dispatchPlaytestWorkflow();}else{startTraining();}}
 else{$('token-err').style.display='block';$('token-input').value='';$('token-input').focus();}
-};
-  $('token-close').onclick=()=>{SFX.button();closeTokenModal()};
-  $('token-modal').onclick=(e)=>{if(e.target.id==='token-modal')closeTokenModal()};
-  $('token-input').addEventListener('keydown',async(e)=>{if(e.key==='Enter'){$('token-save').click();}});
-$('tool-swap').onclick=()=>{SFX.button();beginTool('swap')};
-$('tool-delete').onclick=()=>{SFX.button();beginTool('delete')};
-$('ai-suggest').onclick=()=>{SFX.button();aiSuggest()};
-$('ai-auto').onclick=()=>{SFX.button();startAiAutoPlay()};
-$('ai-stop').onclick=()=>{SFX.button();stopAiAutoPlay();$('tool-status').textContent='AI Auto Play stopped.'};
-$('tools-close').onclick=()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')};
-$('ai-playtest-clear').onclick=()=>{
-SFX.button();
-if(confirm('Clear all playtest records?')){
-savePlaytests([]);
-renderPlaytestPanel();
-}
-};
-$('playtest-batch-start').onclick=()=>{SFX.button();startBatchPlaytest()};
-$('playtest-batch-stop').onclick=()=>{SFX.button();cancelBatchPlaytest()};
-$('pt-toggle-details').onclick=()=>{SFX.button();var d=$('pt-weight-details');var btn=$('pt-toggle-details');if(d){var open=d.style.display==='none';d.style.display=open?'':'none';btn.textContent=open?'Details ▴':'Details ▾';}};
-$('b-restart').onclick=()=>{SFX.button();init(boardSize)};
-$('b-save').onclick=()=>{SFX.button();doSave()};
-$('b-load').onclick=()=>{SFX.button();doLoad()};
-$('b-leaderboard').onclick=()=>{SFX.button();showLeaderboard()};
-$('b-exit').onclick=()=>{SFX.button();exitGame()};
-$('lb-close').onclick=()=>{SFX.button();$('lb-modal').classList.remove('show')};
-$('ov-btn').onclick=()=>{SFX.button();init(boardSize)};
+});
+bind('token-close',()=>{SFX.button();closeTokenModal()});
+bind('token-modal',(e)=>{if(e.target.id==='token-modal')closeTokenModal()});
+(function(){var ti=$('token-input');if(ti)ti.addEventListener('keydown',async(e)=>{if(e.key==='Enter'){$('token-save').click();}});})();
+
+bind('tool-swap',()=>{SFX.button();beginTool('swap')});
+bind('tool-delete',()=>{SFX.button();beginTool('delete')});
+bind('ai-suggest',()=>{SFX.button();aiSuggest()});
+bind('ai-auto',()=>{SFX.button();startAiAutoPlay()});
+bind('ai-stop',()=>{SFX.button();stopAiAutoPlay();var ts=$('tool-status');if(ts)ts.textContent='AI Auto Play stopped.';});
+bind('tools-close',()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')});
+
+bind('playtest-batch-start',()=>{SFX.button();startBatchPlaytest()});
+bind('playtest-batch-stop',()=>{SFX.button();cancelBatchPlaytest()});
+bind('pt-toggle-details',()=>{SFX.button();var d=$('pt-weight-details');var btn=$('pt-toggle-details');if(d){var open=d.style.display==='none';d.style.display=open?'':'none';btn.textContent=open?'Details ▴':'Details ▾';}});
+
+bind('b-restart',()=>{SFX.button();init(boardSize)});
+bind('b-save',()=>{SFX.button();doSave()});
+bind('b-load',()=>{SFX.button();doLoad()});
+bind('b-leaderboard',()=>{SFX.button();showLeaderboard()});
+bind('b-exit',()=>{SFX.button();exitGame()});
+bind('lb-close',()=>{SFX.button();$('lb-modal').classList.remove('show')});
+bind('ov-btn',()=>{SFX.button();init(boardSize)});
 
 /* keyboard */
 document.addEventListener('keydown',e=>{
