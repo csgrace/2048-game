@@ -34,7 +34,12 @@ if (!AIBrain) {
   process.exit(1);
 }
 
-/* ---------- Game-logic replicas — copied verbatim from ai-trainer-worker.js ---------- */
+/* ---------- Game-logic replicas — identical to browser aiBestMove ---------- */
+
+var AI_DIRECTIONS = ['up', 'left', 'down', 'right'];
+var AI_BUDGET_MS = 60; // same time budget as browser/playtest
+
+function aiClone(grid) { return grid.map(function (r) { return r.slice(); }); }
 
 function slide(values) {
   var tiles = values.filter(Boolean); var res = []; var gained = 0;
@@ -46,20 +51,28 @@ function slide(values) {
   return { line: res, gained: gained };
 }
 
-function move(grid, dir) {
-  var next = grid.map(function (r) { return r.slice(); }); var changed = false, gained = 0;
-  for (var i = 0; i < 4; i++) {
-    var line = dir < 2 ? next[i].slice() : [grid[0][i], grid[1][i], grid[2][i], grid[3][i]];
-    if (dir === 1 || dir === 3) line = line.slice().reverse();
-    var res = slide(line); line = res.line.slice();
-    if (dir === 1 || dir === 3) line = line.slice().reverse();
-    var original = dir < 2 ? next[i].slice() : [grid[0][i], grid[1][i], grid[2][i], grid[3][i]];
-    if (line.some(function (v, k) { return v !== original[k]; })) changed = true;
+/* aiMoveBoard — identical to browser/playtest version */
+function aiMoveBoard(grid, direction) {
+  var next = aiClone(grid); var changed = false, gained = 0;
+  for (var index = 0; index < 4; index++) {
+    var line = direction === 'left' || direction === 'right' ? next[index].slice() : next.map(function (r) { return r[index]; });
+    if (direction === 'right' || direction === 'down') line.reverse();
+    var res = slide(line); line = res.line;
+    if (direction === 'right' || direction === 'down') line.reverse();
+    var original = direction === 'left' || direction === 'right' ? next[index].slice() : next.map(function (r) { return r[index]; });
+    if (line.some(function (v, i) { return v !== original[i]; })) changed = true;
     gained += res.gained;
-    if (dir < 2) next[i] = line;
-    else for (var r = 0; r < 4; r++) next[r][i] = line[r];
+    if (direction === 'left' || direction === 'right') next[index] = line;
+    else for (var row = 0; row < 4; row++) next[row][index] = line[row];
   }
-  return { next: next, changed: changed, gained: gained };
+  return { board: next, changed: changed, gained: gained };
+}
+
+/* move() wraps aiMoveBoard for backward compat (dir is 0-3 integer) */
+function move(grid, dir) {
+  var dirName = AI_DIRECTIONS[dir]; // 0=up, 1=left, 2=down, 3=right
+  var res = aiMoveBoard(grid, dirName);
+  return { next: res.board, changed: res.changed, gained: res.gained };
 }
 
 function empty(grid) {
@@ -67,6 +80,8 @@ function empty(grid) {
   for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) if (!grid[r][c]) e.push([r, c]);
   return e;
 }
+// alias for playtest code that calls aiEmptyCells
+function aiEmptyCells(grid) { return empty(grid); }
 
 function hasMoves(grid) {
   for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
@@ -92,8 +107,9 @@ function gridHash(grid) {
   for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) h = (h * 31 + grid[r][c]) | 0;
   return h;
 }
+function aiGridHash(grid) { return gridHash(grid); }
 
-/* ---------- Heuristic evaluation ---------- */
+/* ---------- Heuristic evaluation — identical to browser aiEvaluate ---------- */
 function heuristicValue(grid) {
   var e = empty(grid).length; var smooth = 0, merges = 0, max = 0; var powers = new Set();
   for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
@@ -143,15 +159,16 @@ function runTraining(opts) {
   AIBrain.adamReset();
   AIBrain.adamStep();
 
-  /* ---------- Neural network leaf evaluation ---------- */
+  /* ---------- Neural network leaf evaluation — identical to browser aiNeuralEvaluate ---------- */
   function nnEvaluate(grid) {
     if (!useNNLeaf || !net) return heuristicValue(grid);
     var input = AIBrain.encodeBoard(grid);
     var raw = net.forward(input);
-    return heuristicValue(grid) * 0.3 + raw * 5000;
+    var nnWeight = Math.min(0.8, totalGamesTrained / 300);
+    return heuristicValue(grid) * (1 - nnWeight) + raw * 5000 * nnWeight;
   }
 
-  /* ---------- Expectimax Search ---------- */
+  /* ---------- Expectimax Search — identical to browser aiExpectimax ---------- */
   function expectimax(grid, depth, isChance, table) {
     if (depth <= 0) return nnEvaluate(grid);
     var key = gridHash(grid) + '_' + depth + '_' + (isChance ? 1 : 0);
@@ -160,28 +177,22 @@ function runTraining(opts) {
     var value;
     if (!isChance) {
       value = -Infinity;
-      for (var d = 0; d < 4; d++) {
-        var res = move(grid, d);
-        if (res.changed) {
-          var v = res.gained + expectimax(res.next, depth - 1, true, table);
-          if (v > value) value = v;
-        }
+      for (var i = 0; i < AI_DIRECTIONS.length; i++) {
+        var result = aiMoveBoard(grid, AI_DIRECTIONS[i]);
+        if (result.changed) value = Math.max(value, result.gained + expectimax(result.board, depth - 1, true, table));
       }
       if (value === -Infinity) value = -100000;
     } else {
       var empties = empty(grid);
-      if (!empties.length) {
-        value = expectimax(grid, depth - 1, false, table);
-      } else {
-        var sample = empties.length > 4 ? empties.filter(function (_, i) { return i % Math.ceil(empties.length / 4) === 0; }) : empties;
+      if (!empties.length) { value = expectimax(grid, depth - 1, false, table); }
+      else {
+        var sample = empties.length > 4 ? empties.filter(function (_, i, arr) { return i % Math.ceil(arr.length / 4) === 0; }) : empties;
         var total = 0;
-        for (var i = 0; i < sample.length; i++) {
-          var p = sample[i];
-          var g2 = grid.map(function (r) { return r.slice(); });
-          g2[p[0]][p[1]] = 2;
-          var g4 = grid.map(function (r) { return r.slice(); });
-          g4[p[0]][p[1]] = 4;
-          total += 0.9 * expectimax(g2, depth - 1, false, table) + 0.1 * expectimax(g4, depth - 1, false, table);
+        for (var s = 0; s < sample.length; s++) {
+          var p = sample[s];
+          var t2 = aiClone(grid); t2[p[0]][p[1]] = 2;
+          var t4 = aiClone(grid); t4[p[0]][p[1]] = 4;
+          total += 0.9 * expectimax(t2, depth - 1, false, table) + 0.1 * expectimax(t4, depth - 1, false, table);
         }
         value = total / sample.length;
       }
@@ -190,23 +201,67 @@ function runTraining(opts) {
     return value;
   }
 
-  function pickMoveExpectimax(grid, maxDepth) {
-    var table = new Map();
-    var best = -1, bestScore = -Infinity;
-    for (var d = 0; d < 4; d++) {
-      var res = move(grid, d);
-      if (!res.changed) continue;
-      var score = res.gained + expectimax(res.next, maxDepth, true, table);
-      if (score > bestScore) { bestScore = score; best = d; }
+  /* ---------- Monte Carlo rollout — identical to browser aiMonteCarlo ---------- */
+  function monteCarlo(grid, moveDir, rounds) {
+    var totalGained = 0;
+    for (var round = 0; round < rounds; round++) {
+      var current = aiMoveBoard(grid, moveDir).board; var gained = 0, steps = 0;
+      while (steps < 20) {
+        var empties = empty(current); if (!empties.length) break;
+        var p = empties[Math.floor(Math.random() * empties.length)];
+        current[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
+        var moved = false;
+        var dirs = AI_DIRECTIONS.slice().sort(function () { return Math.random() - 0.5; });
+        for (var d = 0; d < dirs.length; d++) {
+          var res = aiMoveBoard(current, dirs[d]);
+          if (res.changed) { gained += res.gained; current = res.board; moved = true; break; }
+        }
+        if (!moved) break;
+        steps++;
+      }
+      totalGained += gained;
     }
-    return best;
+    return totalGained / rounds;
   }
 
-  function getSearchDepth(grid) {
-    return 2; // fixed shallow search for fast training throughput
+  /* ---------- aiBestMove — IDENTICAL to browser/playtest version ---------- */
+  function aiBestMove(grid) {
+    var table = new Map();
+    var start = Date.now();
+    var bestDirection = null;
+    for (var targetDepth = 2; targetDepth <= 6; targetDepth++) {
+      var localBest = null, localScore = -Infinity, completed = true;
+      for (var i = 0; i < AI_DIRECTIONS.length; i++) {
+        var result = aiMoveBoard(grid, AI_DIRECTIONS[i]);
+        if (!result.changed) continue;
+        var value = result.gained + expectimax(result.board, targetDepth, true, table);
+        if (value > localScore) { localScore = value; localBest = AI_DIRECTIONS[i]; }
+      }
+      if (Date.now() - start > AI_BUDGET_MS) { completed = false; }
+      if (completed && localBest) { bestDirection = localBest; }
+      if (!completed) break;
+    }
+    // Monte Carlo tie-break / validation
+    var candidates = [];
+    for (var j = 0; j < AI_DIRECTIONS.length; j++) {
+      var res2 = aiMoveBoard(grid, AI_DIRECTIONS[j]);
+      if (!res2.changed) continue;
+      candidates.push({ direction: AI_DIRECTIONS[j], expectimax: res2.gained + expectimax(res2.board, 2, true, new Map()) });
+    }
+    candidates.sort(function (a, b) { return b.expectimax - a.expectimax; });
+    if (candidates.length) {
+      var top1 = candidates[0];
+      var top2 = candidates.length > 1 ? candidates[1] : null;
+      var probeRounds = 8;
+      var mc1 = monteCarlo(grid, top1.direction, probeRounds);
+      var mc2 = top2 ? monteCarlo(grid, top2.direction, probeRounds) : -1;
+      if (top2 && mc2 > mc1 * 1.15) bestDirection = top2.direction;
+      else bestDirection = top1.direction;
+    }
+    return bestDirection;
   }
 
-  /* ---------- Self-play one game ---------- */
+  /* ---------- Self-play one game using IDENTICAL aiBestMove as test/browser ---------- */
   function playOneGame() {
     var g = initRandom();
     var traj = new AIBrain.Trajectory();
@@ -215,11 +270,11 @@ function runTraining(opts) {
     while (true) {
       var h = heuristicValue(g);
       traj.add(g, 0);
-      var depth = getSearchDepth(g);
-      var dir = pickMoveExpectimax(g, depth);
-      if (dir < 0) break;
-      var res = move(g, dir);
-      g = res.next;
+      var dir = aiBestMove(g);
+      if (!dir) break;
+      var res = aiMoveBoard(g, dir);
+      if (!res.changed) break;
+      g = res.board;
       score += res.gained;
       for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) {
         if (g[r][c] > maxTile) maxTile = g[r][c];
@@ -227,24 +282,24 @@ function runTraining(opts) {
       var e = empty(g); if (!e.length) break;
       var p = e[Math.random() * e.length | 0];
       g[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
-    // Reward: small step reward + heuristic delta + big bonus for reaching 2048
-    var stepReward = res.gained / 200 + (heuristicValue(g) - h) / 5000;
-    // Bonus for crossing 2048 threshold (the main goal!)
-    if (maxTile >= 2048 && traj.rewards.length > 0) {
-      stepReward += 0.5; // big positive reward for reaching 2048
-    }
-    traj.rewards[traj.rewards.length - 1] = stepReward;
-    if (!hasMoves(g)) {
-      // Terminal penalty: if we never reached 2048, penalize heavily
-      if (maxTile < 2048) {
-        traj.rewards[traj.rewards.length - 1] -= 0.3;
-      } else {
-        traj.rewards[traj.rewards.length - 1] += 0.2; // bonus for surviving past 2048
+      // Reward: small step reward + heuristic delta + big bonus for reaching 2048
+      var stepReward = res.gained / 200 + (heuristicValue(g) - h) / 5000;
+      // Bonus for crossing 2048 threshold (the main goal!)
+      if (maxTile >= 2048 && traj.rewards.length > 0) {
+        stepReward += 0.5; // big positive reward for reaching 2048
       }
-      break;
+      traj.rewards[traj.rewards.length - 1] = stepReward;
+      if (!hasMoves(g)) {
+        // Terminal penalty: if we never reached 2048, penalize heavily
+        if (maxTile < 2048) {
+          traj.rewards[traj.rewards.length - 1] -= 0.3;
+        } else {
+          traj.rewards[traj.rewards.length - 1] += 0.2; // bonus for surviving past 2048
+        }
+        break;
+      }
     }
-  }
-  return { traj: traj, score: score, maxTile: maxTile };
+    return { traj: traj, score: score, maxTile: maxTile };
   }
 
   /* ---------- Train one mini-batch step ---------- */
