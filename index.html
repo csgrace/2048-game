@@ -417,7 +417,7 @@ transition:all .25s ease;
   <!-- ============ PLAYTEST ARENA ============ -->
   <div class="screen" id="playtest-screen">
     <button class="back-btn" id="btn-playtest-back">← Back</button>
-    <div class="glass" style="width:100%;max-width:1000px;padding:22px 24px 26px">
+    <div class="glass" style="width:100%;max-width:1100px;padding:22px 20px 26px;box-sizing:border-box;overflow:hidden">
       <div class="title-big" style="font-size:26px;text-align:center;margin-bottom:2px">🏆 AI Playtest Arena</div>
       <div class="subtitle" style="text-align:center;margin-bottom:18px;font-size:13px">Batch auto-play · Live board preview · Win-rate stats</div>
 
@@ -483,7 +483,7 @@ transition:all .25s ease;
           <span style="font-size:11px;color:rgba(255,255,255,.45)">Game Results</span>
           <span id="pt-summary-badge" style="font-size:10.5px;padding:2px 8px;border-radius:10px;background:rgba(20,184,166,.12);color:#14b8a6;font-weight:600"></span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px" id="pt-game-list">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;min-width:0" id="pt-game-list">
           <!-- JS 动态填充 -->
         </div>
       </div>
@@ -1811,24 +1811,24 @@ function renderBatchGameResults(){
     var totalTime=batchGameResults.reduce(function(a,b){return a+b.duration},0);
     var bestMax=Math.max.apply(null,batchGameResults.map(function(g){return g.maxTile}));
     var winCount=batchGameResults.filter(function(g){return g.result==='win'}).length;
-    html+='<div style="grid-column:1/-1;display:flex;gap:6px;padding:6px 8px;border-radius:6px;background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.15);font-size:11px;color:rgba(255,255,255,.6);margin-bottom:2px;white-space:nowrap">';
-    html+='<span style="width:28px;font-weight:700;color:#14b8a6">Avg</span>';
-    html+='<span style="width:72px;color:#14b8a6;font-weight:600;white-space:nowrap">'+Math.round(winCount/batchGameResults.length*100)+'% win rate</span>';
-    html+='<span style="flex:1;text-align:right;font-weight:600;color:#14b8a6;white-space:nowrap">'+Math.round(totalScore/batchGameResults.length).toLocaleString()+' <span style="font-size:9px;color:rgba(255,255,255,.4)">avg score</span></span>';
-    html+='<span style="width:52px;text-align:right;color:#ffd166;font-weight:600;white-space:nowrap">'+bestMax+' <span style="font-size:9px;color:rgba(255,255,255,.4)">best</span></span>';
-    html+='<span style="width:40px;text-align:right;white-space:nowrap">'+Math.round(totalSteps/batchGameResults.length)+' <span style="font-size:9px;color:rgba(255,255,255,.4)">avg</span></span>';
-    html+='<span style="width:40px;text-align:right;font-size:10.5px;white-space:nowrap">'+fmtPlayTime(totalTime)+'</span>';
+    html+='<div style="grid-column:1/-1;display:flex;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.15);font-size:11px;color:rgba(255,255,255,.6);margin-bottom:2px;white-space:nowrap;overflow:hidden">';
+    html+='<span style="width:24px;flex-shrink:0;font-weight:700;color:#14b8a6">Avg</span>';
+    html+='<span style="width:58px;flex-shrink:0;color:#14b8a6;font-weight:600;white-space:nowrap">'+Math.round(winCount/batchGameResults.length*100)+'% win</span>';
+    html+='<span style="flex:1;text-align:right;font-weight:600;color:#14b8a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+Math.round(totalScore/batchGameResults.length).toLocaleString()+' <span style="font-size:9px;color:rgba(255,255,255,.4)">avg score</span></span>';
+    html+='<span style="width:44px;flex-shrink:0;text-align:right;color:#ffd166;font-weight:600;white-space:nowrap">'+bestMax+' <span style="font-size:9px;color:rgba(255,255,255,.4)">best</span></span>';
+    html+='<span style="width:34px;flex-shrink:0;text-align:right;white-space:nowrap">'+Math.round(totalSteps/batchGameResults.length)+'</span>';
+    html+='<span style="width:34px;flex-shrink:0;text-align:right;font-size:10.5px;white-space:nowrap">'+fmtPlayTime(totalTime)+'</span>';
     html+='</div>';
   }
   // Header row for each column (one per grid column)
   if(batchGameResults.length){
-    var headerHtml='<div style="display:flex;gap:6px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px">';
-    headerHtml+='<span style="width:28px">#</span>';
-    headerHtml+='<span style="width:72px">Result</span>';
-    headerHtml+='<span style="flex:1;text-align:right">Score</span>';
-    headerHtml+='<span style="width:52px;text-align:right">Max Tile</span>';
-    headerHtml+='<span style="width:40px;text-align:right">Steps</span>';
-    headerHtml+='<span style="width:40px;text-align:right">Time</span>';
+    var headerHtml='<div style="display:flex;gap:4px;padding:4px 6px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px;min-width:0;overflow:hidden">';
+    headerHtml+='<span style="width:24px;flex-shrink:0">#</span>';
+    headerHtml+='<span style="width:58px;flex-shrink:0">Result</span>';
+    headerHtml+='<span style="flex:1;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis">Score</span>';
+    headerHtml+='<span style="width:44px;flex-shrink:0;text-align:right">Max</span>';
+    headerHtml+='<span style="width:34px;flex-shrink:0;text-align:right">Steps</span>';
+    headerHtml+='<span style="width:34px;flex-shrink:0;text-align:right">Time</span>';
     headerHtml+='</div>';
     html+=headerHtml+headerHtml;
   }
@@ -1837,13 +1837,13 @@ function renderBatchGameResults(){
     var isWin=g.result==='win';
     var color=isWin?'#6bcb77':'#ff6b6b';
     var icon=isWin?'✅':'❌';
-    html+='<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:rgba(0,0,0,.15);font-size:11.5px;border-left:3px solid '+color+'">';
-    html+='<span style="width:28px;color:rgba(255,255,255,.5)">#'+g.game+'</span>';
-    html+='<span style="width:72px;color:'+color+';font-weight:600;white-space:nowrap">'+icon+' '+(isWin?'win':'lose')+'</span>';
-    html+='<span style="flex:1;text-align:right;font-weight:600;color:rgba(255,255,255,.9)">'+g.score.toLocaleString()+'</span>';
-    html+='<span style="width:52px;text-align:right;color:#ffd166;font-weight:600">'+g.maxTile+'</span>';
-    html+='<span style="width:40px;text-align:right;color:rgba(255,255,255,.6)">'+g.steps+'</span>';
-    html+='<span style="width:40px;text-align:right;color:rgba(255,255,255,.4);font-size:10.5px">'+fmtPlayTime(g.duration)+'</span>';
+    html+='<div style="display:flex;align-items:center;gap:4px;padding:5px 6px;border-radius:6px;background:rgba(0,0,0,.15);font-size:11.5px;border-left:3px solid '+color+';min-width:0;overflow:hidden">';
+    html+='<span style="width:24px;flex-shrink:0;color:rgba(255,255,255,.5)">#'+g.game+'</span>';
+    html+='<span style="width:58px;flex-shrink:0;color:'+color+';font-weight:600;white-space:nowrap">'+icon+' '+(isWin?'win':'lose')+'</span>';
+    html+='<span style="flex:1;text-align:right;font-weight:600;color:rgba(255,255,255,.9);min-width:0;overflow:hidden;text-overflow:ellipsis">'+g.score.toLocaleString()+'</span>';
+    html+='<span style="width:44px;flex-shrink:0;text-align:right;color:#ffd166;font-weight:600">'+g.maxTile+'</span>';
+    html+='<span style="width:34px;flex-shrink:0;text-align:right;color:rgba(255,255,255,.6)">'+g.steps+'</span>';
+    html+='<span style="width:34px;flex-shrink:0;text-align:right;color:rgba(255,255,255,.4);font-size:10.5px">'+fmtPlayTime(g.duration)+'</span>';
     html+='</div>';
   });
   if(!batchGameResults.length)html='<div style="grid-column:1/-1;padding:8px;color:rgba(255,255,255,.3);font-size:11px">Waiting for game results...</div>';
