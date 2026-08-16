@@ -1644,6 +1644,21 @@ function updateBackendStatusUI(data){
 
   // If backend is active, also refresh weights & playtest progress
   if(data.active){
+    // Disable Train and Cloud Test buttons while backend is running
+    var trainBtn=$('ai-train');
+    if(trainBtn&&!trainBtn.dataset.userTriggered){
+      trainBtn.disabled=true;
+      trainBtn.textContent='⏳ Backend '+(phase==='training'?'Training':'Testing')+'...';
+      trainBtn.classList.add('training');
+      trainBtn.style.pointerEvents='none';
+    }
+    var cloudBtn=$('playtest-batch-start');
+    if(cloudBtn&&!cloudBtn.dataset.userTriggered){
+      cloudBtn.disabled=true;
+      cloudBtn.textContent='⏳ Backend Busy...';
+      cloudBtn.style.opacity='0.5';
+      cloudBtn.style.pointerEvents='none';
+    }
     // Reload weights if version changed
     if(data.version&&data.version!==loadedWeightVersion){
       reloadWeightsFromRepo();
@@ -1651,6 +1666,22 @@ function updateBackendStatusUI(data){
     // If testing phase, also poll playtest progress
     if(phase==='testing'&&!playtestPollTimer){
       startPollingPlaytestProgress();
+    }
+  }else{
+    // Re-enable buttons when backend is idle
+    var trainBtn2=$('ai-train');
+    if(trainBtn2&&!trainBtn2.dataset.userTriggered){
+      trainBtn2.disabled=false;
+      trainBtn2.textContent='▶ Train';
+      trainBtn2.classList.remove('training');
+      trainBtn2.style.pointerEvents='auto';
+    }
+    var cloudBtn2=$('playtest-batch-start');
+    if(cloudBtn2&&cloudBtn2.style.display!=='none'&&!cloudBtn2.dataset.userTriggered){
+      cloudBtn2.disabled=false;
+      cloudBtn2.textContent='▶ Start Cloud Test';
+      cloudBtn2.style.opacity='';
+      cloudBtn2.style.pointerEvents='auto';
     }
   }
   // Update weight info bar in Playtest Arena
