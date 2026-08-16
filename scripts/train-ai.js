@@ -320,7 +320,7 @@ function runTraining(opts) {
       onProgress(Object.assign({ type: 'progress' }, dataPoint, { history: trainingHistory }));
     }
 
-    if (g % 20 === 0 || g === GAMES - 1) {
+    if (g % 5 === 0 || g === GAMES - 1) {
       var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
       var avgScore = (totalScore / (g + 1)).toFixed(0);
       console.log(
