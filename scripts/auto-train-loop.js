@@ -33,6 +33,13 @@ var repoRoot = path.join(__dirname, '..');
 var weightsPath = path.join(repoRoot, 'js', 'ai-weights.json');
 var progressPath = path.join(repoRoot, 'js', 'ai-playtest-progress.json');
 var loopLogPath = path.join(repoRoot, 'js', 'auto-train-log.json');
+var statusPath = path.join(repoRoot, 'js', 'ai-backend-status.json');
+
+/* ---------- Backend status file (for frontend monitoring) ---------- */
+function writeBackendStatus(status) {
+  status.lastUpdate = new Date().toISOString();
+  fs.writeFileSync(statusPath, JSON.stringify(status, null, 2));
+}
 
 /* ---------- Load ai-brain.js ---------- */
 var brainSrc = fs.readFileSync(path.join(repoRoot, 'js', 'ai-brain.js'), 'utf8');
@@ -290,6 +297,35 @@ function runPlaytest(numGames) {
     results.push(r);
     var winStr = r.result === 'win' ? 'WIN' : 'LOSS';
     console.log('  Game ' + i + '/' + numGames + ': ' + winStr + ' score=' + r.score + ' max=' + r.maxTile + ' steps=' + r.steps + ' time=' + r.duration + 'ms');
+    
+    // Update progress file during playtest (every game)
+    var partialWins = results.filter(function (g) { return g.result === 'win'; }).length;
+    var partialData = {
+      active: i < numGames,
+      timestamp: new Date().toISOString(),
+      totalGames: numGames,
+      completedGames: i,
+      wins: partialWins,
+      fails: i - partialWins,
+      winRate: Math.round(partialWins / i * 100),
+      avgScore: Math.round(results.reduce(function (a, b) { return a + b.score; }, 0) / i),
+      bestMaxTile: Math.max.apply(null, results.map(function (g) { return g.maxTile; })),
+      totalDurationMs: results.reduce(function (a, b) { return a + b.duration; }, 0),
+      results: results.slice()
+    };
+    fs.writeFileSync(progressPath, JSON.stringify(partialData, null, 2));
+    
+    // Also update backend status
+    writeBackendStatus({
+      active: true,
+      phase: 'testing',
+      round: loopLog.length + 1,
+      maxRounds: MAX_ROUNDS,
+      testProgress: i + '/' + numGames,
+      wins: partialWins,
+      winRate: partialData.winRate,
+      message: 'Testing game ' + i + '/' + numGames + ' — ' + partialWins + ' wins (' + partialData.winRate + '%)'
+    });
   }
   var wins = results.filter(function (g) { return g.result === 'win'; }).length;
   var winRate = Math.round(wins / results.length * 100);
@@ -379,6 +415,19 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   
   console.log('Training ' + trainGames + ' games (lr=' + lr + ', warmup=' + warmup + ', current v' + currentVersion + ')...');
   
+  // Write training-start status
+  writeBackendStatus({
+    active: true,
+    phase: 'training',
+    round: round,
+    maxRounds: MAX_ROUNDS,
+    version: currentVersion,
+    trainGames: trainGames,
+    testGames: TEST_GAMES,
+    lr: lr,
+    message: 'Round ' + round + '/' + MAX_ROUNDS + ' — training ' + trainGames + ' games (lr=' + lr + ')'
+  });
+  
   // Run training
   var trainStart = Date.now();
   var weights = trainModule.run({
@@ -394,6 +443,24 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   
   // Save weights
   fs.writeFileSync(weightsPath, JSON.stringify(weights, null, 2));
+  
+  // Write training-done status
+  var lastHistory = weights.history && weights.history.length ? weights.history[weights.history.length - 1] : null;
+  writeBackendStatus({
+    active: true,
+    phase: 'testing',
+    round: round,
+    maxRounds: MAX_ROUNDS,
+    version: weights.version,
+    trainGames: trainGames,
+    testGames: TEST_GAMES,
+    trainTime: trainTime + 's',
+    lr: lr,
+    loss: lastHistory ? lastHistory.loss : 0,
+    bestMaxTile: weights.bestMaxTile || 0,
+    avgScore: weights.avgScore || 0,
+    message: 'Round ' + round + '/' + MAX_ROUNDS + ' — training done (v' + weights.version + '), running ' + TEST_GAMES + '-game playtest...'
+  });
   
   // Run playtest
   var testResult = runPlaytest(TEST_GAMES);
@@ -414,6 +481,24 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   };
   loopLog.push(logEntry);
   saveLoopLog();
+  
+  // Write idle status
+  writeBackendStatus({
+    active: false,
+    phase: 'idle',
+    round: round,
+    maxRounds: MAX_ROUNDS,
+    version: weights.version,
+    winRate: testResult.winRate,
+    wins: testResult.wins,
+    testTotal: testResult.total,
+    avgScore: testResult.avgScore,
+    bestMax: testResult.bestMax,
+    trainGames: trainGames,
+    trainTime: trainTime + 's',
+    lr: lr,
+    message: 'Round ' + round + ' done — v' + weights.version + ' · ' + testResult.winRate + '% win rate' + (testResult.winRate >= TARGET_WIN_RATE ? ' 🎉 TARGET REACHED!' : ', continuing...')
+  });
   
   // Push to git
   gitPush('auto-train: round ' + round + ' v' + weights.version + ' winRate=' + testResult.winRate + '%');

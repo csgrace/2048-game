@@ -463,6 +463,20 @@ transition:all .25s ease;
         <span style="font-size:11px;color:rgba(255,255,255,.3);margin-left:4px">⏱ max 6h · commits every 5 games</span>
       </div>
 
+      <!-- Backend status mini panel (Playtest Arena) -->
+      <div id="pt-backend-status" style="margin-bottom:8px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ 后台监控</span>
+          <span id="pt-backend-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
+        </div>
+        <div id="pt-backend-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">等待后台状态...</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="pt-backend-tags">
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Version —</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Round —/—</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Win rate —%</span>
+        </div>
+      </div>
+
       <!-- Status / log panel -->
       <div id="playtest-cloud-status" style="margin-bottom:8px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;white-space:pre-wrap">Idle — click "Start Cloud Test" to dispatch the AI playtest workflow on GitHub Actions.</div>
 
@@ -586,6 +600,24 @@ transition:all .25s ease;
         <div class="train-stat" id="ts-best"><span class="ts-label">Best Tile</span><span class="ts-value">—</span></div>
         <div class="train-stat" id="ts-avg"><span class="ts-label">Avg Score</span><span class="ts-value">—</span></div>
         <div class="train-stat" id="ts-loss"><span class="ts-label">Loss</span><span class="ts-value">—</span></div>
+      </div>
+
+      <!-- Backend status monitor panel -->
+      <div id="backend-status-panel" style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ 后台训练状态</span>
+          <span id="backend-phase-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
+        </div>
+        <div id="backend-status-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">
+          <span style="color:rgba(255,255,255,.4)">等待后台状态...</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="backend-stats-row">
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Version —</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Round —/—</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Train — games</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Win rate —%</span>
+        </div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:4px" id="backend-last-update">Last update: —</div>
       </div>
 
       <!-- Loss curve chart -->
@@ -1282,6 +1314,8 @@ const GH_OWNER='csgrace';
 const GH_REPO='2048-game';
 const GH_WORKFLOW_ID='ai-train.yml';
 const PROGRESS_URL='js/ai-training-progress.json';
+const BACKEND_STATUS_URL='js/ai-backend-status.json';
+let backendStatusTimer=null;
 let aiPollTimer=null;
 let aiLiveHistory=[]; // live training data from polling
 let aiNet=null;
@@ -1353,6 +1387,8 @@ drawTrainingCurve();
 drawMaxTileChart();
 // Check if a training run is in progress by polling progress file
 checkTrainingProgress();
+// Start backend status polling
+startBackendStatusPolling();
 $('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong>▶ Train</strong> 在云端启动训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练在 GitHub Actions 云端运行，每 20 局自动推送进度，前端自动刷新图表。</span>';
 }
 /* Load training history from ai-weights.json for charts & stats */
@@ -1524,6 +1560,101 @@ function startPollingProgress(){
 }
 function stopPollingProgress(){
 if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null;}
+}
+
+/* ====================================================================
+   Backend Status Monitor — polls ai-backend-status.json for live
+   training/testing progress from the auto-train-loop
+   ==================================================================== */
+function startBackendStatusPolling(){
+  stopBackendStatusPolling();
+  fetchBackendStatus(); // immediate first fetch
+  backendStatusTimer=setInterval(fetchBackendStatus,10000); // poll every 10s
+}
+function stopBackendStatusPolling(){
+  if(backendStatusTimer){clearInterval(backendStatusTimer);backendStatusTimer=null;}
+}
+async function fetchBackendStatus(){
+  try{
+    var resp=await fetch(BACKEND_STATUS_URL+'?t='+Date.now());
+    if(!resp.ok)return;
+    var data=await resp.json();
+    updateBackendStatusUI(data);
+  }catch(e){/* network error, keep polling */}
+}
+function updateBackendStatusUI(data){
+  if(!data)return;
+  var phase=data.phase||'idle';
+  var phaseLabels={training:'TRAINING',testing:'TESTING',idle:'IDLE'};
+  var phaseColors={training:'#ffd166',testing:'#14b8a6',idle:'#6bcb77'};
+  var phaseLabel=phaseLabels[phase]||'IDLE';
+  var phaseColor=phaseColors[phase]||'#6bcb77';
+
+  // Update Training Lab panel
+  var badge=$('backend-phase-badge');
+  if(badge){
+    badge.textContent=phaseLabel;
+    badge.style.background='rgba('+parseInt(phaseColor.slice(1,3),16)+','+parseInt(phaseColor.slice(3,5),16)+','+parseInt(phaseColor.slice(5,7),16)+',.12)';
+    badge.style.color=phaseColor;
+  }
+  var detail=$('backend-status-detail');
+  if(detail){
+    var html='<span style="color:'+phaseColor+';font-weight:600">'+phaseLabel+'</span>';
+    if(data.message)html+=' — '+data.message;
+    if(data.loss)html+='<br><span style="color:rgba(255,255,255,.4)">Loss: '+data.loss.toFixed(6)+'</span>';
+    if(data.bestMaxTile)html+=' · <span style="color:rgba(255,255,255,.4)">Best: '+data.bestMaxTile+'</span>';
+    if(data.avgScore)html+=' · <span style="color:rgba(255,255,255,.4)">Avg: '+data.avgScore+'</span>';
+    detail.innerHTML=html;
+  }
+  var tags=$('backend-stats-row');
+  if(tags){
+    var tagHtml='';
+    tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Version v'+(data.version||'—')+'</span>';
+    tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Round '+(data.round||0)+'/'+(data.maxRounds||'—')+'</span>';
+    if(data.trainGames)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainGames+' games</span>';
+    if(data.testProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Test '+data.testProgress+'</span>';
+    if(data.winRate!==undefined)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
+    tags.innerHTML=tagHtml;
+  }
+  var lastUpdate=$('backend-last-update');
+  if(lastUpdate&&data.lastUpdate){
+    var d=new Date(data.lastUpdate);
+    lastUpdate.textContent='Last update: '+d.toLocaleTimeString();
+  }
+
+  // Update Playtest Arena panel
+  var ptBadge=$('pt-backend-badge');
+  if(ptBadge){
+    ptBadge.textContent=phaseLabel;
+    ptBadge.style.background='rgba('+parseInt(phaseColor.slice(1,3),16)+','+parseInt(phaseColor.slice(3,5),16)+','+parseInt(phaseColor.slice(5,7),16)+',.12)';
+    ptBadge.style.color=phaseColor;
+  }
+  var ptDetail=$('pt-backend-detail');
+  if(ptDetail){
+    ptDetail.innerHTML='<span style="color:'+phaseColor+';font-weight:600">'+phaseLabel+'</span>'+(data.message?' — '+data.message:'');
+  }
+  var ptTags=$('pt-backend-tags');
+  if(ptTags){
+    var ptTagHtml='';
+    ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Version v'+(data.version||'—')+'</span>';
+    ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Round '+(data.round||0)+'/'+(data.maxRounds||'—')+'</span>';
+    if(data.winRate!==undefined)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
+    ptTags.innerHTML=ptTagHtml;
+  }
+
+  // If backend is active, also refresh weights & playtest progress
+  if(data.active){
+    // Reload weights if version changed
+    if(data.version&&data.version!==loadedWeightVersion){
+      reloadWeightsFromRepo();
+    }
+    // If testing phase, also poll playtest progress
+    if(phase==='testing'&&!playtestPollTimer){
+      startPollingPlaytestProgress();
+    }
+  }
+  // Update weight info bar in Playtest Arena
+  updateWeightInfoBar();
 }
 
 /* ====================================================================
@@ -2089,6 +2220,7 @@ if(aiNet)aiNet._meta=w;
 }
 function stopTraining(){
   stopPollingProgress();
+  stopBackendStatusPolling();
   $('ai-train').disabled=false;
   $('ai-train').textContent='▶ Train';
   $('game-screen').classList.remove('ai-training-mode');
@@ -2359,8 +2491,8 @@ function exitGame(){
 bind('btn-user',()=>{SFX.button();show('auth-screen')});
 bind('btn-guest',()=>{SFX.button();currentUser=null;showSettings()});
 bind('btn-ai-training',()=>{SFX.button();gameReturnScreen='entry-screen';currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();});
-bind('btn-playtest',()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();});
-bind('btn-playtest-back',()=>{SFX.button();closeTokenModal();stopPollingPlaytestProgress();show('entry-screen')});
+bind('btn-playtest',()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();startBackendStatusPolling();});
+bind('btn-playtest-back',()=>{SFX.button();closeTokenModal();stopBackendStatusPolling();stopPollingPlaytestProgress();show('entry-screen')});
 bind('btn-auth-back',()=>{SFX.button();show('entry-screen')});
 
 bind('btn-settings-back',()=>{SFX.button();
@@ -2486,7 +2618,7 @@ bind('b-restart',()=>{SFX.button();init(boardSize)});
 bind('b-save',()=>{SFX.button();doSave()});
 bind('b-load',()=>{SFX.button();doLoad()});
 bind('b-leaderboard',()=>{SFX.button();showLeaderboard()});
-bind('b-exit',()=>{SFX.button();exitGame()});
+bind('b-exit',()=>{SFX.button();stopBackendStatusPolling();stopPollingProgress();exitGame()});
 bind('lb-close',()=>{SFX.button();$('lb-modal').classList.remove('show')});
 bind('ov-btn',()=>{SFX.button();init(boardSize)});
 
