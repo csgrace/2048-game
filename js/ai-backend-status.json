@@ -1,17 +1,12 @@
 {
-  "active": false,
-  "phase": "idle",
-  "round": 0,
+  "active": true,
+  "phase": "training",
+  "round": 1,
   "maxRounds": 50,
   "version": 242,
-  "winRate": 0,
-  "wins": 0,
-  "testTotal": 0,
-  "avgScore": 27305,
-  "bestMax": 4096,
   "trainGames": 200,
-  "trainTime": "32758.3s",
+  "testGames": 50,
   "lr": 0.002,
-  "message": "Backend idle — last version v242 (200 games, best 4096, avg 27305)",
-  "lastUpdate": "2025-01-01T00:00:00.000Z"
+  "message": "Round 1/50 — training 200 games (lr=0.002)",
+  "lastUpdate": "2026-08-16T04:02:19.289Z"
 }

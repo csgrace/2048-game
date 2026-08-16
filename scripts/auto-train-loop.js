@@ -1,11 +1,14 @@
 /* ====================================================================
-   auto-train-loop.js — Autonomous train→test→adjust→train loop.
+   auto-train-loop.js — Autonomous test→train→adjust→test loop.
    
    Strategy:
-   1. Train N games using train-ai.js (with existing weights)
-   2. Run 50-game playtest using playtest-ai.js logic
-   3. If win rate < 100%, adjust hyperparams and repeat
+   1. Test current weights with 50 games
+   2. If win rate = 100%, stop (target reached)
+   3. If win rate < 100%, train N games, then go back to step 1
    4. Push progress to git each cycle
+   
+   File lock: checks ai-backend-status.json for active=true on startup.
+   Only one train/test action can run at a time.
    
    Usage: node scripts/auto-train-loop.js [--target=100] [--maxRounds=50]
    ==================================================================== */
@@ -35,11 +38,40 @@ var progressPath = path.join(repoRoot, 'js', 'ai-playtest-progress.json');
 var loopLogPath = path.join(repoRoot, 'js', 'auto-train-log.json');
 var statusPath = path.join(repoRoot, 'js', 'ai-backend-status.json');
 
-/* ---------- Backend status file (for frontend monitoring) ---------- */
+/* ---------- Backend status file (for frontend monitoring + file lock) ---------- */
 function writeBackendStatus(status) {
   status.lastUpdate = new Date().toISOString();
   fs.writeFileSync(statusPath, JSON.stringify(status, null, 2));
 }
+
+/* ---------- File lock: ensure only one train/test at a time ---------- */
+function tryAcquireLock() {
+  try {
+    var raw = fs.readFileSync(statusPath, 'utf8');
+    var existing = JSON.parse(raw);
+    if (existing && existing.active) {
+      console.error('❌ Another train/test process is already running (phase: ' + (existing.phase || 'unknown') + ', started: ' + (existing.lastUpdate || 'unknown') + ')');
+      console.error('   If this is a stale lock, delete js/ai-backend-status.json and retry.');
+      process.exit(1);
+    }
+  } catch (e) {
+    // No status file = no lock, proceed
+  }
+}
+
+/* ---------- Cleanup on exit ---------- */
+function releaseLock() {
+  try {
+    writeBackendStatus({
+      active: false,
+      phase: 'idle',
+      message: 'Process exited — backend released lock'
+    });
+  } catch (e) {}
+}
+process.on('exit', releaseLock);
+process.on('SIGINT', function () { process.exit(0); });
+process.on('SIGTERM', function () { process.exit(0); });
 
 /* ---------- Load ai-brain.js ---------- */
 var brainSrc = fs.readFileSync(path.join(repoRoot, 'js', 'ai-brain.js'), 'utf8');
@@ -132,7 +164,7 @@ function loadWeights() {
     if (w && w.l1W && w.l1W.length > 100) {
       aiNet.importWeights(w);
       aiTrainGames = w.version || 0;
-      aiUseNN = aiTrainGames > 30; // lower threshold to activate NN sooner
+      aiUseNN = aiTrainGames > 30;
     }
   } catch (e) {
     console.log('No weights to load: ' + e.message);
@@ -288,7 +320,7 @@ function runTestGame(gameIdx) {
 }
 
 /* ---------- Run a full playtest ---------- */
-function runPlaytest(numGames) {
+function runPlaytest(numGames, roundNum) {
   console.log('\n--- Running playtest: ' + numGames + ' games ---');
   loadWeights(); // reload latest weights
   var results = [];
@@ -319,12 +351,13 @@ function runPlaytest(numGames) {
     writeBackendStatus({
       active: true,
       phase: 'testing',
-      round: loopLog.length + 1,
+      round: roundNum,
       maxRounds: MAX_ROUNDS,
+      version: aiTrainGames,
       testProgress: i + '/' + numGames,
       wins: partialWins,
       winRate: partialData.winRate,
-      message: 'Testing game ' + i + '/' + numGames + ' — ' + partialWins + ' wins (' + partialData.winRate + '%)'
+      message: 'Testing game ' + i + '/' + numGames + ' - ' + partialWins + ' wins (' + partialData.winRate + '%)'
     });
   }
   var wins = results.filter(function (g) { return g.result === 'win'; }).length;
@@ -333,7 +366,7 @@ function runPlaytest(numGames) {
   var bestMax = Math.max.apply(null, results.map(function (g) { return g.maxTile; }));
   console.log('--- Playtest result: ' + wins + '/' + results.length + ' wins (' + winRate + '%), avg score=' + avgScore + ', best max=' + bestMax + ' ---\n');
   
-  // Save progress file
+  // Save final progress file
   var data = {
     active: false,
     timestamp: new Date().toISOString(),
@@ -375,14 +408,19 @@ function saveLoopLog() {
 }
 
 /* ========================================================================
-   Main loop
+   Main loop — Test first, then train if needed
    ======================================================================== */
+
+// Check file lock before starting
+tryAcquireLock();
+
 console.log('========================================================');
-console.log('  Auto Train-Test Loop');
-console.log('  Target: ' + TARGET_WIN_RATE + '% win rate');
+console.log('  Auto Test-Train Loop');
+console.log('  Target: ' + TARGET_WIN_RATE + '% win rate (50 games all reach 2048)');
 console.log('  Max rounds: ' + MAX_ROUNDS);
 console.log('  Train games per round: ' + TRAIN_GAMES);
 console.log('  Test games per round: ' + TEST_GAMES);
+console.log('  File lock: active (only one process at a time)');
 console.log('========================================================');
 
 for (var round = 1; round <= MAX_ROUNDS; round++) {
@@ -399,10 +437,67 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   
   var currentVersion = existingWeights ? (existingWeights.version || 0) : 0;
   
-  // Adaptive hyperparams: adjust based on round and past performance
+  // ---- Step 1: TEST FIRST ----
+  console.log('Step 1: Testing current weights (v' + currentVersion + ') with ' + TEST_GAMES + ' games...');
+  writeBackendStatus({
+    active: true,
+    phase: 'testing',
+    round: round,
+    maxRounds: MAX_ROUNDS,
+    version: currentVersion,
+    trainGames: 0,
+    testGames: TEST_GAMES,
+    message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TESTING v' + currentVersion + ' with ' + TEST_GAMES + ' games'
+  });
+  
+  var testResult = runPlaytest(TEST_GAMES, round);
+  
+  // Log test result
+  var testLogEntry = {
+    round: round,
+    phase: 'test',
+    version: currentVersion,
+    testWins: testResult.wins,
+    testTotal: testResult.total,
+    winRate: testResult.winRate,
+    avgScore: testResult.avgScore,
+    bestMax: testResult.bestMax,
+    timestamp: new Date().toISOString()
+  };
+  loopLog.push(testLogEntry);
+  saveLoopLog();
+  
+  // Push test results
+  gitPush('auto-train: round ' + round + ' TEST v' + currentVersion + ' winRate=' + testResult.winRate + '%');
+  
+  // Check if target reached
+  if (testResult.winRate >= TARGET_WIN_RATE) {
+    console.log('\n🎉 TARGET REACHED! Win rate ' + testResult.winRate + '% >= ' + TARGET_WIN_RATE + '%');
+    console.log('Total rounds: ' + round);
+    console.log('Final version: v' + currentVersion);
+    writeBackendStatus({
+      active: false,
+      phase: 'idle',
+      round: round,
+      maxRounds: MAX_ROUNDS,
+      version: currentVersion,
+      winRate: testResult.winRate,
+      wins: testResult.wins,
+      testTotal: testResult.total,
+      avgScore: testResult.avgScore,
+      bestMax: testResult.bestMax,
+      message: '🎯 TARGET REACHED! v' + currentVersion + ' - ' + testResult.winRate + '% win rate (' + testResult.wins + '/' + testResult.total + ' reached 2048)'
+    });
+    break;
+  }
+  
+  // ---- Step 2: TRAIN (only if test didn't pass) ----
+  console.log('Win rate ' + testResult.winRate + '% < target ' + TARGET_WIN_RATE + '%, training...');
+  
+  // Adaptive hyperparams
   var lr = 0.002;
   var warmup = 30;
-  if (round > 5) lr = 0.003; // increase LR if progress stalls
+  if (round > 5) lr = 0.003;
   if (round > 10) lr = 0.004;
   if (round > 20) lr = 0.005;
   
@@ -410,12 +505,11 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   var trainGames = TRAIN_GAMES;
   if (round > 3 && loopLog.length > 0) {
     var lastLog = loopLog[loopLog.length - 1];
-    if (lastLog.winRate < 30) trainGames = TRAIN_GAMES * 2; // train more if very low
+    if (lastLog.winRate < 30) trainGames = TRAIN_GAMES * 2;
   }
   
-  console.log('Training ' + trainGames + ' games (lr=' + lr + ', warmup=' + warmup + ', current v' + currentVersion + ')...');
+  console.log('Step 2: Training ' + trainGames + ' games (lr=' + lr + ', warmup=' + warmup + ', base v' + currentVersion + ')...');
   
-  // Write training-start status
   writeBackendStatus({
     active: true,
     phase: 'training',
@@ -425,10 +519,9 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
     trainGames: trainGames,
     testGames: TEST_GAMES,
     lr: lr,
-    message: 'Round ' + round + '/' + MAX_ROUNDS + ' — training ' + trainGames + ' games (lr=' + lr + ')'
+    message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TRAINING ' + trainGames + ' games (lr=' + lr + ', base v' + currentVersion + ')'
   });
   
-  // Run training
   var trainStart = Date.now();
   var weights = trainModule.run({
     games: trainGames,
@@ -444,82 +537,55 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   // Save weights
   fs.writeFileSync(weightsPath, JSON.stringify(weights, null, 2));
   
-  // Write training-done status
+  // Write training-done status (brief idle before next round's test)
   var lastHistory = weights.history && weights.history.length ? weights.history[weights.history.length - 1] : null;
-  writeBackendStatus({
-    active: true,
-    phase: 'testing',
-    round: round,
-    maxRounds: MAX_ROUNDS,
-    version: weights.version,
-    trainGames: trainGames,
-    testGames: TEST_GAMES,
-    trainTime: trainTime + 's',
-    lr: lr,
-    loss: lastHistory ? lastHistory.loss : 0,
-    bestMaxTile: weights.bestMaxTile || 0,
-    avgScore: weights.avgScore || 0,
-    message: 'Round ' + round + '/' + MAX_ROUNDS + ' — training done (v' + weights.version + '), running ' + TEST_GAMES + '-game playtest...'
-  });
-  
-  // Run playtest
-  var testResult = runPlaytest(TEST_GAMES);
-  
-  // Log this round
-  var logEntry = {
-    round: round,
-    version: weights.version,
-    trainGames: trainGames,
-    lr: lr,
-    trainTime: trainTime + 's',
-    testWins: testResult.wins,
-    testTotal: testResult.total,
-    winRate: testResult.winRate,
-    avgScore: testResult.avgScore,
-    bestMax: testResult.bestMax,
-    timestamp: new Date().toISOString()
-  };
-  loopLog.push(logEntry);
-  saveLoopLog();
-  
-  // Write idle status
   writeBackendStatus({
     active: false,
     phase: 'idle',
     round: round,
     maxRounds: MAX_ROUNDS,
     version: weights.version,
-    winRate: testResult.winRate,
-    wins: testResult.wins,
-    testTotal: testResult.total,
-    avgScore: testResult.avgScore,
-    bestMax: testResult.bestMax,
     trainGames: trainGames,
     trainTime: trainTime + 's',
     lr: lr,
-    message: 'Round ' + round + ' done — v' + weights.version + ' · ' + testResult.winRate + '% win rate' + (testResult.winRate >= TARGET_WIN_RATE ? ' 🎉 TARGET REACHED!' : ', continuing...')
+    loss: lastHistory ? lastHistory.loss : 0,
+    bestMaxTile: weights.bestMaxTile || 0,
+    avgScore: weights.avgScore || 0,
+    message: 'Round ' + round + ' trained v' + weights.version + ' in ' + trainTime + 's - next round will test...'
   });
   
-  // Push to git
-  gitPush('auto-train: round ' + round + ' v' + weights.version + ' winRate=' + testResult.winRate + '%');
+  // Log training result
+  var trainLogEntry = {
+    round: round,
+    phase: 'train',
+    version: weights.version,
+    trainGames: trainGames,
+    lr: lr,
+    trainTime: trainTime + 's',
+    loss: lastHistory ? lastHistory.loss : 0,
+    bestMaxTile: weights.bestMaxTile || 0,
+    avgScore: weights.avgScore || 0,
+    timestamp: new Date().toISOString()
+  };
+  loopLog.push(trainLogEntry);
+  saveLoopLog();
   
-  // Check if target reached
-  if (testResult.winRate >= TARGET_WIN_RATE) {
-    console.log('\n🎉 TARGET REACHED! Win rate ' + testResult.winRate + '% >= ' + TARGET_WIN_RATE + '%');
-    console.log('Total rounds: ' + round);
-    console.log('Final version: v' + weights.version);
-    break;
-  }
+  // Push training results
+  gitPush('auto-train: round ' + round + ' TRAIN v' + weights.version + ' (base v' + currentVersion + ', ' + trainGames + ' games)');
   
   // Adaptive strategy for next round
-  console.log('Win rate ' + testResult.winRate + '% < target ' + TARGET_WIN_RATE + '%, continuing...');
-  
-  // If win rate didn't improve, try different approach
   if (loopLog.length >= 2) {
-    var prev = loopLog[loopLog.length - 2];
-    if (testResult.winRate <= prev.winRate) {
-      console.log('No improvement from last round (' + prev.winRate + '% → ' + testResult.winRate + '%), adjusting strategy...');
-      // Increase training games and LR for next round
+    // Find last test result
+    var lastTestLog = null;
+    for (var k = loopLog.length - 1; k >= 0; k--) {
+      if (loopLog[k].phase === 'test') { lastTestLog = loopLog[k]; break; }
+    }
+    var prevTestLog = null;
+    for (var k2 = k - 1; k2 >= 0; k2--) {
+      if (loopLog[k2].phase === 'test') { prevTestLog = loopLog[k2]; break; }
+    }
+    if (lastTestLog && prevTestLog && lastTestLog.winRate <= prevTestLog.winRate) {
+      console.log('No improvement from last test (' + prevTestLog.winRate + '% -> ' + lastTestLog.winRate + '%), adjusting strategy...');
       TRAIN_GAMES = Math.min(TRAIN_GAMES + 50, 500);
     }
   }
@@ -527,10 +593,15 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
 
 console.log('\n========================================================');
 console.log('  Auto-train loop complete');
-console.log('  Total rounds: ' + loopLog.length);
-console.log('  Final win rate: ' + (loopLog.length ? loopLog[loopLog.length - 1].winRate : 0) + '%');
+console.log('  Total rounds: ' + loopLog.filter(function(e){return e.phase==='test'}).length);
+var lastTest = loopLog.filter(function(e){return e.phase==='test'}).pop();
+console.log('  Final win rate: ' + (lastTest ? lastTest.winRate : 0) + '%');
 console.log('========================================================');
 console.log('\nLoop history:');
 loopLog.forEach(function (e) {
-  console.log('  Round ' + e.round + ': v' + e.version + ' | ' + e.winRate + '% (' + e.testWins + '/' + e.testTotal + ') | avg=' + e.avgScore + ' | best=' + e.bestMax + ' | ' + e.trainTime);
+  if (e.phase === 'test') {
+    console.log('  Round ' + e.round + ' TEST: v' + e.version + ' | ' + e.winRate + '% (' + e.testWins + '/' + e.testTotal + ') | avg=' + e.avgScore + ' | best=' + e.bestMax);
+  } else {
+    console.log('  Round ' + e.round + ' TRAIN: v' + e.version + ' | ' + e.trainGames + ' games | lr=' + e.lr + ' | loss=' + (e.loss||0).toFixed(6) + ' | ' + e.trainTime);
+  }
 });

@@ -1830,6 +1830,13 @@ const PLAYTEST_TRIGGER_WINDOW=300000; // 5 min
 /* Trigger cloud playtest (password-protected) */
 function startBatchPlaytest(){
   if(batchPlaytestMode||isTokenModalOpen)return;
+  // Check if backend auto-train loop is running
+  var bs=$('pt-backend-badge');
+  if(bs&&bs.textContent!=='IDLE'){
+    var statusEl=$('playtest-cloud-status');
+    if(statusEl)statusEl.innerHTML='🔒 <strong>后台正在运行中</strong>（'+bs.textContent+'）— 无法同时启动云端测试。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请等待后台任务完成后再操作。</span>';
+    return;
+  }
   batchCancelled=false;
   batchPlaytestTotal=parseInt($('playtest-batch-count').value);
   if(batchPlaytestTotal>200){
@@ -2180,6 +2187,12 @@ async function verifyPasswordAndLoadToken(password){
 /* Trigger GitHub Actions workflow to start cloud training */
 async function startTraining(){
   if(isTokenModalOpen)return; // Already showing password modal
+  // Check if backend auto-train loop is running
+  var bs=$('backend-phase-badge');
+  if(bs&&bs.textContent!=='IDLE'){
+    $('training-log').innerHTML='🔒 <strong>后台正在运行中</strong>（'+bs.textContent+'）— 无法同时启动新的训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请等待后台任务完成后再操作。</span>';
+    return;
+  }
   var log=$('training-log');
   var token=getGHToken();
   if(!token){
