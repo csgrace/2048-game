@@ -1,12 +1,12 @@
 {
   "active": true,
-  "phase": "training",
+  "phase": "testing",
   "round": 1,
   "maxRounds": 50,
-  "version": 242,
-  "trainGames": 200,
-  "testGames": 50,
-  "lr": 0.002,
-  "message": "Round 1/50 — training 200 games (lr=0.002)",
-  "lastUpdate": "2026-08-16T04:02:19.289Z"
+  "version": 442,
+  "testProgress": "7/50",
+  "wins": 3,
+  "winRate": 43,
+  "message": "Testing game 7/50 - 3 wins (43%)",
+  "lastUpdate": "2026-08-16T16:35:15.434Z"
 }

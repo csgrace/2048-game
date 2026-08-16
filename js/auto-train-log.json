@@ -1,0 +1,15 @@
+[
+  {
+    "round": 1,
+    "version": 242,
+    "trainGames": 200,
+    "lr": 0.002,
+    "trainTime": "32758.3s",
+    "testWins": 18,
+    "testTotal": 50,
+    "winRate": 36,
+    "avgScore": 19298,
+    "bestMax": 2048,
+    "timestamp": "2026-08-16T16:37:09.206Z"
+  }
+]
