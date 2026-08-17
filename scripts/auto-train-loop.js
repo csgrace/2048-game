@@ -572,6 +572,35 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
           avgScore: data.avgScore,
           message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TRAINING ' + data.game + '/' + data.total + ' games (lr=' + lr + ', loss=' + data.loss.toFixed(6) + ')'
         });
+
+        // Every 20 games: write ai-training-progress.json AND git push
+        // (so deployed GitHub Pages site can show live Loss Curve & Max Tile charts)
+        if (data.game % 20 === 0) {
+          try {
+            var progressPath = path.join(repoRoot, 'js', 'ai-training-progress.json');
+            var progressPayload = {
+              active: true,
+              game: data.game,
+              total: data.total,
+              loss: data.loss,
+              maxTile: data.maxTile,
+              bestMax: data.bestMax,
+              avgScore: data.avgScore,
+              version: currentVersion,
+              history: data.history || [],
+              timestamp: Date.now()
+            };
+            fs.writeFileSync(progressPath, JSON.stringify(progressPayload, null, 2));
+            // Git commit + push so deployed site updates in near real-time
+            execSync('git add js/ai-training-progress.json js/ai-backend-status.json', { cwd: repoRoot, stdio: 'pipe' });
+            execSync('git commit -m "progress: round ' + round + ' game ' + data.game + '/' + data.total + ' [skip ci]"', { cwd: repoRoot, stdio: 'pipe' });
+            execSync('git push', { cwd: repoRoot, stdio: 'pipe' });
+            console.log('[Progress committed & pushed: round ' + round + ' game ' + data.game + '/' + data.total + ']');
+          } catch (e) {
+            // Git push may fail (no changes or network), training continues
+            console.log('[Git push skipped: ' + (e.stderr ? e.stderr.toString().trim() : e.message) + ']');
+          }
+        }
       }
     },
     onComplete: function () {}
@@ -599,10 +628,7 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   loopLog.push(trainLogEntry);
   saveLoopLog();
   
-  // Push training results
-  gitPush('auto-train: round ' + round + ' TRAIN v' + weights.version + ' (base v' + currentVersion + ', ' + trainGames + ' games)');
-  
-  // Write brief idle status
+  // Write brief idle status BEFORE push (so deployed site sees correct phase)
   writeBackendStatus({
     active: false,
     phase: 'idle',
@@ -617,6 +643,9 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
     avgScore: weights.avgScore || 0,
     message: 'Round ' + round + ' trained v' + weights.version + ' in ' + trainTime + 's - starting quick test...'
   });
+  
+  // Push training results (includes updated status file)
+  gitPush('auto-train: round ' + round + ' TRAIN v' + weights.version + ' (base v' + currentVersion + ', ' + trainGames + ' games)');
   
   // ---- Step 2: QUICK TEST (10 games) ----
   console.log('\nStep 2: Quick testing new weights (v' + weights.version + ') with ' + TEST_GAMES + ' games...');
