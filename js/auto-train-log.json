@@ -71,5 +71,17 @@
     "bestMaxTile": 4096,
     "avgScore": 23713,
     "timestamp": "2026-08-17T05:41:51.313Z"
+  },
+  {
+    "round": 3,
+    "phase": "test",
+    "testPhase": "quick",
+    "version": 1042,
+    "testWins": 3,
+    "testTotal": 10,
+    "winRate": 30,
+    "avgScore": 16808,
+    "bestMax": 2048,
+    "timestamp": "2026-08-17T06:00:07.592Z"
   }
 ]
