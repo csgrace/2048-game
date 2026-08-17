@@ -1,11 +1,11 @@
 {
   "active": true,
-  "game": 151,
+  "game": 156,
   "total": 200,
-  "loss": 0.004018,
+  "loss": 0.00329,
   "maxTile": 1024,
   "bestMax": 4096,
-  "avgScore": 31434,
+  "avgScore": 31239,
   "version": 1042,
   "history": [
     {
@@ -317,7 +317,17 @@
       "avgScore": 31434,
       "bestMax": 4096,
       "version": 1193
+    },
+    {
+      "game": 156,
+      "total": 200,
+      "loss": 0.00329,
+      "maxTile": 1024,
+      "score": 16992,
+      "avgScore": 31239,
+      "bestMax": 4096,
+      "version": 1198
     }
   ],
-  "timestamp": 1786967678340
+  "timestamp": 1786968118937
 }
