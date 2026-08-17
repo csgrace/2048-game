@@ -1,12 +1,12 @@
 {
   "active": true,
-  "phase": "training",
+  "phase": "testing",
   "round": 1,
   "maxRounds": 50,
-  "version": 442,
-  "trainGames": 200,
-  "testGames": 10,
-  "lr": 0.002,
-  "message": "Round 1/50 - TRAINING 200 games (lr=0.002, base v442) - old zombie processes killed",
-  "lastUpdate": "2026-08-17T03:24:00.000Z"
+  "version": 642,
+  "testProgress": "10/10",
+  "wins": 2,
+  "winRate": 20,
+  "message": "Testing game 10/10 - 2 wins (20%)",
+  "lastUpdate": "2026-08-17T03:53:07.220Z"
 }
