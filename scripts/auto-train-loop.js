@@ -549,9 +549,9 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
           message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TRAINING ' + data.game + '/' + data.total + ' games (lr=' + lr + ', loss=' + data.loss.toFixed(6) + ')'
         });
 
-        // Every 20 games: write ai-training-progress.json AND git push
-        // (so deployed GitHub Pages site can show live Loss Curve & Max Tile charts)
-        if (data.game % 20 === 0) {
+        // Every 5 games (matching onProgress interval): push progress so deployed site stays fresh
+        // Each push takes ~2-5s; 5-game interval ≈ 2-4 min between updates, much better UX
+        if (data.game % 5 === 0) {
           try {
             var progressPath = path.join(repoRoot, 'js', 'ai-training-progress.json');
             var progressPayload = {
