@@ -1985,6 +1985,23 @@ async function fetchPlaytestProgress(){
   }
 }
 
+/* Refresh ONLY the game results list below (does NOT touch test status/progress bar) */
+async function refreshPlaytestResultsOnly(){
+  try{
+    var resp=await fetch(PLAYTEST_PROGRESS_URL+'?t='+Date.now());
+    if(!resp.ok)return;
+    var data=await resp.json();
+    if(data && data.results && data.results.length){
+      batchGameResults=data.results.slice();
+      batchPlaytestCurrent=data.completedGames||data.results.length;
+      batchPlaytestWins=data.wins||batchGameResults.filter(function(g){return g.result==='win'}).length;
+      batchPlaytestFails=data.fails||(batchPlaytestCurrent-batchPlaytestWins);
+      // Only re-render the game list below, do NOT touch progress bar / status / rate
+      renderBatchGameResults();
+    }
+  }catch(e){/* silent */}
+}
+
 function renderBatchGameResults(){
   var el=$('pt-game-list');if(!el)return;
   var html='';
@@ -2559,8 +2576,8 @@ bind('btn-guest',()=>{SFX.button();currentUser=null;showSettings()});
 bind('btn-ai-training',()=>{SFX.button();gameReturnScreen='entry-screen';currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();});
 bind('btn-playtest',()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();startBackendStatusPolling();});
 bind('btn-playtest-back',()=>{SFX.button();closeTokenModal();stopBackendStatusPolling();stopPollingPlaytestProgress();show('entry-screen')});
-bind('btn-refresh-backend',()=>{SFX.button();fetchBackendStatus();fetchPlaytestProgress();});
-bind('btn-refresh-pt-backend',()=>{SFX.button();fetchBackendStatus();fetchPlaytestProgress();updateWeightInfoBar();});
+bind('btn-refresh-backend',()=>{SFX.button();fetchBackendStatus();refreshPlaytestResultsOnly();});
+bind('btn-refresh-pt-backend',()=>{SFX.button();fetchBackendStatus();refreshPlaytestResultsOnly();updateWeightInfoBar();});
 bind('btn-auth-back',()=>{SFX.button();show('entry-screen')});
 
 bind('btn-settings-back',()=>{SFX.button();
