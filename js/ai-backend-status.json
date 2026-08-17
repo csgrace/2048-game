@@ -3,9 +3,9 @@
   "phase": "testing",
   "round": 1,
   "maxRounds": 50,
-  "testProgress": "10/50",
-  "wins": 2,
-  "winRate": 20,
-  "message": "Testing game 10/50 — 2 wins (20%)",
-  "lastUpdate": "2026-08-17T02:39:47.796Z"
+  "testProgress": "21/50",
+  "wins": 5,
+  "winRate": 24,
+  "message": "Testing game 21/50 — 5 wins (24%)",
+  "lastUpdate": "2026-08-17T03:04:16.151Z"
 }
