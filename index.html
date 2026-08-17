@@ -1490,56 +1490,33 @@ function drawMaxTileChart(){
   var ctx=c.getContext('2d');
   var W=c.width=c.clientWidth||280;
   var H=c.height=50;
-  var padL=42; // left padding for Y-axis labels
   ctx.clearRect(0,0,W,H);
-  if(!aiHistory.length){
-    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
-    ctx.fillText('暂无数据',W/2,H/2);
-    return;
-  }
-  var tiles=aiHistory.map(function(p){return p.maxTile});
-  var maxT=Math.max.apply(null,tiles);
-  // Y-axis: round up to next power of 2 for nice labels
-  var axisTop=1;
-  while(axisTop<maxT)axisTop*=2;
-  // Draw Y-axis labels
-  ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='9px monospace';ctx.textAlign='right';
-  var tileLabels=[64,128,256,512,1024,2048,4096];
-  tileLabels.forEach(function(tile){
-    if(tile>axisTop)return;
-    var y=H-4-(tile/axisTop)*(H-8);
-    ctx.fillStyle='rgba(255,255,255,.15)';
-    ctx.fillRect(padL,y,W-padL,1); // gridline
-    ctx.fillStyle='rgba(255,255,255,.5)';
-    ctx.textAlign='right';
-    var label=tile>=1000?(tile/1000)+'k':tile;
-    ctx.fillText(label,padL-3,y+3);
-  });
-  // Axis line
-  ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(padL,0);ctx.lineTo(padL,H);ctx.stroke();
-  // Draw bars (offset by padL, reduced width)
-  var chartW=W-padL;
-  var n=tiles.length;
-  var barW=Math.max(2,chartW/n-1);
-  tiles.forEach(function(t,i){
-    var x=padL+i*(chartW/n);
-    var h=(t/axisTop)*(H-8);
-    var y=H-h;
-    // Color based on tile value
-    var color='#6bcb77';
-    if(t>=1024)color='#9b59b6';else if(t>=512)color='#3498db';else if(t>=256)color='#2ecc71';else if(t>=128)color='#f39c12';else color='#e74c3c';
-    ctx.fillStyle=color;
-    ctx.fillRect(x,y,barW,h);
-  });
+    if(!aiHistory.length){
+      ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+      ctx.fillText('暂无数据',W/2,H/2);
+      return;
+    }
+    var tiles=aiHistory.map(function(p){return p.maxTile});
+    var maxT=Math.max.apply(null,tiles);
+    var n=tiles.length;
+    var barW=Math.max(2,W/n-1);
+    tiles.forEach(function(t,i){
+      var x=i*(W/n);
+      var h=(t/maxT)*(H-4);
+      var y=H-h;
+      // Color based on tile value
+      var color='#6bcb77';
+      if(t>=1024)color='#9b59b6';else if(t>=512)color='#3498db';else if(t>=256)color='#2ecc71';else if(t>=128)color='#f39c12';else color='#e74c3c';
+      ctx.fillStyle=color;
+      ctx.fillRect(x,y,barW,h);
+    });
   // Tooltip handler for max tile bars
   if(!c._hoverAttached){
     c._hoverAttached=true;
     c.addEventListener('mousemove',function(e){
       var rect=c.getBoundingClientRect();
       var mx=e.clientX-rect.left;
-      if(mx<padL){$('chart-tooltip').style.display='none';return;}
-      var idx=Math.floor(((mx-padL)/chartW)*n);
+      var idx=Math.floor((mx/W)*n);
       if(idx>=0&&idx<n){
         var t=tiles[idx],p=aiHistory[idx];
         var tip=$('chart-tooltip');
