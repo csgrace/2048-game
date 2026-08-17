@@ -1374,8 +1374,7 @@ function refreshAiEvalLeaf(){
 function enterTrainingMode(){
 var tp=$('training-panel');if(tp)tp.hidden=false;
 var t1=$('ai-train');if(t1)t1.hidden=false;
-var t2=$('ai-stop-training');if(t2)t2.hidden=false;
-t2.textContent='↻ Refresh';
+// ai-stop-training button: keep hidden (redundant with btn-refresh-backend)
 // Reset button state first
 if(t1){t1.disabled=false;t1.textContent='▶ Train';t1.classList.remove('training');t1.style.pointerEvents='auto';}
 // If training was recently triggered, keep button disabled
