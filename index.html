@@ -1401,6 +1401,7 @@ $('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong
 /* Load training history from ai-weights.json for charts & stats */
 var aiHistory=[];
 var _liveTrainingActive=false; // prevents weight history from overwriting live training data
+var _tilePoints=[]; // stores bar positions for tooltip hit-testing
 function loadTrainingStatsFromWeights(){
   if(aiNet&&aiNet._meta){
     var m=aiNet._meta;
@@ -1492,48 +1493,68 @@ function drawMaxTileChart(){
   var W=c.width=c.clientWidth||280;
   var H=c.height=50;
   ctx.clearRect(0,0,W,H);
-    if(!aiHistory.length){
-      ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
-      ctx.fillText('暂无数据',W/2,H/2);
-      return;
+  if(!aiHistory.length){
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText('暂无数据',W/2,H/2);
+    // Ensure tooltip handler exists even when empty
+    if(!c._hoverAttached){
+      c._hoverAttached=true;
+      c.addEventListener('mousemove',tileChartHover);
+      c.addEventListener('mouseleave',tileChartLeave);
     }
-    var tiles=aiHistory.map(function(p){return p.maxTile});
-    var maxT=Math.max.apply(null,tiles);
-    var n=tiles.length;
-    var barW=Math.max(2,W/n-1);
-    _tilePoints=[]; // store for tooltip color
-    tiles.forEach(function(t,i){
-      var x=i*(W/n);
-      var h=(t/maxT)*(H-4);
-      var y=H-h;
-      // Unified rule: below 2048 = blue, 2048+ = purple
-      var color=t>=2048?'#9b59b6':'#3498db';
-      _tilePoints.push({x:x,w:barW,h:h,y:y,color:color});
-      ctx.fillStyle=color;
-      ctx.fillRect(x,y,barW,h);
-    });
-  // Tooltip handler for max tile bars
+    return;
+  }
+  var tiles=aiHistory.map(function(p){return p.maxTile});
+  var maxT=Math.max.apply(null,tiles);
+  var n=tiles.length;
+  var barW=Math.max(2,W/n-1);
+  _tilePoints=[]; // store for tooltip hit-testing
+  tiles.forEach(function(t,i){
+    var x=i*(W/n);
+    var h=(t/maxT)*(H-4);
+    var y=H-h;
+    // Unified rule: below 2048 = blue, 2048+ = purple
+    var color=t>=2048?'#9b59b6':'#3498db';
+    _tilePoints.push({x:x,w:barW,h:h,y:y,color:color});
+    ctx.fillStyle=color;
+    ctx.fillRect(x,y,barW,h);
+  });
+  // Attach hover handler once; it reads _tilePoints dynamically
   if(!c._hoverAttached){
     c._hoverAttached=true;
-    c.addEventListener('mousemove',function(e){
-      var rect=c.getBoundingClientRect();
-      var mx=e.clientX-rect.left;
-      var idx=Math.floor((mx/W)*n);
-    if(idx>=0&&idx<n){
-          var t=tiles[idx],p=aiHistory[idx],col=t>=2048?'#9b59b6':'#3498db';
-          var tip=$('chart-tooltip');
-          tip.style.display='block';
-          tip.style.left=(e.clientX+12)+'px';
-          tip.style.top=(e.clientY-24)+'px';
-          tip.style.borderColor=col;
-          c.style.cursor='pointer';
-          tip.innerHTML='<span style="color:'+col+'">Game '+p.game+'<br>Max Tile: '+t+'</span>';
-        }else{
-          $('chart-tooltip').style.display='none';c.style.cursor='default';
-        }
-    });
-    c.addEventListener('mouseleave',function(){$('chart-tooltip').style.display='none';});
+    c.addEventListener('mousemove',tileChartHover);
+    c.addEventListener('mouseleave',tileChartLeave);
   }
+}
+function tileChartHover(e){
+  var c=$('training-tiles');if(!c||_tilePoints.length===0)return;
+  var rect=c.getBoundingClientRect();
+  var mx=e.clientX-rect.left;
+  var W=c.width;
+  // Find closest bar point by x position
+  var bestIdx=-1,bestDist=999;
+  for(var i=0;i<_tilePoints.length;i++){
+    var p=_tilePoints[i];
+    var center=p.x+p.w/2;
+    var d=Math.abs(mx-center);
+    if(d<bestDist){bestDist=d;bestIdx=i;}
+  }
+  if(bestIdx>=0){
+    var pt=_tilePoints[bestIdx];
+    var dataPt=aiHistory[bestIdx];
+    var col=pt.color;
+    var tip=$('chart-tooltip');
+    tip.style.display='block';
+    tip.style.left=(e.clientX+12)+'px';
+    tip.style.top=(e.clientY-24)+'px';
+    tip.style.borderColor=col;
+    c.style.cursor='pointer';
+    tip.innerHTML='<span style="color:'+col+'">Game '+dataPt.game+'<br>Max Tile: '+dataPt.maxTile+'</span>';
+  }
+}
+function tileChartLeave(){
+  var tip=$('chart-tooltip');if(tip)tip.style.display='none';
+  var c=$('training-tiles');if(c)c.style.cursor='default';
 }
 /* Check if training was recently triggered (within last 5 min) to keep button banned */
 function isTrainingTriggeredLocally(){
