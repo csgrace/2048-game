@@ -4,10 +4,10 @@
   "round": 1,
   "maxRounds": 50,
   "version": 1242,
-  "trainGames": 0,
-  "testGames": 10,
-  "testPhase": "quick",
-  "message": "Round 1/50 - QUICK TEST v1242 with 10 games",
-  "lastUpdate": "2026-08-17T13:47:14.140Z",
+  "testProgress": "1/10",
+  "wins": 1,
+  "winRate": 100,
+  "message": "Testing game 1/10 - 1 wins (100%)",
+  "lastUpdate": "2026-08-17T13:48:18.258Z",
   "pid": 62876
 }
