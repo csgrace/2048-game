@@ -1673,6 +1673,11 @@ function updateBackendStatusUI(data){
       cloudBtn.style.opacity='0.5';
       cloudBtn.style.pointerEvents='none';
     }
+    // Hide Stop button during backend train/test (it's for user-triggered cloud test only)
+    var stopBtn1=$('playtest-batch-stop');
+    if(stopBtn1&&!stopBtn1.dataset.userTriggered){
+      stopBtn1.style.display='none';
+    }
     // Reload weights if version changed
     if(data.version&&data.version!==loadedWeightVersion){
       reloadWeightsFromRepo();
