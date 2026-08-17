@@ -83,5 +83,17 @@
     "avgScore": 16808,
     "bestMax": 2048,
     "timestamp": "2026-08-17T06:00:07.592Z"
+  },
+  {
+    "round": 1,
+    "phase": "train",
+    "version": 1242,
+    "trainGames": 200,
+    "lr": 0.002,
+    "trainTime": "19201.8s",
+    "loss": 0.005565,
+    "bestMaxTile": 4096,
+    "avgScore": 32061,
+    "timestamp": "2026-08-17T13:47:09.856Z"
   }
 ]
