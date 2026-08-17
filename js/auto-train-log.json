@@ -1,15 +1,27 @@
 [
   {
     "round": 1,
-    "version": 442,
+    "version": 242,
     "trainGames": 200,
     "lr": 0.002,
-    "trainTime": "4561.8s",
+    "trainTime": "33215.4s",
     "testWins": 15,
     "testTotal": 50,
     "winRate": 30,
-    "avgScore": 17806,
+    "avgScore": 17949,
     "bestMax": 2048,
-    "timestamp": "2026-08-17T03:06:27.083Z"
+    "timestamp": "2026-08-17T02:40:18.383Z"
+  },
+  {
+    "round": 1,
+    "phase": "train",
+    "version": 642,
+    "trainGames": 200,
+    "lr": 0.002,
+    "trainTime": "2942.1s",
+    "loss": 0.003357,
+    "bestMaxTile": 4096,
+    "avgScore": 26433,
+    "timestamp": "2026-08-17T03:30:07.107Z"
   }
 ]
