@@ -1500,13 +1500,14 @@ function drawMaxTileChart(){
     var maxT=Math.max.apply(null,tiles);
     var n=tiles.length;
     var barW=Math.max(2,W/n-1);
+    _tilePoints=[]; // store for tooltip color
     tiles.forEach(function(t,i){
       var x=i*(W/n);
       var h=(t/maxT)*(H-4);
       var y=H-h;
-      // Color based on tile value
-      var color='#6bcb77';
-      if(t>=1024)color='#9b59b6';else if(t>=512)color='#3498db';else if(t>=256)color='#2ecc71';else if(t>=128)color='#f39c12';else color='#e74c3c';
+      // Unified rule: below 2048 = blue, 2048+ = gold/purple
+      var color=t>=2048?'#ffd166':'#3498db';
+      _tilePoints.push({x:x,w:barW,h:h,y:y,color=color});
       ctx.fillStyle=color;
       ctx.fillRect(x,y,barW,h);
     });
@@ -1517,14 +1518,18 @@ function drawMaxTileChart(){
       var rect=c.getBoundingClientRect();
       var mx=e.clientX-rect.left;
       var idx=Math.floor((mx/W)*n);
-      if(idx>=0&&idx<n){
-        var t=tiles[idx],p=aiHistory[idx];
-        var tip=$('chart-tooltip');
-        tip.style.display='block';
-        tip.style.left=(e.clientX+12)+'px';
-        tip.style.top=(e.clientY-24)+'px';
-        tip.innerHTML='Game '+p.game+'<br>Max Tile: <b>'+t+'</b>';
-      }
+    if(idx>=0&&idx<n){
+          var t=tiles[idx],p=aiHistory[idx],col=t>=2048?'#ffd166':'#3498db';
+          var tip=$('chart-tooltip');
+          tip.style.display='block';
+          tip.style.left=(e.clientX+12)+'px';
+          tip.style.top=(e.clientY-24)+'px';
+          tip.style.borderColor=col;
+          c.style.cursor='pointer';
+          tip.innerHTML='Game '+p.game+'<br>Max Tile: <b style="color:'+col+'">'+t+'</b>';
+        }else{
+          $('chart-tooltip').style.display='none';c.style.cursor='default';
+        }
     });
     c.addEventListener('mouseleave',function(){$('chart-tooltip').style.display='none';});
   }
@@ -1559,7 +1564,7 @@ async function checkTrainingProgress(){
         drawTrainingCurve();drawMaxTileChart();updateLiveStats();
       }
       var pct=data.total?Math.round(data.game/data.total*100):0;
-      $('training-log').innerHTML='⏳ <strong>训练中 '+pct+'%</strong> — Game '+data.game+'/'+data.total+'<br><span style="font-size:11px;color:rgba(255,255,255,.5)">loss: '+data.loss.toFixed(6)+' · maxTile: '+data.maxTile+' · bestMax: '+data.bestMax+' · avgScore: '+data.avgScore+'</span>';
+      $('training-log').innerHTML='⏳ <strong>训练中 '+pct+'%</strong> — Game '+data.game+'/'+data.total;
       jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ 训练进行中</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
       // Start polling if not already
       if(!aiPollTimer)startPollingProgress();
@@ -1588,7 +1593,7 @@ function startPollingProgress(){
         aiHistory=aiLiveHistory;
         drawTrainingCurve();drawMaxTileChart();updateLiveStats();
         var pct=data.total?Math.round(data.game/data.total*100):0;
-        $('training-log').innerHTML='⏳ <strong>训练中 '+pct+'%</strong> — Game '+data.game+'/'+data.total+'<br><span style="font-size:11px;color:rgba(255,255,255,.5)">loss: '+data.loss.toFixed(6)+' · maxTile: '+data.maxTile+' · bestMax: '+data.bestMax+' · avgScore: '+data.avgScore+'</span>';
+        $('training-log').innerHTML='⏳ <strong>训练中 '+pct+'%</strong> — Game '+data.game+'/'+data.total;
         var jobsEl=$('training-jobs');
         if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ 训练进行中</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
       }else{

@@ -546,7 +546,7 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
           loss: data.loss,
           bestMaxTile: data.bestMax,
           avgScore: data.avgScore,
-          message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TRAINING ' + data.game + '/' + data.total + ' games (lr=' + lr + ', loss=' + data.loss.toFixed(6) + ')'
+          message: 'TRAINING ' + data.game + '/' + data.total + ' games (lr=' + lr + ', loss=' + data.loss.toFixed(6) + ')'
         });
 
         // onProgress already fires every 5 games (see train-ai.js: g%5===0 → game = g+1 = 1,6,11,16...)
