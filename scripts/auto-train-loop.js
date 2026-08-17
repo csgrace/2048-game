@@ -549,9 +549,10 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
           message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TRAINING ' + data.game + '/' + data.total + ' games (lr=' + lr + ', loss=' + data.loss.toFixed(6) + ')'
         });
 
-        // Every 5 games (matching onProgress interval): push progress so deployed site stays fresh
-        // Each push takes ~2-5s; 5-game interval ≈ 2-4 min between updates, much better UX
-        if (data.game % 5 === 0) {
+        // onProgress already fires every 5 games (see train-ai.js: g%5===0 → game = g+1 = 1,6,11,16...)
+        // So data.game values are 1,6,11,16... which are never divisible by 5.
+        // Just push on EVERY onProgress call instead of checking modulo.
+        // Interval: ~2-4 min between pushes, good UX without excessive commits.
           try {
             var progressPath = path.join(repoRoot, 'js', 'ai-training-progress.json');
             var progressPayload = {
@@ -576,7 +577,6 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
             // Git push may fail (no changes or network), training continues
             console.log('[Git push skipped: ' + (e.stderr ? e.stderr.toString().trim() : e.message) + ']');
           }
-        }
       }
     },
     onComplete: function () {}
