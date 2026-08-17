@@ -396,7 +396,7 @@ transition:all .25s ease;
 <body>
 
 <canvas id="bg-canvas"></canvas>
-<button class="music-btn" id="music-toggle" title="音乐开关">🎵</button>
+<button class="music-btn" id="music-toggle" title="音效开关">🔊</button>
 <div class="app">
 
   <!-- ============ ENTRY ============ -->
@@ -788,7 +788,9 @@ async function sha256(t){
    Sound
    ==================================================================== */
 let audioCtx=null;
+let sfxEnabled=true; // 音效开关，默认开启
 function snd(freq,dur=.08,type='sine',vol=.15){
+  if(!sfxEnabled)return; // 音效关闭时不播放
   try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();
     o.type=type;o.frequency.value=freq;
@@ -806,48 +808,20 @@ const SFX={
 };
 
 /* ====================================================================
-   Background Music (ambient generative melody)
+   SFX Toggle (音效开关)
    ==================================================================== */
-let bgmOn=false, bgmTimer=null, bgmNodes=[];
-// Pentatonic scale notes for a pleasant ambient loop
-const BGM_NOTES=[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25];
-const BGM_BPM=72, BGM_BEAT=60/BGM_BPM;
-function bgmPlayNote(){
-  if(!bgmOn)return;
-  try{
-    audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
-    const freq=BGM_NOTES[Math.floor(Math.random()*BGM_NOTES.length)];
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
-    o.type='sine';o.frequency.value=freq;
-    f.type='lowpass';f.frequency.value=800;
-    g.gain.setValueAtTime(0,audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(.07,audioCtx.currentTime+.15);
-    g.gain.linearRampToValueAtTime(.001,audioCtx.currentTime+BGM_BEAT*.9);
-    o.connect(f);f.connect(g);g.connect(audioCtx.destination);
-    o.start();o.stop(audioCtx.currentTime+BGM_BEAT);
-  }catch{}
-}
-function bgmLoop(){
-  bgmPlayNote();
-  if(!bgmOn)return;
-  // Random interval between notes for organic feel (1-3 beats)
-  const next=BGM_BEAT*(1+Math.random())*1000;
-  bgmTimer=setTimeout(bgmLoop,next);
-}
 function toggleBGM(){
-  bgmOn=!bgmOn;
+  sfxEnabled=!sfxEnabled;
   const btn=$('music-toggle');
-  if(bgmOn){
-    btn.textContent='🎵';
+  if(sfxEnabled){
+    btn.textContent='🔊';
     btn.classList.remove('off');
     btn.style.borderColor='rgba(20,184,166,.5)';
   }else{
     btn.textContent='🔇';
     btn.classList.add('off');
     btn.style.borderColor='rgba(255,255,255,.15)';
-    clearTimeout(bgmTimer);
   }
-  if(bgmOn)bgmLoop();
 }
 document.addEventListener('DOMContentLoaded',function(){
   $('music-toggle').addEventListener('click',toggleBGM);
