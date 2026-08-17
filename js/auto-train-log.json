@@ -4,12 +4,12 @@
     "version": 242,
     "trainGames": 200,
     "lr": 0.002,
-    "trainTime": "32758.3s",
-    "testWins": 18,
+    "trainTime": "33215.4s",
+    "testWins": 15,
     "testTotal": 50,
-    "winRate": 36,
-    "avgScore": 19298,
+    "winRate": 30,
+    "avgScore": 17949,
     "bestMax": 2048,
-    "timestamp": "2026-08-16T16:37:09.206Z"
+    "timestamp": "2026-08-17T02:40:18.383Z"
   }
 ]
