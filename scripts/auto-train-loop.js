@@ -44,22 +44,87 @@ var statusPath = path.join(repoRoot, 'js', 'ai-backend-status.json');
 /* ---------- Backend status file (for frontend monitoring + file lock) ---------- */
 function writeBackendStatus(status) {
   status.lastUpdate = new Date().toISOString();
+  status.pid = process.pid; // Always record our PID for zombie detection
   fs.writeFileSync(statusPath, JSON.stringify(status, null, 2));
 }
 
-/* ---------- File lock: ensure only one train/test at a time ---------- */
+/* ---------- File lock: ensure only one train/test at a time ----------
+   Enhanced with:
+   - PID liveness check (detect zombie locks from crashed processes)
+   - Timeout-based auto-takeover (if lock is older than STALE_LOCK_MS, force-acquire)
+   - Process PID recording (so next instance can check if we're alive)
+*/
+var STALE_LOCK_MS = 30 * 60 * 1000; // 30 minutes with no update = stale
+
+function isProcessAlive(pid) {
+  if (!pid || pid <= 0) return false;
+  try {
+    // process.kill(pid, 0) throws if process doesn't exist, succeeds (no-op) if alive
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function tryAcquireLock() {
   try {
     var raw = fs.readFileSync(statusPath, 'utf8');
     var existing = JSON.parse(raw);
     if (existing && existing.active) {
-      console.error('❌ Another train/test process is already running (phase: ' + (existing.phase || 'unknown') + ', started: ' + (existing.lastUpdate || 'unknown') + ')');
-      console.error('   If this is a stale lock, delete js/ai-backend-status.json and retry.');
+      var lockPid = existing.pid || 0;
+      var lockAge = Date.now() - (existing.lastUpdate ? new Date(existing.lastUpdate).getTime() : 0);
+      
+      // Case 1: Lock has a PID — check if that process is still alive
+      if (lockPid > 0 && !isProcessAlive(lockPid)) {
+        console.warn('⚠️  Stale lock detected: PID ' + lockPid + ' is dead, taking over...');
+        // Process is dead, safe to take over
+        writeBackendStatus({
+          active: true,
+          phase: 'starting',
+          pid: process.pid,
+          message: 'Recovered from stale lock (PID ' + lockPid + ' was dead). Starting...'
+        });
+        return; // Take over
+      }
+      
+      // Case 2: Lock is very old (no update for >30 min) — assume zombie
+      if (lockAge > STALE_LOCK_MS) {
+        console.warn('⚠️  Stale lock detected: last update ' + Math.round(lockAge / 60000) + ' min ago, taking over...');
+        if (lockPid > 0) {
+          try { process.kill(lockPid, 'SIGTERM'); } catch (e) {}
+          console.log('   Sent SIGTERM to old PID ' + lockPid);
+        }
+        writeBackendStatus({
+          active: true,
+          phase: 'starting',
+          pid: process.pid,
+          message: 'Recovered from stale lock (no update for ' + Math.round(lockAge / 60000) + ' min). Starting...'
+        });
+        return; // Take over
+      }
+      
+      // Case 3: Lock is active and recent — respect it, exit
+      console.error('❌ Another train/test process is already running:');
+      console.error('   Phase: ' + (existing.phase || 'unknown'));
+      console.error('   PID: ' + lockPid);
+      console.error('   Last update: ' + (existing.lastUpdate || 'unknown'));
+      console.error('   ' + Math.round(lockAge / 1000) + 's ago');
+      if (lockPid > 0) console.error('   To force-kill: taskkill /PID ' + lockPid + ' /F');
+      console.error('   To force-takeover: delete js/ai-backend-status.json and retry.');
       process.exit(1);
     }
   } catch (e) {
     // No status file = no lock, proceed
   }
+  
+  // Write our PID into the status so future instances can check us
+  writeBackendStatus({
+    active: true,
+    phase: 'starting',
+    pid: process.pid,
+    message: 'Starting auto-train-loop (PID ' + process.pid + ')...'
+  });
 }
 
 /* ---------- Cleanup on exit ---------- */

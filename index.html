@@ -1618,9 +1618,12 @@ function updateBackendStatusUI(data){
     tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Version v'+(data.version||'—')+'</span>';
     tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Round '+(data.round||0)+'/'+(data.maxRounds||'—')+'</span>';
     if(data.trainGames)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainGames+' games</span>';
-    if(data.trainProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainProgress+'</span>';
+    if(phase==='training'&&data.trainProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Train '+data.trainProgress+'</span>';
+    if(phase==='training'&&data.loss!==undefined)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Loss '+data.loss.toFixed(6)+'</span>';
+    if(phase==='training'&&data.bestMaxTile)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:#ffd166">Best '+data.bestMaxTile+'</span>';
+    if(phase!=='training'&&data.trainProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainProgress+'</span>';
     if(data.testProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Test '+data.testProgress+'</span>';
-    if(data.winRate!==undefined)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
+    if(phase!=='training'&&data.winRate!==undefined)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
     tags.innerHTML=tagHtml;
   }
   var lastUpdate=$('backend-last-update');
@@ -1645,7 +1648,11 @@ function updateBackendStatusUI(data){
     var ptTagHtml='';
     ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Version v'+(data.version||'—')+'</span>';
     ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Round '+(data.round||0)+'/'+(data.maxRounds||'—')+'</span>';
-    if(data.winRate!==undefined)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
+    if(phase==='training'&&data.trainProgress)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Train '+data.trainProgress+'</span>';
+    if(phase==='training'&&data.loss!==undefined)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Loss '+data.loss.toFixed(6)+'</span>';
+    if(phase==='training'&&data.avgScore)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Avg '+data.avgScore+'</span>';
+    if(phase==='training'&&data.bestMaxTile)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:#ffd166">Best '+data.bestMaxTile+'</span>';
+    if(phase!=='training'&&data.winRate!==undefined)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
     ptTags.innerHTML=ptTagHtml;
   }
 
