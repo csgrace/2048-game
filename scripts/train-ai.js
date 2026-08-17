@@ -207,7 +207,12 @@ function runTraining(opts) {
   }
 
   function getSearchDepth(grid) {
-    return 2; // fixed shallow search for fast training throughput
+    // Adaptive depth by empty cells — same as index.html / auto-train-loop.js
+    // More empty cells → shallower (prioritize speed); fewer cells → deeper (avoid losing)
+    var e = empty(grid).length;
+    if (e >= 8) return 2;
+    if (e >= 4) return 3;
+    return 4;
   }
 
   /* ---------- Self-play one game ---------- */

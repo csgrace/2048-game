@@ -155,7 +155,6 @@ var trainModule = require('./train-ai.js');
    Playtest logic (copied from playtest-ai.js to run in-process)
    ======================================================================== */
 var AI_DIRECTIONS = ['up', 'left', 'down', 'right'];
-var AI_BUDGET_MS = 60;
 
 function aiClone(grid) { return grid.map(function (r) { return r.slice(); }); }
 
@@ -279,60 +278,24 @@ function aiExpectimax(grid, depth, isChance, table) {
   return value;
 }
 
-function aiMonteCarlo(grid, move, rounds) {
-  var totalGained = 0;
-  for (var round = 0; round < rounds; round++) {
-    var current = aiMoveBoard(grid, move).board; var gained = 0, steps = 0;
-    while (steps < 20) {
-      var empties = aiEmptyCells(current); if (!empties.length) break;
-      var p = empties[Math.floor(Math.random() * empties.length)];
-      current[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
-      var moved = false;
-      var dirs = AI_DIRECTIONS.slice().sort(function () { return Math.random() - 0.5; });
-      for (var d = 0; d < dirs.length; d++) {
-        var res = aiMoveBoard(current, dirs[d]);
-        if (res.changed) { gained += res.gained; current = res.board; moved = true; break; }
-      }
-      if (!moved) break;
-      steps++;
-    }
-    totalGained += gained;
-  }
-  return totalGained / rounds;
+// Adaptive search depth — same logic as train-ai.js getSearchDepth()
+function aiGetSearchDepth(grid) {
+  var e = aiEmptyCells(grid).length;
+  if (e >= 8) return 2;
+  if (e >= 4) return 3;
+  return 4;
 }
 
 function aiBestMove(grid) {
+  // Single-pass expectimax at adaptive depth (consistent with training)
+  var depth = aiGetSearchDepth(grid);
   var table = new Map();
-  var start = Date.now();
-  var bestDirection = null;
-  for (var targetDepth = 2; targetDepth <= 6; targetDepth++) {
-    var localBest = null, localScore = -Infinity, completed = true;
-    for (var i = 0; i < AI_DIRECTIONS.length; i++) {
-      var result = aiMoveBoard(grid, AI_DIRECTIONS[i]);
-      if (!result.changed) continue;
-      var value = result.gained + aiExpectimax(result.board, targetDepth, true, table);
-      if (value > localScore) { localScore = value; localBest = AI_DIRECTIONS[i]; }
-    }
-    if (Date.now() - start > AI_BUDGET_MS) { completed = false; }
-    if (completed && localBest) { bestDirection = localBest; }
-    if (!completed) break;
-  }
-  // Monte Carlo tie-break
-  var candidates = [];
-  for (var j = 0; j < AI_DIRECTIONS.length; j++) {
-    var res2 = aiMoveBoard(grid, AI_DIRECTIONS[j]);
-    if (!res2.changed) continue;
-    candidates.push({ direction: AI_DIRECTIONS[j], expectimax: res2.gained + aiExpectimax(res2.board, 2, true, new Map()) });
-  }
-  candidates.sort(function (a, b) { return b.expectimax - a.expectimax; });
-  if (candidates.length) {
-    var top1 = candidates[0];
-    var top2 = candidates.length > 1 ? candidates[1] : null;
-    var probeRounds = 8;
-    var mc1 = aiMonteCarlo(grid, top1.direction, probeRounds);
-    var mc2 = top2 ? aiMonteCarlo(grid, top2.direction, probeRounds) : -1;
-    if (top2 && mc2 > mc1 * 1.15) bestDirection = top2.direction;
-    else bestDirection = top1.direction;
+  var bestDirection = null, bestScore = -Infinity;
+  for (var i = 0; i < AI_DIRECTIONS.length; i++) {
+    var result = aiMoveBoard(grid, AI_DIRECTIONS[i]);
+    if (!result.changed) continue;
+    var value = result.gained + aiExpectimax(result.board, depth, true, table);
+    if (value > bestScore) { bestScore = value; bestDirection = AI_DIRECTIONS[i]; }
   }
   return bestDirection;
 }
