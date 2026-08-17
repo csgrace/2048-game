@@ -467,7 +467,10 @@ transition:all .25s ease;
       <div id="pt-backend-status" style="margin-bottom:8px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ 后台监控</span>
-          <span id="pt-backend-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="pt-backend-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
+            <button id="btn-refresh-pt-backend" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(20,184,166,.3);background:rgba(20,184,166,.08);color:#14b8a6;cursor:pointer;transition:all .2s" title="刷新后台状态">🔄 Refresh</button>
+          </div>
         </div>
         <div id="pt-backend-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">等待后台状态...</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="pt-backend-tags">
@@ -606,7 +609,10 @@ transition:all .25s ease;
       <div id="backend-status-panel" style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ 后台训练状态</span>
-          <span id="backend-phase-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="backend-phase-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
+            <button id="btn-refresh-backend" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(20,184,166,.3);background:rgba(20,184,166,.08);color:#14b8a6;cursor:pointer;transition:all .2s" title="刷新后台状态">🔄 Refresh</button>
+          </div>
         </div>
         <div id="backend-status-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">
           <span style="color:rgba(255,255,255,.4)">等待后台状态...</span>
@@ -2294,6 +2300,13 @@ if(aiNet)aiNet._meta=w;
     });
 })();
 
+/* Start backend status polling on page load */
+setTimeout(function(){
+  startBackendStatusPolling();
+  // Also check for existing playtest progress
+  checkExistingPlaytestProgress();
+}, 2000);
+
 /* ====================================================================
    AI Self-Play Showcase — mini board that renders an AI game live
    ==================================================================== */
@@ -2537,6 +2550,8 @@ bind('btn-guest',()=>{SFX.button();currentUser=null;showSettings()});
 bind('btn-ai-training',()=>{SFX.button();gameReturnScreen='entry-screen';currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();});
 bind('btn-playtest',()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();startBackendStatusPolling();});
 bind('btn-playtest-back',()=>{SFX.button();closeTokenModal();stopBackendStatusPolling();stopPollingPlaytestProgress();show('entry-screen')});
+bind('btn-refresh-backend',()=>{SFX.button();fetchBackendStatus();fetchPlaytestProgress();});
+bind('btn-refresh-pt-backend',()=>{SFX.button();fetchBackendStatus();fetchPlaytestProgress();updateWeightInfoBar();});
 bind('btn-auth-back',()=>{SFX.button();show('entry-screen')});
 
 bind('btn-settings-back',()=>{SFX.button();
