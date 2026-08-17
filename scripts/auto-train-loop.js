@@ -548,6 +548,13 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
     lr: lr,
     message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TRAINING ' + trainGames + ' games (lr=' + lr + ', base v' + currentVersion + ')'
   });
+  // Push immediately so deployed site shows training started right away
+  try {
+    execSync('git add js/ai-backend-status.json', { cwd: repoRoot, stdio: 'pipe' });
+    execSync('git commit -m "progress: round ' + round + ' TRAINING started (base v' + currentVersion + ') [skip ci]"', { cwd: repoRoot, stdio: 'pipe' });
+    execSync('git push', { cwd: repoRoot, stdio: 'pipe' });
+    console.log('[Training start pushed: round ' + round + ']');
+  } catch (e) { console.log('[Git push skipped: ' + e.message + ']'); }
   
   var trainStart = Date.now();
   var weights = trainModule.run({
@@ -660,6 +667,13 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
     testPhase: 'quick',
     message: 'Round ' + round + '/' + MAX_ROUNDS + ' - QUICK TEST v' + weights.version + ' with ' + TEST_GAMES + ' games'
   });
+  // Push immediately so deployed site shows testing phase right away
+  try {
+    execSync('git add js/ai-backend-status.json', { cwd: repoRoot, stdio: 'pipe' });
+    execSync('git commit -m "progress: round ' + round + ' QUICK TEST started v' + weights.version + ' [skip ci]"', { cwd: repoRoot, stdio: 'pipe' });
+    execSync('git push', { cwd: repoRoot, stdio: 'pipe' });
+    console.log('[Testing start pushed: round ' + round + ']');
+  } catch (e) { console.log('[Git push skipped: ' + e.message + ']'); }
   
   var testResult = runPlaytest(TEST_GAMES, round);
   
