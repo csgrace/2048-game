@@ -1566,7 +1566,7 @@ async function checkTrainingProgress(){
         drawTrainingCurve();drawMaxTileChart();updateLiveStats();
       }
       var pct=data.total?Math.round(data.game/data.total*100):0;
-      $('training-log').innerHTML='⏳ <strong>训练中 '+pct+'%</strong> — Game '+data.game+'/'+data.total;
+      // training-log: only show on completion, not during training
       jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ 训练进行中</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
       // Start polling if not already
       if(!aiPollTimer)startPollingProgress();
@@ -1597,7 +1597,7 @@ function startPollingProgress(){
         aiHistory=aiLiveHistory;
         drawTrainingCurve();drawMaxTileChart();updateLiveStats();
         var pct=data.total?Math.round(data.game/data.total*100):0;
-        $('training-log').innerHTML='⏳ <strong>训练中 '+pct+'%</strong> — Game '+data.game+'/'+data.total;
+        // training-log: only show on completion, not during training
         var jobsEl=$('training-jobs');
         if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ 训练进行中</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
       }else{
@@ -1660,20 +1660,25 @@ function updateBackendStatusUI(data){
   var detail=$('backend-status-detail');
   if(detail){
     var html='<span style="color:'+phaseColor+';font-weight:600">'+phaseLabel+'</span>';
-    if(data.message)html+=' — '+data.message;
-    if(data.loss)html+='<br><span style="color:rgba(255,255,255,.4)">Loss: '+data.loss.toFixed(6)+'</span>';
-    if(data.bestMaxTile)html+=' · <span style="color:rgba(255,255,255,.4)">Best: '+data.bestMaxTile+'</span>';
-    if(data.avgScore)html+=' · <span style="color:rgba(255,255,255,.4)">Avg: '+data.avgScore+'</span>';
+    // Show clean progress from trainProgress if available, else fall back to message
+    if(data.trainProgress&&phase==='training'){
+      var pct=Math.round(parseInt(data.trainProgress)/data.total*100);
+      html+=' — Game '+data.trainProgress;
+      html+=' <span style="font-size:10px;color:rgba(255,255,255,.4)">('+pct+'%)</span>';
+    }else if(data.message){
+      html+=' — '+data.message;
+    }
+    if(data.loss&&phase==='training')html+='<br><span style="color:rgba(255,255,255,.4)">Loss: '+data.loss.toFixed(6)+'</span>';
+    if(data.bestMaxTile&&phase!=='idle')html+=' · <span style="color:rgba(255,255,255,.4)">Best: '+data.bestMaxTile+'</span>';
+    if(data.avgScore&&phase!=='idle')html+=' · <span style="color:rgba(255,255,255,.4)">Avg: '+data.avgScore+'</span>';
     detail.innerHTML=html;
   }
   var tags=$('backend-stats-row');
   if(tags){
     var tagHtml='';
-    tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Version v'+(data.version||'—')+'</span>';
-    tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Round '+(data.round||0)+'/'+(data.maxRounds||'—')+'</span>';
-    if(data.trainGames)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainGames+' games</span>';
-    if(phase==='training'&&data.trainProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Train '+data.trainProgress+'</span>';
-    if(phase==='training'&&data.loss!==undefined)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Loss '+data.loss.toFixed(6)+'</span>';
+    tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">v'+(data.version||'—')+'</span>';
+    if(data.trainProgress&&phase==='training')tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(255,209,102,.15);color:#ffd166">⏳ '+data.trainProgress+'</span>';
+    if(data.loss&&phase==='training')tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">loss '+data.loss.toFixed(4)+'</span>';
     if(phase==='training'&&data.bestMaxTile)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:#ffd166">Best '+data.bestMaxTile+'</span>';
     if(phase!=='training'&&data.trainProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainProgress+'</span>';
     if(data.testProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Test '+data.testProgress+'</span>';
