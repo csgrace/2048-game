@@ -326,6 +326,20 @@ function runTestGame(gameIdx) {
 function runPlaytest(numGames, roundNum) {
   console.log('\n--- Running playtest: ' + numGames + ' games ---');
   loadWeights(); // reload latest weights
+  // Clear old progress file so frontend only shows THIS round's results
+  fs.writeFileSync(progressPath, JSON.stringify({
+    active: true,
+    timestamp: new Date().toISOString(),
+    totalGames: numGames,
+    completedGames: 0,
+    wins: 0,
+    fails: 0,
+    winRate: 0,
+    avgScore: 0,
+    bestMaxTile: 0,
+    totalDurationMs: 0,
+    results: []
+  }, null, 2));
   var results = [];
   for (var i = 1; i <= numGames; i++) {
     var r = runTestGame(i);
