@@ -1662,7 +1662,8 @@ function updateBackendStatusUI(data){
     var html='<span style="color:'+phaseColor+';font-weight:600">'+phaseLabel+'</span>';
     // Show clean progress from trainProgress if available, else fall back to message
     if(data.trainProgress&&phase==='training'){
-      var pct=Math.round(parseInt(data.trainProgress)/data.total*100);
+      var parts=data.trainProgress.split('/');
+      var pct=Math.round(parseInt(parts[0])/parseInt(parts[1])*100);
       html+=' — Game '+data.trainProgress;
       html+=' <span style="font-size:10px;color:rgba(255,255,255,.4)">('+pct+'%)</span>';
     }else if(data.message){
