@@ -1677,7 +1677,34 @@ function updateBackendStatusUI(data){
     if(data.version&&data.version!==loadedWeightVersion){
       reloadWeightsFromRepo();
     }
-    // If testing phase, also poll playtest progress
+    // ---- TRAINING phase: show progress bar with train progress ----
+    if(phase==='training'){
+      var progDiv=$('playtest-batch-progress');
+      var infoEl=$('playtest-batch-info');
+      var barEl=$('playtest-batch-bar');
+      var rateEl=$('playtest-batch-rate');
+      var statusEl=$('playtest-cloud-status');
+      if(progDiv)progDiv.style.display='';
+      // Parse trainProgress like "106/200"
+      var tpStr=data.trainProgress||'';
+      var tpParts=tpStr.split('/');
+      var tpCur=parseInt(tpParts[0])||0;
+      var tpTotal=parseInt(tpParts[1])||data.trainGames||1;
+      var tpPct=Math.round(tpCur/tpTotal*100);
+      if(barEl)barEl.style.width=tpPct+'%';
+      if(barEl)barEl.style.background='linear-gradient(90deg,#ffd166,#ffa07a)';
+      if(infoEl)infoEl.textContent='Train '+tpCur+' / '+tpTotal+' ('+tpPct+'%)';
+      if(rateEl){
+        var rateParts=[];
+        if(data.loss!==undefined)rateParts.push('Loss '+data.loss.toFixed(6));
+        if(data.avgScore)rateParts.push('Avg '+data.avgScore);
+        if(data.bestMaxTile)rateParts.push('Best '+data.bestMaxTile);
+        rateEl.textContent=rateParts.join(' · ');
+        rateEl.style.color='#ffd166';
+      }
+      if(statusEl)statusEl.innerHTML='🟡 <strong>训练进行中...</strong> '+tpStr+' 局已完成。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练结束后将自动进入 Quick Test (10局)。</span>';
+    }
+    // ---- TESTING phase: poll playtest progress ----
     if(phase==='testing'&&!playtestPollTimer){
       startPollingPlaytestProgress();
     }
@@ -1705,6 +1732,15 @@ function updateBackendStatusUI(data){
       cloudBtn2.textContent='▶ Start Cloud Test';
       cloudBtn2.style.opacity='';
       cloudBtn2.style.pointerEvents='auto';
+    }
+    // Hide progress bar when idle (unless batch playtest was user-triggered)
+    if(!batchPlaytestMode){
+      var progDiv2=$('playtest-batch-progress');
+      if(progDiv2)progDiv2.style.display='none';
+      var statusEl2=$('playtest-cloud-status');
+      if(statusEl2&&!batchPlaytestMode)statusEl2.innerHTML='Idle — click "Start Cloud Test" to dispatch the AI playtest workflow on GitHub Actions.';
+      var barEl2=$('playtest-batch-bar');
+      if(barEl2)barEl2.style.background='linear-gradient(90deg,#14b8a6,#6bcb77)';
     }
   }
   // Update weight info bar in Playtest Arena
