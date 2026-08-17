@@ -370,6 +370,20 @@ transition:all .25s ease;
   background:rgba(143,122,102,.25);color:rgba(255,255,255,.8);margin-left:8px;
 }
 
+/* music toggle button */
+.music-btn{
+  position:fixed;top:16px;right:16px;z-index:99;
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,.08);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.7);font-size:20px;
+  cursor:pointer;transition:all .25s;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.music-btn:hover{background:rgba(255,255,255,.15);color:#fff;transform:scale(1.08)}
+.music-btn.off{color:rgba(255,255,255,.35)}
+
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
   .stat{font-size:11px;min-width:68px;padding:5px 8px}
@@ -382,6 +396,7 @@ transition:all .25s ease;
 <body>
 
 <canvas id="bg-canvas"></canvas>
+<button class="music-btn" id="music-toggle" title="音乐开关">🎵</button>
 <div class="app">
 
   <!-- ============ ENTRY ============ -->
@@ -789,6 +804,54 @@ const SFX={
   lose:()=>{snd(220,.2);setTimeout(()=>snd(165,.3),120)},
   button:()=>snd(500,.03,'square',.05),
 };
+
+/* ====================================================================
+   Background Music (ambient generative melody)
+   ==================================================================== */
+let bgmOn=false, bgmTimer=null, bgmNodes=[];
+// Pentatonic scale notes for a pleasant ambient loop
+const BGM_NOTES=[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25];
+const BGM_BPM=72, BGM_BEAT=60/BGM_BPM;
+function bgmPlayNote(){
+  if(!bgmOn)return;
+  try{
+    audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+    const freq=BGM_NOTES[Math.floor(Math.random()*BGM_NOTES.length)];
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+    o.type='sine';o.frequency.value=freq;
+    f.type='lowpass';f.frequency.value=800;
+    g.gain.setValueAtTime(0,audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(.07,audioCtx.currentTime+.15);
+    g.gain.linearRampToValueAtTime(.001,audioCtx.currentTime+BGM_BEAT*.9);
+    o.connect(f);f.connect(g);g.connect(audioCtx.destination);
+    o.start();o.stop(audioCtx.currentTime+BGM_BEAT);
+  }catch{}
+}
+function bgmLoop(){
+  bgmPlayNote();
+  if(!bgmOn)return;
+  // Random interval between notes for organic feel (1-3 beats)
+  const next=BGM_BEAT*(1+Math.random())*1000;
+  bgmTimer=setTimeout(bgmLoop,next);
+}
+function toggleBGM(){
+  bgmOn=!bgmOn;
+  const btn=$('music-toggle');
+  if(bgmOn){
+    btn.textContent='🎵';
+    btn.classList.remove('off');
+    btn.style.borderColor='rgba(20,184,166,.5)';
+  }else{
+    btn.textContent='🔇';
+    btn.classList.add('off');
+    btn.style.borderColor='rgba(255,255,255,.15)';
+    clearTimeout(bgmTimer);
+  }
+  if(bgmOn)bgmLoop();
+}
+document.addEventListener('DOMContentLoaded',function(){
+  $('music-toggle').addEventListener('click',toggleBGM);
+});
 
 /* ====================================================================
    Colours
