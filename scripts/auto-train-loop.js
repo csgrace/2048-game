@@ -490,7 +490,25 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
     lr: lr,
     warmup: warmup,
     existingWeights: existingWeights,
-    onProgress: function () {},
+    onProgress: function (data) {
+      // Update backend status during training so frontend can see progress
+      if (data.type === 'progress') {
+        writeBackendStatus({
+          active: true,
+          phase: 'training',
+          round: round,
+          maxRounds: MAX_ROUNDS,
+          version: currentVersion,
+          trainGames: trainGames,
+          trainProgress: data.game + '/' + data.total,
+          lr: lr,
+          loss: data.loss,
+          bestMaxTile: data.bestMax,
+          avgScore: data.avgScore,
+          message: 'Round ' + round + '/' + MAX_ROUNDS + ' - TRAINING ' + data.game + '/' + data.total + ' games (lr=' + lr + ', loss=' + data.loss.toFixed(6) + ')'
+        });
+      }
+    },
     onComplete: function () {}
   });
   var trainTime = ((Date.now() - trainStart) / 1000).toFixed(1);

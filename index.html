@@ -1618,6 +1618,7 @@ function updateBackendStatusUI(data){
     tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Version v'+(data.version||'—')+'</span>';
     tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Round '+(data.round||0)+'/'+(data.maxRounds||'—')+'</span>';
     if(data.trainGames)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainGames+' games</span>';
+    if(data.trainProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Train '+data.trainProgress+'</span>';
     if(data.testProgress)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Test '+data.testProgress+'</span>';
     if(data.winRate!==undefined)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
     tags.innerHTML=tagHtml;
