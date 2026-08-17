@@ -1,16 +1,13 @@
 {
-  "active": false,
-  "phase": "idle",
+  "active": true,
+  "phase": "testing",
   "round": 1,
   "maxRounds": 50,
   "version": 1242,
-  "trainGames": 200,
-  "trainTime": "19201.8s",
-  "lr": 0.002,
-  "loss": 0.005565,
-  "bestMaxTile": 4096,
-  "avgScore": 32061,
-  "message": "Round 1 trained v1242 in 19201.8s - starting quick test...",
-  "lastUpdate": "2026-08-17T13:47:09.870Z",
+  "trainGames": 0,
+  "testGames": 10,
+  "testPhase": "quick",
+  "message": "Round 1/50 - QUICK TEST v1242 with 10 games",
+  "lastUpdate": "2026-08-17T13:47:14.140Z",
   "pid": 62876
 }
