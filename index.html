@@ -1400,10 +1400,11 @@ $('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong
 }
 /* Load training history from ai-weights.json for charts & stats */
 var aiHistory=[];
+var _liveTrainingActive=false; // prevents weight history from overwriting live training data
 function loadTrainingStatsFromWeights(){
   if(aiNet&&aiNet._meta){
     var m=aiNet._meta;
-    if(m.history){aiHistory=m.history;}
+    if(m.history&&!_liveTrainingActive){aiHistory=m.history;}
     if(m.version){setStat('ts-version','v'+m.version);}
     if(m.bestMaxTile){setStat('ts-best',m.bestMaxTile);}
     if(m.avgScore){setStat('ts-avg',m.avgScore);}
@@ -1526,7 +1527,7 @@ function drawMaxTileChart(){
           tip.style.top=(e.clientY-24)+'px';
           tip.style.borderColor=col;
           c.style.cursor='pointer';
-          tip.innerHTML='Game '+p.game+'<br>Max Tile: <b style="color:'+col+'">'+t+'</b>';
+          tip.innerHTML='<span style="color:'+col+'">Game '+p.game+'<br>Max Tile: '+t+'</span>';
         }else{
           $('chart-tooltip').style.display='none';c.style.cursor='default';
         }
@@ -1558,6 +1559,7 @@ async function checkTrainingProgress(){
       $('ai-train').disabled=true;
       $('ai-train').textContent='⏳ Training...';
       sessionStorage.setItem('ai-training-triggered',Date.now());
+      _liveTrainingActive=true; // lock: prevent weight history from overwriting live data
       aiLiveHistory=data.history||[];
       if(aiLiveHistory.length){
         aiHistory=aiLiveHistory;
@@ -1569,6 +1571,7 @@ async function checkTrainingProgress(){
       // Start polling if not already
       if(!aiPollTimer)startPollingProgress();
     }else{
+      _liveTrainingActive=false; // unlock: training done, allow weight history to show
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
       jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ 云端空闲</span></div>';
@@ -1589,6 +1592,7 @@ function startPollingProgress(){
       if(!resp.ok)return;
       var data=await resp.json();
       if(data.active){
+        _liveTrainingActive=true;
         aiLiveHistory=data.history||[];
         aiHistory=aiLiveHistory;
         drawTrainingCurve();drawMaxTileChart();updateLiveStats();
@@ -1598,6 +1602,7 @@ function startPollingProgress(){
         if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ 训练进行中</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
       }else{
         // Training done!
+        _liveTrainingActive=false;
         stopPollingProgress();
         sessionStorage.removeItem('ai-training-triggered');
         $('ai-train').disabled=false;
