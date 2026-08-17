@@ -1,12 +1,13 @@
 {
   "active": true,
   "phase": "training",
-  "round": 4,
+  "round": 1,
   "maxRounds": 50,
   "version": 1042,
-  "trainGames": 250,
+  "trainGames": 200,
   "testGames": 10,
   "lr": 0.002,
-  "message": "Round 4/50 - TRAINING 250 games (lr=0.002, base v1042)",
-  "lastUpdate": "2026-08-17T06:00:12.183Z"
+  "message": "Round 1/50 - TRAINING 200 games (lr=0.002, base v1042)",
+  "lastUpdate": "2026-08-17T06:34:31.442Z",
+  "pid": 63484
 }
