@@ -404,6 +404,12 @@ function runPlaytest(numGames, roundNum) {
       winRate: partialData.winRate,
       message: 'Testing game ' + i + '/' + numGames + ' - ' + partialWins + ' wins (' + partialData.winRate + '%)'
     });
+    // Push each game so deployed site shows live test progress
+    try {
+      execSync('git add js/ai-backend-status.json js/ai-playtest-progress.json', { cwd: repoRoot, stdio: 'pipe' });
+      execSync('git commit -m "progress: test round ' + roundNum + ' game ' + i + '/' + numGames + ' (' + partialData.winRate + '%) [skip ci]"', { cwd: repoRoot, stdio: 'pipe' });
+      execSync('git push', { cwd: repoRoot, stdio: 'pipe' });
+    } catch (e) { /* ignore push errors */ }
   }
   var wins = results.filter(function (g) { return g.result === 'win'; }).length;
   var winRate = Math.round(wins / results.length * 100);
