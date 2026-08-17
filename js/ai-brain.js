@@ -70,14 +70,18 @@
     }
     return output;
   };
+  Linear.prototype.zeroGrad = function () {
+    this.gW.fill(0);
+    this.gB.fill(0);
+  };
   Linear.prototype.backward = function (gradOutput) {
     var i, o;
-    // gradW and gradB
+    // gradW and gradB — ACCUMULATE (+=) so batch samples are summed
     for (o = 0; o < this.outF; o++) {
       var go = gradOutput[o] * (this.outC[o] > 0 ? 1 : 0); // ReLU derivative
-      this.gB[o] = go;
+      this.gB[o] += go;
       var off = o * this.inF;
-      for (i = 0; i < this.inF; i++) this.gW[off + i] = go * this.inC[i];
+      for (i = 0; i < this.inF; i++) this.gW[off + i] += go * this.inC[i];
     }
     // propagate gradient to input
     var gradInput = new Float32Array(this.inF);
@@ -135,7 +139,9 @@
   ValueNet.prototype.trainStep = function (batch, lr) {
     // batch: [{input, target, weight}]
     var totalLoss = 0;
-    // accumulate gradients
+    // Zero gradients before accumulating across batch
+    this.l1.zeroGrad(); this.l2.zeroGrad(); this.l3.zeroGrad(); this.l4.zeroGrad();
+    // accumulate gradients across all samples in batch
     for (var s = 0; s < batch.length; s++) {
       var sample = batch[s];
       var pred = this.forward(sample.input);
@@ -169,6 +175,11 @@
       l2W: Array.from(this.l2.W), l2b: Array.from(this.l2.b),
       l3W: Array.from(this.l3.W), l3b: Array.from(this.l3.b),
       l4W: Array.from(this.l4.W), l4b: Array.from(this.l4.b),
+      // Persist Adam optimiser state so training continuity is preserved
+      l1mW: Array.from(this.l1.mW), l1vW: Array.from(this.l1.vW), l1mB: Array.from(this.l1.mB), l1vB: Array.from(this.l1.vB),
+      l2mW: Array.from(this.l2.mW), l2vW: Array.from(this.l2.vW), l2mB: Array.from(this.l2.mB), l2vB: Array.from(this.l2.vB),
+      l3mW: Array.from(this.l3.mW), l3vW: Array.from(this.l3.vW), l3mB: Array.from(this.l3.mB), l3vB: Array.from(this.l3.vB),
+      l4mW: Array.from(this.l4.mW), l4vW: Array.from(this.l4.vW), l4mB: Array.from(this.l4.mB), l4vB: Array.from(this.l4.vB),
       adam_t: ADAM_B1_T
     };
   };
@@ -178,6 +189,13 @@
     this.l2.W.set(data.l2W); this.l2.b.set(data.l2b);
     this.l3.W.set(data.l3W); this.l3.b.set(data.l3b);
     this.l4.W.set(data.l4W); this.l4.b.set(data.l4b);
+    // Restore Adam optimiser state if available (for training continuity)
+    if (data.l1mW) {
+      this.l1.mW.set(data.l1mW); this.l1.vW.set(data.l1vW); this.l1.mB.set(data.l1mB); this.l1.vB.set(data.l1vB);
+      this.l2.mW.set(data.l2mW); this.l2.vW.set(data.l2vW); this.l2.mB.set(data.l2mB); this.l2.vB.set(data.l2vB);
+      this.l3.mW.set(data.l3mW); this.l3.vW.set(data.l3vW); this.l3.mB.set(data.l3mB); this.l3.vB.set(data.l3vB);
+      this.l4.mW.set(data.l4mW); this.l4.vW.set(data.l4vW); this.l4.mB.set(data.l4mB); this.l4.vB.set(data.l4vB);
+    }
     if (data.adam_t) { ADAM_B1_T = data.adam_t; ADAM_B2_T = Math.pow(ADAM_B2, Math.log(data.adam_t) / Math.log(ADAM_B1 + 1e-10)); }
   };
 

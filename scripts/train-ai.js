@@ -131,24 +131,28 @@ function runTraining(opts) {
   var totalGamesTrained = 0;
   var useNNLeaf = false;
 
-  /* ---------- load existing weights ---------- */
+  /* ---------- load existing weights (including Adam state) ---------- */
   if (opts.existingWeights && opts.existingWeights.l1W && opts.existingWeights.l1W.length > 100) {
     net.importWeights(opts.existingWeights);
     totalGamesTrained = opts.existingWeights.version || 0;
     useNNLeaf = totalGamesTrained >= WARMUP;
-    console.log('Loaded existing weights (v' + totalGamesTrained + '), NN leaf: ' + useNNLeaf);
+    console.log('Loaded existing weights (v' + totalGamesTrained + '), NN leaf: ' + useNNLeaf + ', Adam state restored');
+  } else {
+    // Fresh start: initialise Adam t-counter
+    AIBrain.adamReset();
+    AIBrain.adamStep();
   }
 
-  /* ---------- fix Adam optimiser ---------- */
-  AIBrain.adamReset();
-  AIBrain.adamStep();
-
   /* ---------- Neural network leaf evaluation ---------- */
+  // Use the SAME blend formula as playtest-ai.js / browser for consistency:
+  //   nnWeight = min(0.8, totalGamesTrained / 300)
+  //   value = heuristic * (1 - nnWeight) + raw * 5000 * nnWeight
   function nnEvaluate(grid) {
     if (!useNNLeaf || !net) return heuristicValue(grid);
     var input = AIBrain.encodeBoard(grid);
     var raw = net.forward(input);
-    return heuristicValue(grid) * 0.3 + raw * 5000;
+    var nnWeight = Math.min(0.8, totalGamesTrained / 300);
+    return heuristicValue(grid) * (1 - nnWeight) + raw * 5000 * nnWeight;
   }
 
   /* ---------- Expectimax Search ---------- */

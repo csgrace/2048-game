@@ -3,10 +3,9 @@
   "phase": "testing",
   "round": 1,
   "maxRounds": 50,
-  "version": 442,
-  "testProgress": "14/50",
-  "wins": 7,
-  "winRate": 50,
-  "message": "Testing game 14/50 - 7 wins (50%)",
-  "lastUpdate": "2026-08-17T02:13:03.660Z"
+  "testProgress": "10/50",
+  "wins": 2,
+  "winRate": 20,
+  "message": "Testing game 10/50 — 2 wins (20%)",
+  "lastUpdate": "2026-08-17T02:39:47.796Z"
 }
