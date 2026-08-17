@@ -1505,8 +1505,8 @@ function drawMaxTileChart(){
       var x=i*(W/n);
       var h=(t/maxT)*(H-4);
       var y=H-h;
-      // Unified rule: below 2048 = blue, 2048+ = gold/purple
-      var color=t>=2048?'#ffd166':'#3498db';
+      // Unified rule: below 2048 = blue, 2048+ = purple
+      var color=t>=2048?'#9b59b6':'#3498db';
       _tilePoints.push({x:x,w:barW,h:h,y:y,color:color});
       ctx.fillStyle=color;
       ctx.fillRect(x,y,barW,h);
@@ -1519,7 +1519,7 @@ function drawMaxTileChart(){
       var mx=e.clientX-rect.left;
       var idx=Math.floor((mx/W)*n);
     if(idx>=0&&idx<n){
-          var t=tiles[idx],p=aiHistory[idx],col=t>=2048?'#ffd166':'#3498db';
+          var t=tiles[idx],p=aiHistory[idx],col=t>=2048?'#9b59b6':'#3498db';
           var tip=$('chart-tooltip');
           tip.style.display='block';
           tip.style.left=(e.clientX+12)+'px';
