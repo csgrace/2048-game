@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0f1428" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>2048 – CS109 Project</title>
+<link rel="manifest" href="./manifest.json" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f1428'/><text x='16' y='23' font-size='14' font-weight='bold' text-anchor='middle' fill='%23ffd166'>2048</text></svg>" />
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f1428'/><text x='16' y='23' font-size='14' font-weight='bold' text-anchor='middle' fill='%23ffd166'>2048</text></svg>" />
 <style>
@@ -395,6 +399,9 @@ transition:all .25s ease;
 #pet-canvas-wrap.dragging{cursor:grabbing;transition:none}
 #pet-canvas-wrap:hover{transform:scale(1.08);opacity:1}
 #pet-canvas{display:block;width:100%;height:auto;pointer-events:none}
+#pet-reset-btn{display:none;position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.15);box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer;font-size:12px;line-height:22px;text-align:center;color:#555;padding:0;z-index:2;transition:transform .15s,background .15s}
+#pet-reset-btn:hover{background:#fff;transform:scale(1.15)}
+#pet-canvas-wrap:hover #pet-reset-btn, #pet-canvas-wrap.pet-moved #pet-reset-btn{display:block}
 
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
@@ -751,28 +758,28 @@ transition:all .25s ease;
 /* ====================================================================
    Animated background
    ==================================================================== */
+let bgAnimationFrameId=null;
 (function(){
   const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
   let W,H,stars=[];
-  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;initStars()}
+  function resize(){const dpr=window.devicePixelRatio||1;W=c.width=innerWidth*dpr;H=c.height=innerHeight*dpr;c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';x.scale(dpr,dpr);initStars()}
   function initStars(){stars=[];for(let i=0;i<80;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.4,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28})}
   function frame(){
     x.clearRect(0,0,W,H);
-    // gradient bg
     const g=x.createLinearGradient(0,0,W,H);
     g.addColorStop(0,'#0f1428');g.addColorStop(1,'#321e50');
     x.fillStyle=g;x.fillRect(0,0,W,H);
-    // stars
     for(const s of stars){
       s.ph+=s.a;
       const alpha=.3+.7*Math.sin(s.ph)*Math.sin(s.ph);
       x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fillStyle=`rgba(255,255,255,${alpha*.5})`;x.fill();
       s.y-=s.s;if(s.y<-5){s.y=H+5;s.x=Math.random()*W}
     }
-    requestAnimationFrame(frame)
+    bgAnimationFrameId=requestAnimationFrame(frame)
   }
   addEventListener('resize',resize);resize();frame()
 })();
+function stopBgAnimation(){if(bgAnimationFrameId){cancelAnimationFrame(bgAnimationFrameId);bgAnimationFrameId=null;}}
 
 /* ====================================================================
    Persistent helpers (localStorage)
@@ -780,6 +787,29 @@ transition:all .25s ease;
 const LS_SESSION ='g2048_session_v1';
 const API_BASE=window.GAME_API_URL||'https://vjbugpoxinddrwfkkfkn.supabase.co/functions/v1/game-api';
 let authToken=null;
+
+/* Timing & threshold constants */
+const TIMER_POLL_INTERVAL_MS=10000;          // training/backend poll every 10s
+const PLAYTEST_POLL_INTERVAL_MS=15000;       // playtest poll every 15s
+const TRAIGGER_WINDOW_MS=300000;             // 5 min session trigger window
+const SWIPE_THRESHOLD_PX=30;                 // min px for swipe gesture
+const AI_MOVE_BUDGET_MS=60;                  // AI move time budget
+const MAX_UNDO_STACK=30;                     // max undo history
+const WEIGHTS_RELOAD_DELAY_MS=2000;          // delay before reloading weights after training
+const TRAINING_LOG_POLL_DELAY_MS=20000;      // delay before starting progress poll after dispatch
+const SHOWCASE_TICK_MS=500;                  // showcase auto-play interval
+const SHOWCASE_WIN_RESET_MS=1200;            // delay after winning showcase game
+const SHOWCASE_OVER_RESET_MS=800;            // delay after game over in showcase
+const AI_RETRY_DELAY_MS=120;                 // AI move retry when input locked
+const AI_AUTO_PLAY_DELAY_MS=360;             // delay between AI auto-play moves
+const PLAYTEST_POLL_START_DELAY_MS=25000;    // delay before polling playtest progress
+const PET_BUBBLE_DUR_MS=1600;                // pet speech bubble duration
+const PET_BLINK_THRESHOLD=150;               // frames between宠物 blinks
+const PET_BLINK_DUR_MS=100;                  // pet blink duration
+const PET_AUTO_CYCLE_MS=3000;                // pet auto-cycle interval
+const PET_FADE_IN_MS=200;                    // pet bubble fade-in/out time
+const PET_FADE_OUT_MS=400;                   // pet bubble fade-out time before expire
+const CHART_HOVER_RADIUS=999;                // max distance for chart tooltip hover
 
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 async function api(path,options={}){
@@ -817,6 +847,12 @@ const SFX={
   win:()=>{snd(880,.2);setTimeout(()=>snd(1100,.3),120)},
   lose:()=>{snd(220,.2);setTimeout(()=>snd(165,.3),120)},
   button:()=>snd(500,.03,'square',.05),
+  // Countdown timer expiry: urgent descending triple-beep
+  timeout:()=>{
+    snd(880,.12,'square',.18);
+    setTimeout(()=>snd(660,.12,'square',.18),150);
+    setTimeout(()=>snd(440,.25,'square',.2),300);
+  },
 };
 
 /* ====================================================================
@@ -842,7 +878,7 @@ document.addEventListener('DOMContentLoaded',function(){
 /* ====================================================================
    2048 Block Sprite Pet (Draggable, Click to Speak, Auto Cycle)
    ==================================================================== */
-document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas id="pet-canvas"></canvas></div>');
+document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas id="pet-canvas"></canvas><button id="pet-reset-btn" title="Return to corner">⌂</button></div>');
 (function(){
   const PET_TILES=[2,4,8,16,32,64,128,256,512,1024,2048];
   const PET_NAMES={2:'Two',4:'Four',8:'Eight',16:'Sixteen',32:'Thirty-two',64:'Sixty-four',128:'One-two-eight',256:'Two-five-six',512:'Five-one-two',1024:'Ten-twenty-four',2048:'Twenty-forty-eight'};
@@ -899,11 +935,19 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     }
   }
 
+  let petAnimationFrameId=null;
+  function setupHiDPICanvas(c, w, h){
+    const dpr=window.devicePixelRatio||1;
+    c.width=w*dpr;c.height=h*dpr;
+    c.style.width=w+'px';c.style.height=h+'px';
+    const ctx=c.getContext('2d');
+    ctx.scale(dpr,dpr);
+    return ctx;
+  }
   function drawPet(){
     const c=document.getElementById('pet-canvas');if(!c)return;
-    const ctx=c.getContext('2d');
     const S=180, SH=220;
-    c.width=S;c.height=SH;
+    const ctx=setupHiDPICanvas(c,S,SH);
     ctx.clearRect(0,0,S,SH);
     const cx=S/2,cy=115+bounce;
     const tileValue=PET_TILES[petIndex];
@@ -1018,10 +1062,10 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     // -- Bubble (unaffected by rotation) --
     if(bubble){
       const age=Date.now()-bubble.born;
-      const dur=1600;
+      const dur=PET_BUBBLE_DUR_MS;
       if(age>dur){bubble=null;}
       else{
-        const alpha=age<200?age/200:age>dur-400?(dur-age)/400:1;
+        const alpha=age<PET_FADE_IN_MS?age/PET_FADE_IN_MS:age>dur-PET_FADE_OUT_MS?(dur-age)/PET_FADE_OUT_MS:1;
         const rise=Math.min(age/2,25);
         const bx2=cx-30,by2=by-42-rise,bw2=60,bh2=24,br2=10;
         ctx.save();
@@ -1053,21 +1097,21 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     }
     ctx.globalAlpha=1;
 
-    // Blink / bounce / animation progress
     blinkTimer++;
-    if(!isBlinking&&blinkTimer>150+Math.random()*100){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},100);}
+    if(!isBlinking&&blinkTimer>PET_BLINK_THRESHOLD+Math.random()*100){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},PET_BLINK_DUR_MS);}
     if(bounce>0)bounce-=.4;
     if(spin>0)spin=Math.max(0,spin-.017);
     if(dance>0)dance=Math.max(0,dance-.011);
-    requestAnimationFrame(drawPet);
+    petAnimationFrameId=requestAnimationFrame(drawPet);
   }
+  function stopPetAnimation(){if(petAnimationFrameId){cancelAnimationFrame(petAnimationFrameId);petAnimationFrameId=null;}}
 
   function startAutoCycle(){
     stopAutoCycle();
     autoCycleTimer=setInterval(function(){
       petIndex=(petIndex+1)%PET_TILES.length;
       bounce=4;
-    },3000);
+    },PET_AUTO_CYCLE_MS);
   }
   function stopAutoCycle(){
     if(autoCycleTimer){clearInterval(autoCycleTimer);autoCycleTimer=null;}
@@ -1140,6 +1184,33 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       SFX.merge();
     });
 
+    // Cleanup handler for drag events (prevents leaks on screen switch)
+    window.__cleanupPetDrag=function(){
+      window.removeEventListener('mousemove',onMove);
+      window.removeEventListener('touchmove',onMove);
+      window.removeEventListener('mouseup',onUp);
+      window.removeEventListener('touchend',onUp);
+    };
+
+    // Reset button: return pet to bottom-right corner
+    const resetBtn=document.getElementById('pet-reset-btn');
+    if(resetBtn){
+      resetBtn.addEventListener('click',function(e){
+        e.stopPropagation();
+        wrap.style.cssText='position:fixed;bottom:16px;right:16px;z-index:99;width:96px;cursor:grab;user-select:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));transition:transform .12s ease;touch-action:none;';
+        wrap.classList.remove('pet-moved');
+        bounce=6;
+        petVo();
+      });
+    }
+    // Mark as moved when dragged
+    wrap.addEventListener('mouseup',function(){
+      if(dragMoved)wrap.classList.add('pet-moved');
+    });
+    wrap.addEventListener('touchend',function(){
+      if(dragMoved)wrap.classList.add('pet-moved');
+    });
+
     // No auto-cycle, fixed at 2
     drawPet();
   }
@@ -1153,6 +1224,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
   };
 
   document.addEventListener('DOMContentLoaded',initPet);
+  window.__stopPetAnimation=stopPetAnimation;
 })();
 
 /* ====================================================================
@@ -1179,7 +1251,7 @@ let selectedToolTileId=null;
 let aiAutoPlay=false;
 let aiTimer=null; // 'up' | 'down-60' | 'down-120' | 'down-300'
 const undoStack=[];
-const MAX_UNDO=30;
+const MAX_UNDO=MAX_UNDO_STACK;
 let currentUser=null;     // null = guest
 let gameReturnScreen='entry-screen';
 let cells=[];
@@ -1413,7 +1485,7 @@ function move(dir,fromAI=false){
   if(over||inputLocked)return;
   const before=JSON.stringify(board);
   undoStack.push(snapshot());
-  if(undoStack.length>MAX_UNDO)undoStack.shift();
+  if(undoStack.length>MAX_UNDO_STACK)undoStack.shift();
   let allMerged=[];
   if(dir==='left')for(let r=0;r<SIZE;r++){const res=slideLine(rowLine(r).line,rowLine(r).ids);allMerged=allMerged.concat(res.merged);rowSet(r,res)}
   if(dir==='right'){
@@ -1473,7 +1545,7 @@ function hasMoves(){
 
 function gameOverByTime(){
 if(over)return;
-over=true;SFX.lose();
+over=true;SFX.timeout();
 recordScore();
 showOverlay('⏰ Time\'s Up!',`score: ${score} · moves: ${steps}`);
 schedulePostGameLeaderboard();
@@ -1508,7 +1580,7 @@ function undo(){
      4. A short Monte Carlo rollout validates the chosen move with random playouts,
         which mitigates expectation blind spots of the pure heuristic.            */
 const AI_DIRECTIONS=['up','left','down','right'];
-const AI_BUDGET_MS=60;
+const AI_BUDGET_MS=AI_MOVE_BUDGET_MS;
 function aiClone(grid){return grid.map(row=>row.slice())}
 function aiSlide(values){
   const tiles=values.filter(Boolean);const result=[];let gained=0;
@@ -1651,11 +1723,11 @@ function updateAiControls(){
 function scheduleAiMove(){
 if(!aiAutoPlay)return;
 if(over||won){stopAiAutoPlay();return}
-if(inputLocked){aiTimer=setTimeout(scheduleAiMove,120);return}
+if(inputLocked){aiTimer=setTimeout(scheduleAiMove,AI_RETRY_DELAY_MS);return}
 const direction=aiBestMove();
 if(!direction){stopAiAutoPlay();return}
 move(direction,true);
-aiTimer=setTimeout(scheduleAiMove,360);
+aiTimer=setTimeout(scheduleAiMove,AI_AUTO_PLAY_DELAY_MS);
 }
 function startAiAutoPlay(){
   if(SIZE!==4){$('tool-status').textContent='AI Auto Play is available on 4×4 only.';return}
@@ -1671,9 +1743,9 @@ function resetTrainingUI(){
 stopAiAutoPlay();
 stopPollingProgress();
 cancelToolSelection();
-var tp=$('training-panel');if(tp)tp.hidden=true;
-var t1=$('ai-train');if(t1){t1.disabled=false;t1.textContent='▶ Train';t1.classList.remove('training');t1.style.pointerEvents='auto';}
-var t2=$('ai-stop-training');if(t2){t2.hidden=true;t2.disabled=false;}
+const tp=$('training-panel');if(tp)tp.hidden=true;
+const t1=$('ai-train');if(t1){t1.disabled=false;t1.textContent='▶ Train';t1.classList.remove('training');t1.style.pointerEvents='auto';}
+const t2=$('ai-stop-training');if(t2){t2.hidden=true;t2.disabled=false;}
 $('game-screen').classList.remove('ai-training-mode');
 batchPlaytestMode=false;
 batchCancelled=false;
@@ -1741,8 +1813,8 @@ function refreshAiEvalLeaf(){
   };
 }
 function enterTrainingMode(){
-var tp=$('training-panel');if(tp)tp.hidden=false;
-var t1=$('ai-train');if(t1)t1.hidden=false;
+const tp=$('training-panel');if(tp)tp.hidden=false;
+const t1=$('ai-train');if(t1)t1.hidden=false;
 // ai-stop-training button: keep hidden (redundant with btn-refresh-backend)
 // Reset button state first
 if(t1){t1.disabled=false;t1.textContent='▶ Train';t1.classList.remove('training');t1.style.pointerEvents='auto';}
@@ -1766,53 +1838,54 @@ startBackendStatusPolling();
 $('training-log').innerHTML='☁️ GitHub Actions training ready. Click <strong>▶ Train</strong> to start training in the cloud.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Training runs on GitHub Actions cloud, auto-pushes progress every 20 games, frontend auto-refreshes charts.</span>';
 }
 /* Load training history from ai-weights.json for charts & stats */
-var aiHistory=[];
-var _liveTrainingActive=false; // prevents weight history from overwriting live training data
-var _tilePoints=[]; // stores bar positions for tooltip hit-testing
+let aiHistory=[];
+let _liveTrainingActive=false; // prevents weight history from overwriting live training data
+const _tilePoints=[]; // stores bar positions for tooltip hit-testing
 function loadTrainingStatsFromWeights(){
   if(aiNet&&aiNet._meta){
-    var m=aiNet._meta;
+    const m=aiNet._meta;
     if(m.history&&!_liveTrainingActive){aiHistory=m.history;}
     if(m.version){setStat('ts-version','v'+m.version);}
     if(m.bestMaxTile){setStat('ts-best',m.bestMaxTile);}
     if(m.avgScore){setStat('ts-avg',m.avgScore);}
     if(m.history&&m.history.length){
       setStat('ts-games',m.history[m.history.length-1].game);
-      var last=m.history[m.history.length-1];
+      const last=m.history[m.history.length-1];
       setStat('ts-loss',last.loss.toFixed(6));
     }
   }
 }
-function setStat(id,val){var el=$(id);if(el){var v=el.querySelector('.ts-value');if(v)v.textContent=val;}}
+function setStat(id,val){const el=$(id);if(el){const v=el.querySelector('.ts-value');if(v)v.textContent=val;}}
 /* Draw loss curve on canvas */
-var _lossPoints=[]; // store for hover detection
+const _lossPoints=[]; // store for hover detection
 function drawTrainingCurve(){
-  var c=$('training-curve');if(!c)return;
-  var ctx=c.getContext('2d');
-  var W=c.width=c.clientWidth||280;
-  var H=c.height=80;
+  const c=$('training-curve');if(!c)return;
+  const W=c.clientWidth||280;
+  const H=80;
+  c.style.height=H+'px';
+  const ctx=setupHiDPICanvas(c,W,H);
   ctx.clearRect(0,0,W,H);
   // Background grid
   ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
-  for(var i=1;i<4;i++){ctx.beginPath();ctx.moveTo(0,H/4*i);ctx.lineTo(W,H/4*i);ctx.stroke();}
+  for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(0,H/4*i);ctx.lineTo(W,H/4*i);ctx.stroke();}
   _lossPoints=[];
   if(!aiHistory.length){
     ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
     ctx.fillText('No training data',W/2,H/2);
     return;
   }
-  var losses=aiHistory.map(function(p){return p.loss});
-  var maxL=Math.max.apply(null,losses);var minL=Math.min.apply(null,losses);
-  var range=(maxL-minL)||0.001;
+  const losses=aiHistory.map(function(p){return p.loss});
+  const maxL=Math.max.apply(null,losses);const minL=Math.min.apply(null,losses);
+  const range=(maxL-minL)||0.001;
   // Draw loss curve with gradient
-  var grad=ctx.createLinearGradient(0,0,0,H);
+  const grad=ctx.createLinearGradient(0,0,0,H);
   grad.addColorStop(0,'rgba(255,209,102,.25)');
   grad.addColorStop(1,'rgba(255,209,102,0)');
   ctx.beginPath();
   ctx.moveTo(0,H);
   aiHistory.forEach(function(p,i){
-    var x=i/(aiHistory.length-1)*W;
-    var y=H-2-(p.loss-minL)/range*(H-6);
+    const x=i/(aiHistory.length-1)*W;
+    const y=H-2-(p.loss-minL)/range*(H-6);
     _lossPoints.push({x:x,y:y,loss:p.loss,game:p.game});
     ctx.lineTo(x,y);
   });
@@ -1821,29 +1894,29 @@ function drawTrainingCurve(){
   // Line
   ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.beginPath();
   aiHistory.forEach(function(p,i){
-    var x=i/(aiHistory.length-1)*W;
-    var y=H-2-(p.loss-minL)/range*(H-6);
+    const x=i/(aiHistory.length-1)*W;
+    const y=H-2-(p.loss-minL)/range*(H-6);
     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   });
   ctx.stroke();
   // Last point dot
-  var lastP=aiHistory[aiHistory.length-1];
-  var lx=W;var ly=H-2-(lastP.loss-minL)/range*(H-6);
+  const lastP=aiHistory[aiHistory.length-1];
+  const lx=W;const ly=H-2-(lastP.loss-minL)/range*(H-6);
   ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(lx-2,ly,3,0,6.28);ctx.fill();
   // Attach hover handler (only once)
   if(!c._hoverAttached){
     c._hoverAttached=true;
     c.addEventListener('mousemove',function(e){
-      var rect=c.getBoundingClientRect();
-      var mx=e.clientX-rect.left;
-      var my=e.clientY-rect.top;
-      var best=null,bd=999;
+      const rect=c.getBoundingClientRect();
+      const mx=e.clientX-rect.left;
+      const my=e.clientY-rect.top;
+      let best=null,bd=CHART_HOVER_RADIUS;
       _lossPoints.forEach(function(pt){
-        var d=Math.sqrt((pt.x-mx)*(pt.x-mx)+(pt.y-my)*(pt.y-my));
+        const d=Math.sqrt((pt.x-mx)*(pt.x-mx)+(pt.y-my)*(pt.y-my));
         if(d<bd){bd=d;best=pt;}
       });
       if(best&&bd<30){
-        var tip=$('chart-tooltip');
+        const tip=$('chart-tooltip');
         tip.style.display='block';
         tip.style.left=(e.clientX+12)+'px';
         tip.style.top=(e.clientY-24)+'px';
@@ -1855,10 +1928,11 @@ function drawTrainingCurve(){
 }
 /* Draw max tile bar chart */
 function drawMaxTileChart(){
-  var c=$('training-tiles');if(!c)return;
-  var ctx=c.getContext('2d');
-  var W=c.width=c.clientWidth||280;
-  var H=c.height=50;
+  const c=$('training-tiles');if(!c)return;
+  const W=c.clientWidth||280;
+  const H=50;
+  c.style.height=H+'px';
+  const ctx=setupHiDPICanvas(c,W,H);
   ctx.clearRect(0,0,W,H);
   if(!aiHistory.length){
     ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
@@ -1871,17 +1945,17 @@ function drawMaxTileChart(){
     }
     return;
   }
-  var tiles=aiHistory.map(function(p){return p.maxTile});
-  var maxT=Math.max.apply(null,tiles);
-  var n=tiles.length;
-  var barW=Math.max(2,W/n-1);
+  const tiles=aiHistory.map(function(p){return p.maxTile});
+  const maxT=Math.max.apply(null,tiles);
+  const n=tiles.length;
+  const barW=Math.max(2,W/n-1);
   _tilePoints=[]; // store for tooltip hit-testing
   tiles.forEach(function(t,i){
-    var x=i*(W/n);
-    var h=(t/maxT)*(H-4);
-    var y=H-h;
+    const x=i*(W/n);
+    const h=(t/maxT)*(H-4);
+    const y=H-h;
     // Unified rule: below 2048 = blue, 2048+ = purple
-    var color=t>=2048?'#9b59b6':'#3498db';
+    const color=t>=2048?'#9b59b6':'#3498db';
     _tilePoints.push({x:x,w:barW,h:h,y:y,color:color});
     ctx.fillStyle=color;
     ctx.fillRect(x,y,barW,h);
@@ -1894,23 +1968,23 @@ function drawMaxTileChart(){
   }
 }
 function tileChartHover(e){
-  var c=$('training-tiles');if(!c||_tilePoints.length===0)return;
-  var rect=c.getBoundingClientRect();
-  var mx=e.clientX-rect.left;
-  var W=c.width;
+  const c=$('training-tiles');if(!c||_tilePoints.length===0)return;
+  const rect=c.getBoundingClientRect();
+  const mx=e.clientX-rect.left;
+  const W=c.width;
   // Find closest bar point by x position
-  var bestIdx=-1,bestDist=999;
-  for(var i=0;i<_tilePoints.length;i++){
-    var p=_tilePoints[i];
-    var center=p.x+p.w/2;
-    var d=Math.abs(mx-center);
+  let bestIdx=-1,bestDist=CHART_HOVER_RADIUS;
+  for(let i=0;i<_tilePoints.length;i++){
+    const p=_tilePoints[i];
+    const center=p.x+p.w/2;
+    const d=Math.abs(mx-center);
     if(d<bestDist){bestDist=d;bestIdx=i;}
   }
   if(bestIdx>=0){
-    var pt=_tilePoints[bestIdx];
-    var dataPt=aiHistory[bestIdx];
-    var col=pt.color;
-    var tip=$('chart-tooltip');
+    const pt=_tilePoints[bestIdx];
+    const dataPt=aiHistory[bestIdx];
+    const col=pt.color;
+    const tip=$('chart-tooltip');
     tip.style.display='block';
     tip.style.left=(e.clientX+12)+'px';
     tip.style.top=(e.clientY-24)+'px';
@@ -1920,55 +1994,68 @@ function tileChartHover(e){
   }
 }
 function tileChartLeave(){
-  var tip=$('chart-tooltip');if(tip)tip.style.display='none';
-  var c=$('training-tiles');if(c)c.style.cursor='default';
+  const tip=$('chart-tooltip');if(tip)tip.style.display='none';
+  const c=$('training-tiles');if(c)c.style.cursor='default';
 }
 /* Check if training was recently triggered (within last 5 min) to keep button banned */
 function isTrainingTriggeredLocally(){
-  var ts=sessionStorage.getItem('ai-training-triggered');
+  const ts=sessionStorage.getItem('ai-training-triggered');
   if(!ts)return false;
-  return (Date.now()-parseInt(ts,10))<300000; // 5 min window
+  return (Date.now()-parseInt(ts,10))<TRAIGGER_WINDOW_MS;
 }
-/* Check training progress by polling the progress JSON file */
+/* Shared: update training progress UI from data object */
+function renderTrainingProgressUI(data){
+  const jobsEl=$('training-jobs');
+  if(data.active){
+    $('ai-train').disabled=true;
+    $('ai-train').textContent='⏳ Training...';
+    _liveTrainingActive=true;
+    aiLiveHistory=data.history||[];
+    aiHistory=aiLiveHistory;
+    drawTrainingCurve();drawMaxTileChart();updateLiveStats();
+    if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
+    return true;
+  }else{
+    _liveTrainingActive=false;
+    $('ai-train').disabled=false;
+    $('ai-train').textContent='▶ Train';
+    aiLiveHistory=data.history||[];
+    aiHistory=aiLiveHistory;
+    drawTrainingCurve();drawMaxTileChart();updateLiveStats();
+    const completeMsg='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Best tile '+data.bestMaxTile+' · Avg score '+data.avgScore+' · Time '+data.trainTime+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
+    const jobsEl2=$('training-jobs');
+    if(jobsEl2)jobsEl2.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.08);border:1px solid rgba(107,203,119,.2)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Training complete</span></div>';
+    return false;
+  }
+}
+/* Shared: reset training UI to idle state */
+function setTrainingIdleUI(){
+  $('ai-train').disabled=false;
+  $('ai-train').textContent='▶ Train';
+  const jobsEl=$('training-jobs');
+  if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Cloud idle</span></div>';
+}
+/* Check training progress on demand (button click) */
 async function checkTrainingProgress(){
-  var jobsEl=$('training-jobs');if(!jobsEl)return;
+  if(!$('training-jobs'))return;
   try{
-    var resp=await fetch(PROGRESS_URL+'?t='+Date.now());
+    const resp=await fetch(PROGRESS_URL+'?t='+Date.now());
     if(!resp.ok){
-      // Progress file not found — but if we recently triggered, keep button disabled
       if(isTrainingTriggeredLocally()){
         $('ai-train').disabled=true;
         $('ai-train').textContent='⏳ Training...';
       }
       throw new Error('No progress file');
     }
-    var data=await resp.json();
-    if(data.active){
-      $('ai-train').disabled=true;
-      $('ai-train').textContent='⏳ Training...';
+    const data=await resp.json();
+    if(renderTrainingProgressUI(data)){
       sessionStorage.setItem('ai-training-triggered',Date.now());
-      _liveTrainingActive=true; // lock: prevent weight history from overwriting live data
-      aiLiveHistory=data.history||[];
-      if(aiLiveHistory.length){
-        aiHistory=aiLiveHistory;
-        drawTrainingCurve();drawMaxTileChart();updateLiveStats();
-      }
-      var pct=data.total?Math.round(data.game/data.total*100):0;
-      // training-log: only show on completion, not during training
-      jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
-      // Start polling if not already
       if(!aiPollTimer)startPollingProgress();
     }else{
-      _liveTrainingActive=false; // unlock: training done, allow weight history to show
-      $('ai-train').disabled=false;
-      $('ai-train').textContent='▶ Train';
-      jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Cloud idle</span></div>';
       stopPollingProgress();
     }
   }catch(e){
-    $('ai-train').disabled=false;
-    $('ai-train').textContent='▶ Train';
-    jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Cloud idle</span></div>';
+    setTrainingIdleUI();
   }
 }
 /* Poll progress file every 10 seconds during training */
@@ -1976,35 +2063,17 @@ function startPollingProgress(){
   stopPollingProgress();
   aiPollTimer=setInterval(async function(){
     try{
-      var resp=await fetch(PROGRESS_URL+'?t='+Date.now());
+      const resp=await fetch(PROGRESS_URL+'?t='+Date.now());
       if(!resp.ok)return;
-      var data=await resp.json();
-      if(data.active){
-        _liveTrainingActive=true;
-        aiLiveHistory=data.history||[];
-        aiHistory=aiLiveHistory;
-        drawTrainingCurve();drawMaxTileChart();updateLiveStats();
-        var pct=data.total?Math.round(data.game/data.total*100):0;
-        // training-log: only show on completion, not during training
-        var jobsEl=$('training-jobs');
-        if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
-      }else{
-        // Training done!
-        _liveTrainingActive=false;
+      const data=await resp.json();
+      if(!renderTrainingProgressUI(data)){
         stopPollingProgress();
         sessionStorage.removeItem('ai-training-triggered');
-        $('ai-train').disabled=false;
-        $('ai-train').textContent='▶ Train';
-        aiLiveHistory=data.history||[];
-        aiHistory=aiLiveHistory;
-        drawTrainingCurve();drawMaxTileChart();updateLiveStats();
-        $('training-log').innerHTML='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Best tile '+data.bestMaxTile+' · Avg score '+data.avgScore+' · Time '+data.trainTime+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
-        var jobsEl=$('training-jobs');
-        if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.08);border:1px solid rgba(107,203,119,.2)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Training complete</span></div>';
-        setTimeout(reloadWeightsFromRepo,2000);
+        $('training-log').innerHTML='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Best tile '+data.bestMaxTile+' · Avg score '+data.avgScore+' · Time '+data.trainTime+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,.4)">Reloading weights...</span>';
+        setTimeout(reloadWeightsFromRepo,WEIGHTS_RELOAD_DELAY_MS);
       }
     }catch(e){/* network error, keep polling */}
-  },10000);
+  },TIMER_POLL_INTERVAL_MS);
 }
 function stopPollingProgress(){
 if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null;}
@@ -2017,41 +2086,41 @@ if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null;}
 function startBackendStatusPolling(){
   stopBackendStatusPolling();
   fetchBackendStatus(); // immediate first fetch
-  backendStatusTimer=setInterval(fetchBackendStatus,10000); // poll every 10s
+  backendStatusTimer=setInterval(fetchBackendStatus,TIMER_POLL_INTERVAL_MS);
 }
 function stopBackendStatusPolling(){
   if(backendStatusTimer){clearInterval(backendStatusTimer);backendStatusTimer=null;}
 }
 async function fetchBackendStatus(){
   try{
-    var resp=await fetch(BACKEND_STATUS_URL+'?t='+Date.now());
+    const resp=await fetch(BACKEND_STATUS_URL+'?t='+Date.now());
     if(!resp.ok)return;
-    var data=await resp.json();
+    const data=await resp.json();
     updateBackendStatusUI(data);
   }catch(e){/* network error, keep polling */}
 }
 function updateBackendStatusUI(data){
   if(!data)return;
-  var phase=data.phase||'idle';
-  var phaseLabels={training:'TRAINING',testing:'TESTING',idle:'IDLE'};
-  var phaseColors={training:'#ffd166',testing:'#14b8a6',idle:'#6bcb77'};
-  var phaseLabel=phaseLabels[phase]||'IDLE';
-  var phaseColor=phaseColors[phase]||'#6bcb77';
+  const phase=data.phase||'idle';
+  const phaseLabels={training:'TRAINING',testing:'TESTING',idle:'IDLE'};
+  const phaseColors={training:'#ffd166',testing:'#14b8a6',idle:'#6bcb77'};
+  const phaseLabel=phaseLabels[phase]||'IDLE';
+  const phaseColor=phaseColors[phase]||'#6bcb77';
 
   // Update Training Lab panel
-  var badge=$('backend-phase-badge');
+  const badge=$('backend-phase-badge');
   if(badge){
     badge.textContent=phaseLabel;
     badge.style.background='rgba('+parseInt(phaseColor.slice(1,3),16)+','+parseInt(phaseColor.slice(3,5),16)+','+parseInt(phaseColor.slice(5,7),16)+',.12)';
     badge.style.color=phaseColor;
   }
-  var detail=$('backend-status-detail');
+  const detail=$('backend-status-detail');
   if(detail){
-    var html='<span style="color:'+phaseColor+';font-weight:600">'+phaseLabel+'</span>';
+    let html='<span style="color:'+phaseColor+';font-weight:600">'+phaseLabel+'</span>';
     // Show clean progress from trainProgress if available, else fall back to message
     if(data.trainProgress&&phase==='training'){
-      var parts=data.trainProgress.split('/');
-      var pct=Math.round(parseInt(parts[0])/parseInt(parts[1])*100);
+      const parts=data.trainProgress.split('/');
+      const pct=Math.round(parseInt(parts[0])/parseInt(parts[1])*100);
       html+=' — Game '+data.trainProgress;
       html+=' <span style="font-size:10px;color:rgba(255,255,255,.4)">('+pct+'%)</span>';
     }else if(data.message){
@@ -2062,9 +2131,9 @@ function updateBackendStatusUI(data){
     if(data.avgScore&&phase!=='idle')html+=' · <span style="color:rgba(255,255,255,.4)">Avg: '+data.avgScore+'</span>';
     detail.innerHTML=html;
   }
-  var tags=$('backend-stats-row');
+  const tags=$('backend-stats-row');
   if(tags){
-    var tagHtml='';
+    let tagHtml='';
     tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">v'+(data.version||'—')+'</span>';
     if(data.trainProgress&&phase==='training')tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(255,209,102,.15);color:#ffd166">⏳ '+data.trainProgress+'</span>';
     if(data.loss&&phase==='training')tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">loss '+data.loss.toFixed(4)+'</span>';
@@ -2074,26 +2143,26 @@ function updateBackendStatusUI(data){
     if(phase!=='training'&&data.winRate!==undefined)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Win rate '+data.winRate+'%</span>';
     tags.innerHTML=tagHtml;
   }
-  var lastUpdate=$('backend-last-update');
+  const lastUpdate=$('backend-last-update');
   if(lastUpdate&&data.lastUpdate){
-    var d=new Date(data.lastUpdate);
+    const d=new Date(data.lastUpdate);
     lastUpdate.textContent='Last update: '+d.toLocaleTimeString();
   }
 
   // Update Playtest Arena panel
-  var ptBadge=$('pt-backend-badge');
+  const ptBadge=$('pt-backend-badge');
   if(ptBadge){
     ptBadge.textContent=phaseLabel;
     ptBadge.style.background='rgba('+parseInt(phaseColor.slice(1,3),16)+','+parseInt(phaseColor.slice(3,5),16)+','+parseInt(phaseColor.slice(5,7),16)+',.12)';
     ptBadge.style.color=phaseColor;
   }
-  var ptDetail=$('pt-backend-detail');
+  const ptDetail=$('pt-backend-detail');
   if(ptDetail){
     ptDetail.innerHTML='<span style="color:'+phaseColor+';font-weight:600">'+phaseLabel+'</span>'+(data.message?' — '+data.message:'');
   }
-  var ptTags=$('pt-backend-tags');
+  const ptTags=$('pt-backend-tags');
   if(ptTags){
-    var ptTagHtml='';
+    let ptTagHtml='';
     ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Version v'+(data.version||'—')+'</span>';
     ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">Round '+(data.round||0)+'/'+(data.maxRounds||'—')+'</span>';
     if(phase==='training'&&data.trainProgress)ptTagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:'+phaseColor+'">Train '+data.trainProgress+'</span>';
@@ -2107,14 +2176,14 @@ function updateBackendStatusUI(data){
   // If backend is active, also refresh weights & playtest progress
   if(data.active){
     // Disable Train and Cloud Test buttons while backend is running
-    var trainBtn=$('ai-train');
+    const trainBtn=$('ai-train');
     if(trainBtn&&!trainBtn.dataset.userTriggered){
       trainBtn.disabled=true;
       trainBtn.textContent='⏳ Backend '+(phase==='training'?'Training':'Testing')+'...';
       trainBtn.classList.add('training');
       trainBtn.style.pointerEvents='none';
     }
-    var cloudBtn=$('playtest-batch-start');
+    const cloudBtn=$('playtest-batch-start');
     if(cloudBtn&&!cloudBtn.dataset.userTriggered){
       cloudBtn.disabled=true;
       cloudBtn.textContent='⏳ Backend Busy...';
@@ -2122,7 +2191,7 @@ function updateBackendStatusUI(data){
       cloudBtn.style.pointerEvents='none';
     }
     // Hide Stop button during backend train/test (it's for user-triggered cloud test only)
-    var stopBtn1=$('playtest-batch-stop');
+    const stopBtn1=$('playtest-batch-stop');
     if(stopBtn1&&!stopBtn1.dataset.userTriggered){
       stopBtn1.style.display='none';
     }
@@ -2132,23 +2201,23 @@ function updateBackendStatusUI(data){
     }
     // ---- TRAINING phase: show progress bar with train progress ----
     if(phase==='training'){
-      var progDiv=$('playtest-batch-progress');
-      var infoEl=$('playtest-batch-info');
-      var barEl=$('playtest-batch-bar');
-      var rateEl=$('playtest-batch-rate');
-      var statusEl=$('playtest-cloud-status');
+      const progDiv=$('playtest-batch-progress');
+      const infoEl=$('playtest-batch-info');
+      const barEl=$('playtest-batch-bar');
+      const rateEl=$('playtest-batch-rate');
+      const statusEl=$('playtest-cloud-status');
       if(progDiv)progDiv.style.display='';
       // Parse trainProgress like "106/200"
-      var tpStr=data.trainProgress||'';
-      var tpParts=tpStr.split('/');
-      var tpCur=parseInt(tpParts[0])||0;
-      var tpTotal=parseInt(tpParts[1])||data.trainGames||1;
-      var tpPct=Math.round(tpCur/tpTotal*100);
+      const tpStr=data.trainProgress||'';
+      const tpParts=tpStr.split('/');
+      const tpCur=parseInt(tpParts[0])||0;
+      const tpTotal=parseInt(tpParts[1])||data.trainGames||1;
+      const tpPct=Math.round(tpCur/tpTotal*100);
       if(barEl)barEl.style.width=tpPct+'%';
       if(barEl)barEl.style.background='linear-gradient(90deg,#ffd166,#ffa07a)';
       if(infoEl)infoEl.textContent='Train '+tpCur+' / '+tpTotal+' ('+tpPct+'%)';
       if(rateEl){
-        var rateParts=[];
+        const rateParts=[];
         if(data.loss!==undefined)rateParts.push('Loss '+data.loss.toFixed(6));
         if(data.avgScore)rateParts.push('Avg '+data.avgScore);
         if(data.bestMaxTile)rateParts.push('Best '+data.bestMaxTile);
@@ -2172,14 +2241,14 @@ function updateBackendStatusUI(data){
     }
   }else{
     // Re-enable buttons when backend is idle
-    var trainBtn2=$('ai-train');
+    const trainBtn2=$('ai-train');
     if(trainBtn2&&!trainBtn2.dataset.userTriggered){
       trainBtn2.disabled=false;
       trainBtn2.textContent='▶ Train';
       trainBtn2.classList.remove('training');
       trainBtn2.style.pointerEvents='auto';
     }
-    var cloudBtn2=$('playtest-batch-start');
+    const cloudBtn2=$('playtest-batch-start');
     if(cloudBtn2&&cloudBtn2.style.display!=='none'&&!cloudBtn2.dataset.userTriggered){
       cloudBtn2.disabled=false;
       cloudBtn2.textContent='▶ Start Cloud Test';
@@ -2188,11 +2257,11 @@ function updateBackendStatusUI(data){
     }
     // Hide progress bar when idle (unless batch playtest was user-triggered)
     if(!batchPlaytestMode){
-      var progDiv2=$('playtest-batch-progress');
+      const progDiv2=$('playtest-batch-progress');
       if(progDiv2)progDiv2.style.display='none';
-      var statusEl2=$('playtest-cloud-status');
+      const statusEl2=$('playtest-cloud-status');
       if(statusEl2&&!batchPlaytestMode)statusEl2.innerHTML='Idle — click "Start Cloud Test" to dispatch the AI playtest workflow on GitHub Actions.';
-      var barEl2=$('playtest-batch-bar');
+      const barEl2=$('playtest-batch-bar');
       if(barEl2)barEl2.style.background='linear-gradient(90deg,#14b8a6,#6bcb77)';
     }
   }
@@ -2213,9 +2282,9 @@ return aiTrainGames>0?('v'+aiTrainGames):'unknown';
 }
 function recordAiPlaytest(result){
 if(!aiAutoPlay&&!cheated)return;
-var maxTile=0;
-for(var r=0;r<SIZE;r++)for(var c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
-var rec={
+let maxTile=0;
+for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
+const rec={
 ts:Date.now(),
 version:getCurrentWeightVersion(),
 result:result,
@@ -2225,24 +2294,24 @@ steps:steps,
 durationMs:elapsedMs,
 boardSize:SIZE
 };
-var records=loadPlaytests();
+const records=loadPlaytests();
 records.push(rec);
 if(records.length>500)records=records.slice(-500);
 savePlaytests(records);
 renderPlaytestPanel();
 }
 function fmtPlayTime(ms){
-var s=Math.floor(ms/1000);
+let s=Math.floor(ms/1000);
 if(s<60)return s+'s';
-var m=Math.floor(s/60);s=s%60;
+let m=Math.floor(s/60);s=s%60;
 if(m<60)return m+'m '+s+'s';
-var h=Math.floor(m/60);m=m%60;
+const h=Math.floor(m/60);m=m%60;
 return h+'h '+m+'m';
 }
 function renderPlaytestPanel(){
-var records=loadPlaytests();
-var statsEl=$('playtest-stats');
-var recsEl=$('playtest-records');
+const records=loadPlaytests();
+const statsEl=$('playtest-stats');
+const recsEl=$('playtest-records');
 if(!statsEl||!recsEl)return;
 
 if(!records.length){
@@ -2252,9 +2321,9 @@ return;
 }
 
 // Group by version
-var byVersion={};
+const byVersion={};
 records.forEach(function(r){
-var v=r.version||'unknown';
+const v=r.version||'unknown';
 if(!byVersion[v])byVersion[v]={total:0,wins:0,fails:0,bestScore:0,bestTile:0,avgScore:0,scores:[]};
 byVersion[v].total++;
 if(r.result==='win')byVersion[v].wins++;else byVersion[v].fails++;
@@ -2264,12 +2333,12 @@ byVersion[v].scores.push(r.score);
 });
 
 // Build stats cards
-var html='';
+let html='';
 Object.keys(byVersion).forEach(function(v){
-var s=byVersion[v];
+const s=byVersion[v];
 s.avgScore=Math.round(s.scores.reduce(function(a,b){return a+b},0)/s.scores.length);
-var rate=s.total>0?Math.round(s.wins/s.total*100):0;
-var rateColor=rate>=60?'#6bcb77':rate>=30?'#ffd166':'#ff6b6b';
+const rate=s.total>0?Math.round(s.wins/s.total*100):0;
+const rateColor=rate>=60?'#6bcb77':rate>=30?'#ffd166':'#ff6b6b';
 html+='<div style="padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);min-width:120px;flex:1">';
 html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px">'+v+' · '+s.total+' games</div>';
 html+='<div style="font-size:16px;font-weight:700;color:'+rateColor+'">'+rate+'%</div>';
@@ -2279,16 +2348,16 @@ html+='</div>';
 statsEl.innerHTML=html;
 
 // Recent records (last 20)
-var recent=records.slice(-20).reverse();
-var recHtml='';
+const recent=records.slice(-20).reverse();
+let recHtml='';
 recent.forEach(function(r,i){
-var idx=records.length-i;
-var isWin=r.result==='win';
-var bg=isWin?'rgba(107,203,119,.06)':'rgba(255,107,107,.06)';
-var border=isWin?'rgba(107,203,119,.15)':'rgba(255,107,107,.15)';
-var icon=isWin?'✅':'❌';
-var date=new Date(r.ts);
-var timeStr=date.toLocaleDateString()+' '+date.toLocaleTimeString().slice(0,5);
+const idx=records.length-i;
+const isWin=r.result==='win';
+const bg=isWin?'rgba(107,203,119,.06)':'rgba(255,107,107,.06)';
+const border=isWin?'rgba(107,203,119,.15)':'rgba(255,107,107,.15)';
+const icon=isWin?'✅':'❌';
+const date=new Date(r.ts);
+const timeStr=date.toLocaleDateString()+' '+date.toLocaleTimeString().slice(0,5);
 recHtml+='<div style="padding:6px 10px;margin-bottom:4px;border-radius:6px;background:'+bg+';border:1px solid '+border+';display:flex;justify-content:space-between;align-items:center">';
 recHtml+='<span>'+icon+' <strong style="color:'+(isWin?'#6bcb77':'#ff6b6b')+'">'+(isWin?'Win':'Fail')+'</strong> <span style="color:rgba(255,255,255,.4);font-size:11px">'+r.version+'</span></span>';
 recHtml+='<span style="color:rgba(255,255,255,.6);font-size:11px">Score '+r.score+' · Max '+r.maxTile+' · '+r.steps+' moves · '+fmtPlayTime(r.durationMs)+'</span>';
@@ -2299,14 +2368,14 @@ recsEl.innerHTML=recHtml;
 
 /* Update weight info bar on arena page */
 function updateWeightInfoBar(){
-var badge=$('pt-weight-badge');
-var summary=$('pt-weight-summary');
-var extra=$('pt-weight-extra');
-var v=getCurrentWeightVersion();
+const badge=$('pt-weight-badge');
+const summary=$('pt-weight-summary');
+const extra=$('pt-weight-extra');
+const v=getCurrentWeightVersion();
 if(badge)badge.textContent=v;
-var verNum=0,bestMax=0,avgScore=0;
+let verNum=0,bestMax=0,avgScore=0;
 if(aiNet&&aiNet._meta){
-var m=aiNet._meta;
+const m=aiNet._meta;
 verNum=m.version||0;
 bestMax=m.bestMaxTile||0;
 avgScore=m.avgScore||0;
@@ -2332,20 +2401,20 @@ let batchPlaytestFails=0;
 let batchCancelled=false;
 let batchGameResults=[];
 let playtestPollTimer=null;
-var isTokenModalOpen=false;
-var tokenModalAction='train';
+let isTokenModalOpen=false;
+let tokenModalAction='train';
 const PLAYTEST_PROGRESS_URL='js/ai-playtest-progress.json';
 const PLAYTEST_WORKFLOW_ID='playtest.yml';
 const LS_PLAYTEST_TRIGGERED='ai-playtest-triggered';
-const PLAYTEST_TRIGGER_WINDOW=300000; // 5 min
+const PLAYTEST_TRIGGER_WINDOW=TRAIGGER_WINDOW_MS;
 
 /* Trigger cloud playtest (password-protected) */
 function startBatchPlaytest(){
   if(batchPlaytestMode||isTokenModalOpen)return;
   // Check if backend auto-train loop is running
-  var bs=$('pt-backend-badge');
+  const bs=$('pt-backend-badge');
   if(bs&&bs.textContent!=='IDLE'){
-    var statusEl=$('playtest-cloud-status');
+    const statusEl=$('playtest-cloud-status');
     if(statusEl)statusEl.innerHTML='🔒 <strong>Backend running</strong> ('+bs.textContent+') — cannot start cloud test now.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Please wait for the backend task to complete.</span>';
     return;
   }
@@ -2358,7 +2427,7 @@ function startBatchPlaytest(){
   // Every cloud test requires an explicit password confirmation before dispatching.
   tokenModalAction='playtest';
   openTokenModal();
-  var statusEl=$('playtest-cloud-status');
+  const statusEl=$('playtest-cloud-status');
   if(statusEl)statusEl.innerHTML='🔑 Enter password to start '+batchPlaytestTotal+' cloud test games.';
 }
 
@@ -2370,11 +2439,11 @@ async function dispatchPlaytestWorkflow(){
   batchGameResults=[];
   batchPlaytestCurrent=0;batchPlaytestWins=0;batchPlaytestFails=0;
 
-  var startBtn=$('playtest-batch-start');
-  var stopBtn=$('playtest-batch-stop');
-  var progDiv=$('playtest-batch-progress');
-  var statusEl=$('playtest-cloud-status');
-  var logEl=$('playtest-batch-log');
+  const startBtn=$('playtest-batch-start');
+  const stopBtn=$('playtest-batch-stop');
+  const progDiv=$('playtest-batch-progress');
+  const statusEl=$('playtest-cloud-status');
+  const logEl=$('playtest-batch-log');
 
   if(startBtn)startBtn.style.display='none';
   if(stopBtn)stopBtn.style.display='';
@@ -2382,24 +2451,24 @@ async function dispatchPlaytestWorkflow(){
   if(logEl)logEl.style.display='';
   if(logEl)logEl.innerHTML='';
 
-  var gameResults=$('pt-game-results');
+  const gameResults=$('pt-game-results');
   if(gameResults)gameResults.style.display='';
-  var gameList=$('pt-game-list');
+  const gameList=$('pt-game-list');
   if(gameList)gameList.innerHTML='<div style="padding:8px;color:rgba(255,255,255,.3);font-size:11px">Waiting for game results...</div>';
 
-  var infoEl=$('playtest-batch-info');
+  const infoEl=$('playtest-batch-info');
   if(infoEl)infoEl.textContent='Dispatching...';
   if(statusEl)statusEl.innerHTML='⏳ Triggering GitHub Actions cloud test ('+batchPlaytestTotal+' games)...';
 
-  var barEl=$('playtest-batch-bar');
+  const barEl=$('playtest-batch-bar');
   if(barEl)barEl.style.width='0%';
 
   sessionStorage.setItem(LS_PLAYTEST_TRIGGERED,Date.now());
 
   try{
-    var token=getGHToken();
-    var apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+PLAYTEST_WORKFLOW_ID+'/dispatches';
-    var resp=await fetch(apiUrl,{
+    const token=getGHToken();
+    const apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+PLAYTEST_WORKFLOW_ID+'/dispatches';
+    const resp=await fetch(apiUrl,{
       method:'POST',
       headers:{
         'Accept':'application/vnd.github+json',
@@ -2412,7 +2481,7 @@ async function dispatchPlaytestWorkflow(){
       if(statusEl)statusEl.innerHTML='🚀 <strong>Cloud test triggered!</strong> '+batchPlaytestTotal+' AI test games.<br><span style="font-size:11px;color:#ffd166">GitHub Actions starting... takes about 30-60s to begin pushing progress.</span>';
       if(infoEl)infoEl.textContent='Workflow running...';
       // Start polling after a delay
-      setTimeout(function(){startPollingPlaytestProgress();},25000);
+      setTimeout(function(){startPollingPlaytestProgress();},PLAYTEST_POLL_START_DELAY_MS);
     }else if(resp.status===401||resp.status===403){
       setGHToken('');
       sessionStorage.removeItem(LS_PLAYTEST_TRIGGERED);
@@ -2440,7 +2509,7 @@ async function dispatchPlaytestWorkflow(){
 /* Poll playtest progress from the repo's ai-playtest-progress.json */
 function startPollingPlaytestProgress(){
   if(playtestPollTimer){clearInterval(playtestPollTimer);}
-  playtestPollTimer=setInterval(fetchPlaytestProgress,15000);
+  playtestPollTimer=setInterval(fetchPlaytestProgress,PLAYTEST_POLL_INTERVAL_MS);
   fetchPlaytestProgress(); // immediate first fetch
 }
 function stopPollingPlaytestProgress(){
@@ -2448,12 +2517,12 @@ function stopPollingPlaytestProgress(){
 }
 async function fetchPlaytestProgress(){
   try{
-    var resp=await fetch(PLAYTEST_PROGRESS_URL+'?t='+Date.now());
+    const resp=await fetch(PLAYTEST_PROGRESS_URL+'?t='+Date.now());
     if(!resp.ok){
       // File not yet available, that's OK
       return;
     }
-    var data=await resp.json();
+    const data=await resp.json();
     if(data && data.results && data.results.length){
       batchGameResults=data.results.slice();
       batchPlaytestCurrent=data.completedGames||data.results.length;
@@ -2461,13 +2530,13 @@ async function fetchPlaytestProgress(){
       batchPlaytestFails=data.fails||(batchPlaytestCurrent-batchPlaytestWins);
       renderBatchGameResults();
 
-      var infoEl=$('playtest-batch-info');
-      var barEl=$('playtest-batch-bar');
-      var rateEl=$('playtest-batch-rate');
-      var statusEl=$('playtest-cloud-status');
-      var logEl=$('playtest-batch-log');
+      const infoEl=$('playtest-batch-info');
+      const barEl=$('playtest-batch-bar');
+      const rateEl=$('playtest-batch-rate');
+      const statusEl=$('playtest-cloud-status');
+      const logEl=$('playtest-batch-log');
 
-      var pct=Math.round(batchPlaytestCurrent/batchPlaytestTotal*100);
+      const pct=Math.round(batchPlaytestCurrent/batchPlaytestTotal*100);
       if(barEl)barEl.style.width=pct+'%';
       if(infoEl)infoEl.textContent='Game '+batchPlaytestCurrent+' / '+batchPlaytestTotal+' ('+pct+'%)';
       if(rateEl)rateEl.textContent='Win rate '+(data.winRate||Math.round(batchPlaytestWins/batchPlaytestCurrent*100))+'% ('+batchPlaytestWins+' win / '+batchPlaytestFails+' lose)';
@@ -2485,9 +2554,9 @@ async function fetchPlaytestProgress(){
 /* Refresh ONLY the game results list below (does NOT touch test status/progress bar) */
 async function refreshPlaytestResultsOnly(){
   try{
-    var resp=await fetch(PLAYTEST_PROGRESS_URL+'?t='+Date.now());
+    const resp=await fetch(PLAYTEST_PROGRESS_URL+'?t='+Date.now());
     if(!resp.ok)return;
-    var data=await resp.json();
+    const data=await resp.json();
     if(data && data.results && data.results.length){
       batchGameResults=data.results.slice();
       batchPlaytestCurrent=data.completedGames||data.results.length;
@@ -2500,15 +2569,15 @@ async function refreshPlaytestResultsOnly(){
 }
 
 function renderBatchGameResults(){
-  var el=$('pt-game-list');if(!el)return;
-  var html='';
+  const el=$('pt-game-list');if(!el)return;
+  let html='';
   // Summary row (full width, spans both columns) — shown first, before headers
   if(batchGameResults.length>1){
-    var totalScore=batchGameResults.reduce(function(a,b){return a+b.score},0);
-    var totalSteps=batchGameResults.reduce(function(a,b){return a+b.steps},0);
-    var totalTime=batchGameResults.reduce(function(a,b){return a+b.duration},0);
-    var bestMax=Math.max.apply(null,batchGameResults.map(function(g){return g.maxTile}));
-    var winCount=batchGameResults.filter(function(g){return g.result==='win'}).length;
+    const totalScore=batchGameResults.reduce(function(a,b){return a+b.score},0);
+    const totalSteps=batchGameResults.reduce(function(a,b){return a+b.steps},0);
+    const totalTime=batchGameResults.reduce(function(a,b){return a+b.duration},0);
+    const bestMax=Math.max.apply(null,batchGameResults.map(function(g){return g.maxTile}));
+    const winCount=batchGameResults.filter(function(g){return g.result==='win'}).length;
     html+='<div style="grid-column:1/-1;display:flex;gap:6px;padding:6px 10px;border-radius:6px;background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.15);font-size:11px;color:rgba(255,255,255,.6);margin-bottom:2px;white-space:nowrap;overflow:hidden">';
     html+='<span style="width:24px;flex-shrink:0;font-weight:700;color:#14b8a6">Avg</span>';
     html+='<span style="width:58px;flex-shrink:0;color:#14b8a6;font-weight:600;white-space:nowrap">'+Math.round(winCount/batchGameResults.length*100)+'% win</span>';
@@ -2520,7 +2589,7 @@ function renderBatchGameResults(){
   }
   // Header row for each column (one per grid column)
   if(batchGameResults.length){
-    var headerHtml='<div style="display:flex;gap:4px;padding:4px 6px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px;min-width:0;overflow:hidden">';
+    const headerHtml='<div style="display:flex;gap:4px;padding:4px 6px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px;min-width:0;overflow:hidden">';
     headerHtml+='<span style="width:24px;flex-shrink:0">#</span>';
     headerHtml+='<span style="width:58px;flex-shrink:0">Result</span>';
     headerHtml+='<span style="flex:1;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis">Score</span>';
@@ -2532,9 +2601,9 @@ function renderBatchGameResults(){
   }
   // Game result cards (2 per row via CSS grid)
   batchGameResults.forEach(function(g){
-    var isWin=g.result==='win';
-    var color=isWin?'#6bcb77':'#ff6b6b';
-    var icon=isWin?'✅':'❌';
+    const isWin=g.result==='win';
+    const color=isWin?'#6bcb77':'#ff6b6b';
+    const icon=isWin?'✅':'❌';
     html+='<div style="display:flex;align-items:center;gap:4px;padding:5px 6px;border-radius:6px;background:rgba(0,0,0,.15);font-size:11.5px;border-left:3px solid '+color+';min-width:0;overflow:hidden">';
     html+='<span style="width:24px;flex-shrink:0;color:rgba(255,255,255,.5)">#'+g.game+'</span>';
     html+='<span style="width:58px;flex-shrink:0;color:'+color+';font-weight:600;white-space:nowrap">'+icon+' '+(isWin?'win':'lose')+'</span>';
@@ -2549,8 +2618,8 @@ function renderBatchGameResults(){
 
   // Update summary badge
   if(batchGameResults.length){
-    var wins=batchGameResults.filter(function(g){return g.result==='win'}).length;
-    var badge=$('pt-summary-badge');
+    const wins=batchGameResults.filter(function(g){return g.result==='win'}).length;
+    const badge=$('pt-summary-badge');
     if(badge)badge.textContent=wins+' win / '+(batchGameResults.length-wins)+' lose · '+Math.round(wins/batchGameResults.length*100)+'% win rate';
   }
 }
@@ -2559,11 +2628,11 @@ function finishBatchPlaytest(){
   batchPlaytestMode=false;
   batchCancelled=false;
   stopPollingPlaytestProgress();
-  var startBtn=$('playtest-batch-start');
-  var stopBtn=$('playtest-batch-stop');
-  var infoEl=$('playtest-batch-info');
-  var statusEl=$('playtest-cloud-status');
-  var barEl=$('playtest-batch-bar');
+  const startBtn=$('playtest-batch-start');
+  const stopBtn=$('playtest-batch-stop');
+  const infoEl=$('playtest-batch-info');
+  const statusEl=$('playtest-cloud-status');
+  const barEl=$('playtest-batch-bar');
   if(startBtn){startBtn.style.display='';startBtn.textContent='▶ Start Cloud Test';startBtn.disabled=false;startBtn.classList.remove('testing');startBtn.style.pointerEvents='auto';}
   if(stopBtn){stopBtn.style.display='none';stopBtn.disabled=false;}
   if(barEl)barEl.style.width='100%';
@@ -2577,14 +2646,14 @@ function finishBatchPlaytest(){
 function cancelBatchPlaytest(){
   batchCancelled=true;
   batchPlaytestMode=false;
-  var statusEl=$('playtest-cloud-status');
+  const statusEl=$('playtest-cloud-status');
   if(statusEl)statusEl.innerHTML='⏹ <strong>Cancelled.</strong> GitHub Actions workflow will stop after current game.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions" target="_blank" style="color:#ffd166">Actions page</a> to cancel workflow manually.</span>';
   finishBatchPlaytest();
 }
 
 /* Check if playtest was recently triggered (within 5 min) */
 function isPlaytestTriggeredLocally(){
-  var ts=sessionStorage.getItem(LS_PLAYTEST_TRIGGERED);
+  const ts=sessionStorage.getItem(LS_PLAYTEST_TRIGGERED);
   if(!ts)return false;
   return (Date.now()-parseInt(ts,10))<PLAYTEST_TRIGGER_WINDOW;
 }
@@ -2593,9 +2662,9 @@ function isPlaytestTriggeredLocally(){
 function checkExistingPlaytestProgress(){
 setTimeout(async function(){
 try{
-var resp=await fetch(PLAYTEST_PROGRESS_URL+'?t='+Date.now());
+const resp=await fetch(PLAYTEST_PROGRESS_URL+'?t='+Date.now());
 if(!resp.ok)return;
-var data=await resp.json();
+const data=await resp.json();
 if(data && data.results && data.results.length){
 // Show existing results
 batchGameResults=data.results.slice();
@@ -2604,14 +2673,14 @@ batchPlaytestCurrent=data.completedGames||data.results.length;
 batchPlaytestWins=data.wins||0;
 batchPlaytestFails=data.fails||0;
 renderBatchGameResults();
-var gameResults=$('pt-game-results');
+const gameResults=$('pt-game-results');
 if(gameResults)gameResults.style.display='';
-var statusEl=$('playtest-cloud-status');
+const statusEl=$('playtest-cloud-status');
 if(data.active){
 if(statusEl)statusEl.innerHTML='🔄 <strong>Cloud test in progress...</strong> '+batchPlaytestCurrent+'/'+batchPlaytestTotal+' games completed.<br><span style="font-size:11px;color:#ffd166">Polling for updates, latest results will appear automatically.</span>';
 startPollingPlaytestProgress();
 // Keep stop button visible, show Testing... state
-var startBtn=$('playtest-batch-start');
+const startBtn=$('playtest-batch-start');
 if(startBtn){startBtn.style.display='none';startBtn.textContent='⏳ Testing...';startBtn.disabled=true;startBtn.classList.add('testing');}
 if($('playtest-batch-stop')){$('playtest-batch-stop').style.display='';$('playtest-batch-stop').disabled=false;}
 if($('playtest-batch-progress'))$('playtest-batch-progress').style.display='';
@@ -2630,9 +2699,9 @@ batchPlaytestMode=true;
 
 /* Build the pt-board grid cells (called once) */
 function buildPtBoard(){
-  var el=$('pt-board');if(!el)return;
-  var html='';
-  for(var i=0;i<16;i++)html+='<div class="cell"></div>';
+  const el=$('pt-board');if(!el)return;
+  let html='';
+  for(let i=0;i<16;i++)html+='<div class="cell"></div>';
   el.innerHTML=html;
 }
 function updatePtBoard(){
@@ -2642,7 +2711,7 @@ function updatePtBoard(){
 /* Update stat cards from live data */
 function updateLiveStats(d){
   if(!aiLiveHistory.length)return;
-  var last=d||aiLiveHistory[aiLiveHistory.length-1];
+  const last=d||aiLiveHistory[aiLiveHistory.length-1];
   setStat('ts-version','v'+last.version);
   setStat('ts-games',last.game+'/'+last.total);
   setStat('ts-best',last.bestMax);
@@ -2661,21 +2730,21 @@ function setGHToken(token){
   else{localStorage.removeItem(LS_GH_TOKEN);window.GH_TOKEN='';}
 }
 // Load token on page load
-(function(){var t=localStorage.getItem(LS_GH_TOKEN);if(t)window.GH_TOKEN=t;})();
+(function(){const t=localStorage.getItem(LS_GH_TOKEN);if(t)window.GH_TOKEN=t;})();
 
 /* XOR decrypt: key = first 32 chars of password SHA-256 */
 function xorDecrypt(encrypted, keyHex){
-  var key=[];
-  for(var i=0;i<keyHex.length;i+=2)key.push(parseInt(keyHex.substr(i,2),16));
-  var bytes=atob(encrypted);
-  var result='';
-  for(var i=0;i<bytes.length;i++)result+=String.fromCharCode(bytes.charCodeAt(i)^key[i%key.length]);
+  const key=[];
+  for(let i=0;i<keyHex.length;i+=2)key.push(parseInt(keyHex.substr(i,2),16));
+  const bytes=atob(encrypted);
+  let result='';
+  for(let i=0;i<bytes.length;i++)result+=String.fromCharCode(bytes.charCodeAt(i)^key[i%key.length]);
   return result;
 }
 
 /* Password modal handlers */
 function openTokenModal(){
-  var m=$('token-modal');
+  const m=$('token-modal');
   // The modal starts inside the training panel. Move it to <body> so it can also
   // appear above the Playtest screen (a hidden game screen would otherwise hide it).
   if(m.parentElement!==document.body)document.body.appendChild(m);
@@ -2685,7 +2754,7 @@ function openTokenModal(){
   }
   isTokenModalOpen=true;
   m.style.display='flex';
-  var inp=$('token-input');inp.value='';
+  const inp=$('token-input');inp.value='';
   $('token-err').style.display='none';
   $('token-modal-title').textContent=tokenModalAction==='playtest'?'🔑 Cloud Test Authorization':'🔑 Training Authorization';
   setTimeout(function(){inp.focus();},100);
@@ -2695,17 +2764,17 @@ function closeTokenModal(){$('token-modal').style.display='none';isTokenModalOpe
 /* Verify password and fetch+decrypt token from repo config */
 async function verifyPasswordAndLoadToken(password){
   // Hash password and compare
-  var enc=new TextEncoder().encode(password);
-  var buf=await crypto.subtle.digest('SHA-256',enc);
-  var hash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+  const enc=new TextEncoder().encode(password);
+  const buf=await crypto.subtle.digest('SHA-256',enc);
+  const hash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
   if(hash!==PW_HASH)return false;
   // Fetch encrypted token from repo config file
   try{
-    var resp=await fetch(CONFIG_URL+'?t='+Date.now());
+    const resp=await fetch(CONFIG_URL+'?t='+Date.now());
     if(!resp.ok)return false;
-    var cfg=await resp.json();
+    const cfg=await resp.json();
     if(cfg.encrypted_token&&cfg.encrypted_token!=='REPLACE_WITH_ENCRYPTED_TOKEN'){
-      var token=xorDecrypt(cfg.encrypted_token,hash.substring(0,32));
+      const token=xorDecrypt(cfg.encrypted_token,hash.substring(0,32));
       setGHToken(token);
       return true;
     }
@@ -2717,13 +2786,13 @@ async function verifyPasswordAndLoadToken(password){
 async function startTraining(){
   if(isTokenModalOpen)return; // Already showing password modal
   // Check if backend auto-train loop is running
-  var bs=$('backend-phase-badge');
+  const bs=$('backend-phase-badge');
   if(bs&&bs.textContent!=='IDLE'){
     $('training-log').innerHTML='🔒 <strong>Backend running</strong> ('+bs.textContent+') — cannot start new training.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Please wait for the backend task to complete.</span>';
     return;
   }
-  var log=$('training-log');
-  var token=getGHToken();
+  const log=$('training-log');
+  const token=getGHToken();
   if(!token){
     // No token — open password modal
     openTokenModal();
@@ -2735,8 +2804,8 @@ async function startTraining(){
   sessionStorage.setItem('ai-training-triggered',Date.now());
   log.innerHTML='⏳ Triggering GitHub Actions training...';
   try{
-    var apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches';
-    var resp=await fetch(apiUrl,{
+    const apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches';
+    const resp=await fetch(apiUrl,{
       method:'POST',
       headers:{
         'Accept':'application/vnd.github+json',
@@ -2748,7 +2817,7 @@ async function startTraining(){
     if(resp.status===204){
       log.innerHTML='🚀 <strong>Training triggered!</strong> 200 self-play games.<br><span style="font-size:11px;color:#ffd166">GitHub Actions starting... takes about 30-60s to begin pushing progress.</span>';
       $('ai-train').textContent='⏳ Training...';
-      setTimeout(startPollingProgress,20000);
+      setTimeout(startPollingProgress,TRAINING_LOG_POLL_DELAY_MS);
     }else if(resp.status===401||resp.status===403){
       // Token expired, clear and ask for password again
       setGHToken('');
@@ -2770,12 +2839,10 @@ async function startTraining(){
       $('ai-train').textContent='▶ Train';
   }
 }
-function escapeHtml(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''
-}
 async function reloadWeightsFromRepo(){
   try{
-    var resp=await fetch(WEIGHTS_URL+'?t='+Date.now());
-    var w=await resp.json();
+    const resp=await fetch(WEIGHTS_URL+'?t='+Date.now());
+    const w=await resp.json();
     if(w&&w.l1W&&w.l1W.length>100){
 initAiNet(w);aiTrainGames=w.version||100;loadedWeightVersion=aiTrainGames;refreshAiEvalLeaf();
 // Store meta for stats & charts
@@ -2833,35 +2900,35 @@ setTimeout(function(){
 /* ====================================================================
    AI Self-Play Showcase — mini board that renders an AI game live
    ==================================================================== */
-var sg, sScore, sMoves, sTiles, sTimer, sGameCount;
-function sSlide(v){var t=v.filter(Boolean),r=[],g=0;for(var i=0;i<t.length;i++){if(t[i]===t[i+1]){var val=t[i]*2;r.push(val);g+=val;i++;}else r.push(t[i]);}while(r.length<4)r.push(0);return{line:r,g:g}}
-function sMove(g,dir){var n=g.map(r=>r.slice()),ch=false,gn=0;for(var i=0;i<4;i++){var ln=dir<2?n[i].slice():[g[0][i],g[1][i],g[2][i],g[3][i]];if(dir===1||dir===3)ln=ln.slice().reverse();var res=sSlide(ln);ln=res.line.slice();if(dir===1||dir===3)ln=ln.slice().reverse();var orig=dir<2?n[i].slice():[g[0][i],g[1][i],g[2][i],g[3][i]];if(ln.some((v,k)=>v!==orig[k]))ch=true;gn+=res.g;if(dir<2)n[i]=ln;else for(var r=0;r<4;r++)n[r][i]=ln[r];}return{next:n,ch:ch,g:gn}}
-function sEmpty(g){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!g[r][c])e.push([r,c]);return e}
-function sHasMoves(g){for(var r=0;r<4;r++)for(var c=0;c<4;c++){if(!g[r][c])return true;if(c<3&&g[r][c]===g[r][c+1])return true;if(r<3&&g[r][c]===g[r+1][c])return true}return false}
-function sHeuristic(g){var e=sEmpty(g).length,sm=0,mg=0,mx=0,tc=0;var pw=new Set();for(var r=0;r<4;r++)for(var c=0;c<4;c++){var v=g[r][c];if(v){tc++;if(v>mx)mx=v;if(v>2)pw.add(Math.log2(v)|0);if(c<3){var o=g[r][c+1];if(o){sm-=Math.abs(Math.log2(v)-Math.log2(o));if(v===o)mg++;}}if(r<3){var o2=g[r+1][c];if(o2){sm-=Math.abs(Math.log2(v)-Math.log2(o2));if(v===o2)mg++;}}}}var sn=[[16,15,14,13],[9,10,11,12],[8,7,6,5],[1,2,3,4]];var st=0;for(var r2=0;r2<4;r2++)for(var c2=0;c2<4;c2++)st+=(g[r2][c2]?Math.log2(g[r2][c2]):0)*sn[r2][c2];var cu=mx>0&&Math.max(g[0][0],g[0][3],g[3][0],g[3][3])===mx?1:0;var fillPenalty=(tc-e)*30;return e*100+st*5+Math.log2(mx||1)*20+cu*150+sm*8+mg*120-fillPenalty;}
+let sg, sScore, sMoves, sTiles, sTimer, sGameCount;
+function sSlide(v){const t=v.filter(Boolean);const r=[];let g=0;for(let i=0;i<t.length;i++){if(t[i]===t[i+1]){const val=t[i]*2;r.push(val);g+=val;i++;}else r.push(t[i]);}while(r.length<4)r.push(0);return{line:r,g:g}}
+function sMove(g,dir){const n=g.map(r=>r.slice());let ch=false,gn=0;for(let i=0;i<4;i++){let ln=dir<2?n[i].slice():[g[0][i],g[1][i],g[2][i],g[3][i]];if(dir===1||dir===3)ln=ln.slice().reverse();const res=sSlide(ln);ln=res.line.slice();if(dir===1||dir===3)ln=ln.slice().reverse();const orig=dir<2?n[i].slice():[g[0][i],g[1][i],g[2][i],g[3][i]];if(ln.some((v,k)=>v!==orig[k]))ch=true;gn+=res.g;if(dir<2)n[i]=ln;else for(let r=0;r<4;r++)n[r][i]=ln[r];}return{next:n,ch:ch,g:gn}}
+function sEmpty(g){const e=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!g[r][c])e.push([r,c]);return e}
+function sHasMoves(g){for(let r=0;r<4;r++)for(let c=0;c<4;c++){if(!g[r][c])return true;if(c<3&&g[r][c]===g[r][c+1])return true;if(r<3&&g[r][c]===g[r+1][c])return true}return false}
+function sHeuristic(g){const e=sEmpty(g).length;let sm=0,mg=0,mx=0,tc=0;const pw=new Set();for(let r=0;r<4;r++)for(let c=0;c<4;c++){const v=g[r][c];if(v){tc++;if(v>mx)mx=v;if(v>2)pw.add(Math.log2(v)|0);if(c<3){const o=g[r][c+1];if(o){sm-=Math.abs(Math.log2(v)-Math.log2(o));if(v===o)mg++;}}if(r<3){const o2=g[r+1][c];if(o2){sm-=Math.abs(Math.log2(v)-Math.log2(o2));if(v===o2)mg++;}}}}const sn=[[16,15,14,13],[9,10,11,12],[8,7,6,5],[1,2,3,4]];let st=0;for(let r2=0;r2<4;r2++)for(let c2=0;c2<4;c2++)st+=(g[r2][c2]?Math.log2(g[r2][c2]):0)*sn[r2][c2];const cu=mx>0&&Math.max(g[0][0],g[0][3],g[3][0],g[3][3])===mx?1:0;const fillPenalty=(tc-e)*30;return e*100+st*5+Math.log2(mx||1)*20+cu*150+sm*8+mg*120-fillPenalty;}
 // Showcase uses fast Expectimax search (stronger than pure heuristic)
 function sExpectimax(grid,depth,isChance,table){
   if(depth<=0)return sHeuristic(grid);
-  var key=JSON.stringify(grid)+'_'+depth+'_'+(isChance?1:0);
-  var cached=table.get(key);
+  const key=JSON.stringify(grid)+'_'+depth+'_'+(isChance?1:0);
+  const cached=table.get(key);
   if(cached!==undefined)return cached;
-  var value;
+  let value;
   if(!isChance){
     value=-Infinity;
-    for(var d=0;d<4;d++){
-      var res=sMove(grid,d);
+    for(let d=0;d<4;d++){
+      const res=sMove(grid,d);
       if(res.ch)value=Math.max(res.g+sExpectimax(res.next,depth-1,true,table),value);
     }
     if(value===-Infinity)value=-100000;
   }else{
-    var empties=sEmpty(grid);
+    const empties=sEmpty(grid);
     if(!empties.length){value=sExpectimax(grid,depth-1,false,table)}
     else{
-      var total=0;
-      for(var i=0;i<empties.length;i++){
-        var p=empties[i];
-        var g2=grid.map(r=>r.slice());g2[p[0]][p[1]]=2;
-        var g4=grid.map(r=>r.slice());g4[p[0]][p[1]]=4;
+      let total=0;
+      for(let i=0;i<empties.length;i++){
+        const p=empties[i];
+        const g2=grid.map(r=>r.slice());g2[p[0]][p[1]]=2;
+        const g4=grid.map(r=>r.slice());g4[p[0]][p[1]]=4;
         total+=.9*sExpectimax(g2,depth-1,false,table)+.1*sExpectimax(g4,depth-1,false,table);
       }
       value=total/empties.length;
@@ -2870,26 +2937,26 @@ function sExpectimax(grid,depth,isChance,table){
   table.set(key,value);
   return value;
 }
-function sGetDepth(g){var e=sEmpty(g).length;if(e>=8)return 2;if(e>=4)return 3;return 4;}
+function sGetDepth(g){const e=sEmpty(g).length;if(e>=8)return 2;if(e>=4)return 3;return 4;}
 function sPick(g){
   // Use Expectimax search to select moves
-  var table=new Map();
-  var depth=sGetDepth(g);
-  var b=-1,bv=-Infinity;
-  for(var d=0;d<4;d++){
-    var res=sMove(g,d);
+  const table=new Map();
+  const depth=sGetDepth(g);
+  let b=-1,bv=-Infinity;
+  for(let d=0;d<4;d++){
+    const res=sMove(g,d);
     if(!res.ch)continue;
-    var v=res.g+sExpectimax(res.next,depth,true,table);
+    const v=res.g+sExpectimax(res.next,depth,true,table);
     if(v>bv){bv=v;b=d}}
   // Fallback: use heuristic if search fails
-  if(b<0){bv=-Infinity;for(var d2=0;d2<4;d2++){var res2=sMove(g,d2);if(!res2.ch)continue;var v2=sHeuristic(res2.next)+res2.g;if(v2>bv){bv=v2;b=d2}}}
+  if(b<0){bv=-Infinity;for(let d2=0;d2<4;d2++){const res2=sMove(g,d2);if(!res2.ch)continue;const v2=sHeuristic(res2.next)+res2.g;if(v2>bv){bv=v2;b=d2}}}
   return b;
 }
-function sRender(){for(var r=0;r<4;r++)for(var c=0;c<4;c++){var el=sTiles[r*4+c];var v=sg[r][c];el.textContent=v||'';el.setAttribute('data-v',v||'');}var pct=sScore>0?Math.min(100,Math.round(Math.log2(Math.max(sScore,1))/11*100)):0;$('showside-bar').style.width=pct+'%';if(document.getElementById('game-screen').classList.contains('ai-training-mode')){$('stat-score').textContent='🏆 '+sScore;$('stat-steps').textContent='👣 '+sMoves;}}
-function sMax(g){var m=0;for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(g[r][c]>m)m=g[r][c];return m}
-function sInitGame(){sg=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];sScore=0;sMoves=0;sGameCount++;for(var k=0;k<2;k++){var e=sEmpty(sg);var p=e[Math.random()*e.length|0];sg[p[0]][p[1]]=Math.random()<.9?2:4;}sRender();}
-function sTick(){if(!document.getElementById('showcase')||$('showcase').style.display==='none')return;var d=sPick(sg);if(d<0){sInitGame();return;}var res=sMove(sg,d);sg=res.next;sScore+=res.g;sMoves++;if(sMax(sg)>=2048){sRender();setTimeout(sInitGame,1200);return;}var e=sEmpty(sg);if(e.length){var p=e[Math.random()*e.length|0];sg[p[0]][p[1]]=Math.random()<.9?2:4;}sRender();if(!sHasMoves(sg))setTimeout(sInitGame,800);}
-function startShowcase(){if(sTimer)return;sTiles=[];var boardEl=$('showcase-board');boardEl.innerHTML='';for(var i=0;i<16;i++){var t=document.createElement('div');t.className='sc-tile';boardEl.appendChild(t);sTiles.push(t);}sGameCount=0;sInitGame();sTimer=setInterval(sTick,500);}
+function sRender(){for(let r=0;r<4;r++)for(let c=0;c<4;c++){const el=sTiles[r*4+c];const v=sg[r][c];el.textContent=v||'';el.setAttribute('data-v',v||'');}const pct=sScore>0?Math.min(100,Math.round(Math.log2(Math.max(sScore,1))/11*100)):0;$('showside-bar').style.width=pct+'%';if(document.getElementById('game-screen').classList.contains('ai-training-mode')){$('stat-score').textContent='🏆 '+sScore;$('stat-steps').textContent='👣 '+sMoves;}}
+function sMax(g){let m=0;for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(g[r][c]>m)m=g[r][c];return m}
+function sInitGame(){sg=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];sScore=0;sMoves=0;sGameCount++;for(let k=0;k<2;k++){const e=sEmpty(sg);const p=e[Math.random()*e.length|0];sg[p[0]][p[1]]=Math.random()<.9?2:4;}sRender();}
+function sTick(){if(!document.getElementById('showcase')||$('showcase').style.display==='none')return;const d=sPick(sg);if(d<0){sInitGame();return;}const res=sMove(sg,d);sg=res.next;sScore+=res.g;sMoves++;if(sMax(sg)>=2048){sRender();setTimeout(sInitGame,SHOWCASE_WIN_RESET_MS);return;}const e=sEmpty(sg);if(e.length){const p=e[Math.random()*e.length|0];sg[p[0]][p[1]]=Math.random()<.9?2:4;}sRender();if(!sHasMoves(sg))setTimeout(sInitGame,SHOWCASE_OVER_RESET_MS);}
+function startShowcase(){if(sTimer)return;sTiles=[];const boardEl=$('showcase-board');boardEl.innerHTML='';for(let i=0;i<16;i++){const t=document.createElement('div');t.className='sc-tile';boardEl.appendChild(t);sTiles.push(t);}sGameCount=0;sInitGame();sTimer=setInterval(sTick,SHOWCASE_TICK_MS);}
 function stopShowcase(){if(sTimer){clearInterval(sTimer);sTimer=null;}}
 
 /* ------------------------------------------------------------------ practice tools */
@@ -2913,7 +2980,7 @@ function beginTool(mode){
 }
 function saveUndoSnapshot(){
   undoStack.push(snapshot());
-  if(undoStack.length>MAX_UNDO)undoStack.shift();
+  if(undoStack.length>MAX_UNDO_STACK)undoStack.shift();
 }
 function finishToolAction(){
   cheated=true;
@@ -3005,13 +3072,16 @@ function escapeHtml(s){const d=document.createElement('div');d.textContent=s;ret
 async function doSave(){
   if(!currentUser){alert('Saving is only available in User Mode.');return}
   if(cheated){alert('Practice-tool games cannot be saved to your cloud slot. Undo the tool action or start a new game first.');return}
+  const btn=$('b-save');const orig=btn.textContent;btn.textContent='⏳ Saving...';btn.disabled=true;
   try{
     await api(`/saves/${SIZE}`,{method:'PUT',body:JSON.stringify({board,score,steps,elapsedMs,timerMode})});
     SFX.merge();alert('✅ Game saved!');
   }catch(error){alert(error.message);}
+  finally{btn.textContent=orig;btn.disabled=false;}
 }
 async function doLoad(){
   if(!currentUser)return;
+  const btn=$('b-load');const orig=btn.textContent;btn.textContent='⏳ Loading...';btn.disabled=true;
   try{
     const s=await api(`/saves/${SIZE}`);
     clearPendingGameTimers();
@@ -3026,6 +3096,7 @@ async function doLoad(){
     syncTiles();applyAllTileStyles();
     render();SFX.merge();startTimer(elapsedMs);alert('📂 Game loaded!');
   }catch(error){alert(error.message);}
+  finally{btn.textContent=orig;btn.disabled=false;}
 }
 function applyAllTileStyles(){
   for(const id in tileMap){const t=tileMap[id];applyTileStyle(t.el,t.value)}
@@ -3055,13 +3126,14 @@ function exitGame(){
   stopAiAutoPlay();
   stopPollingProgress();
   stopPollingPlaytestProgress();
+  stopAutoCycle();
+  stopShowcase();
   cancelToolSelection();
   hideOverlay();
   $('lb-modal').classList.remove('show');
   $('tools-modal').classList.remove('show');
   closeTokenModal();
   $('game-screen').classList.remove('ai-training-mode');
-  // Back leaves the game only; it must not silently log the player out.
   show(gameReturnScreen);
 }
 
@@ -3158,7 +3230,7 @@ bind('btn-register',async()=>{
 /* ====================================================================
    Game buttons — safe binding (null-safe so one missing element can't break the rest)
    ==================================================================== */
-function bind(id,handler){var el=$(id);if(el)el.onclick=handler;else console.warn('[bind] element not found: '+id);}
+function bind(id,handler){const el=$(id);if(el)el.onclick=handler;else console.warn('[bind] element not found: '+id);}
 
 bind('b-up',()=>{SFX.button();move('up')});
 bind('b-down',()=>{SFX.button();move('down')});
@@ -3171,11 +3243,11 @@ bind('ai-stop-training',()=>{SFX.button();checkTrainingProgress()});
 
 bind('token-save',async()=>{
 SFX.button();
-var pw=$('token-input').value;
+const pw=$('token-input').value;
 if(!pw)return;
 $('token-save').textContent='Verifying...';
 $('token-save').disabled=true;
-var ok=await verifyPasswordAndLoadToken(pw);
+const ok=await verifyPasswordAndLoadToken(pw);
 $('token-save').textContent='Confirm';
 $('token-save').disabled=false;
 if(ok){closeTokenModal(); if(tokenModalAction==='playtest'){dispatchPlaytestWorkflow();}else{startTraining();}}
@@ -3183,18 +3255,18 @@ else{$('token-err').style.display='block';$('token-input').value='';$('token-inp
 });
 bind('token-close',()=>{SFX.button();closeTokenModal()});
 bind('token-modal',(e)=>{if(e.target.id==='token-modal')closeTokenModal()});
-(function(){var ti=$('token-input');if(ti)ti.addEventListener('keydown',async(e)=>{if(e.key==='Enter'){$('token-save').click();}});})();
+(function(){const ti=$('token-input');if(ti)ti.addEventListener('keydown',async(e)=>{if(e.key==='Enter'){$('token-save').click();}});})();
 
 bind('tool-swap',()=>{SFX.button();beginTool('swap')});
 bind('tool-delete',()=>{SFX.button();beginTool('delete')});
 bind('ai-suggest',()=>{SFX.button();aiSuggest()});
 bind('ai-auto',()=>{SFX.button();startAiAutoPlay()});
-bind('ai-stop',()=>{SFX.button();stopAiAutoPlay();var ts=$('tool-status');if(ts)ts.textContent='AI Auto Play stopped.';});
+bind('ai-stop',()=>{SFX.button();stopAiAutoPlay();const ts=$('tool-status');if(ts)ts.textContent='AI Auto Play stopped.';});
 bind('tools-close',()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')});
 
 bind('playtest-batch-start',()=>{SFX.button();startBatchPlaytest()});
 bind('playtest-batch-stop',()=>{SFX.button();cancelBatchPlaytest()});
-bind('pt-toggle-details',()=>{SFX.button();var d=$('pt-weight-details');var btn=$('pt-toggle-details');if(d){var open=d.style.display==='none';d.style.display=open?'':'none';btn.textContent=open?'Details ▴':'Details ▾';}});
+bind('pt-toggle-details',()=>{SFX.button();const d=$('pt-weight-details');const btn=$('pt-toggle-details');if(d){const open=d.style.display==='none';d.style.display=open?'':'none';btn.textContent=open?'Details ▴':'Details ▾';}});
 
 bind('b-restart',()=>{SFX.button();init(boardSize)});
 bind('b-save',()=>{SFX.button();doSave()});
@@ -3211,6 +3283,35 @@ document.addEventListener('keydown',e=>{
     w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
   if(map[e.key]){e.preventDefault();move(map[e.key])}
 });
+
+/* swipe gestures for mobile */
+(function(){
+  let startX=0,startY=0,tracking=false;
+  const SWIPE_MIN=SWIPE_THRESHOLD_PX;
+  document.addEventListener('touchstart',function(e){
+    if(!$('game-screen').classList.contains('active'))return;
+    if(e.target.closest('.pet-canvas-wrap'))return;
+    const t=e.touches[0];
+    startX=t.clientX;startY=t.clientY;tracking=true;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!tracking)return;
+    tracking=false;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-startX,dy=t.clientY-startY;
+    const absDx=Math.abs(dx),absDy=Math.abs(dy);
+    if(Math.max(absDx,absDy)<SWIPE_THRESHOLD_PX)return;
+    if(absDx>absDy){move(dx>0?'right':'left');}
+    else{move(dy>0?'down':'up');}
+  },{passive:true});
+})();
+
+/* PWA Service Worker Registration */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{/* SW registration failed */});
+  });
+}
 </script>
 <div id="chart-tooltip" class="chart-tooltip"></div>
 </body>
