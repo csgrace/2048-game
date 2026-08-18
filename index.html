@@ -384,6 +384,16 @@ transition:all .25s ease;
 .music-btn:hover{background:rgba(255,255,255,.15);color:#fff;transform:scale(1.08)}
 .music-btn.off{color:rgba(255,255,255,.35)}
 
+/* pet mascot bottom-right */
+#pet-canvas{
+  position:fixed;bottom:16px;right:16px;z-index:98;
+  width:56px;height:56px;cursor:pointer;
+  pointer-events:auto;image-rendering:pixelated;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));
+  transition:transform .1s;
+}
+#pet-canvas:active{transform:scale(.9)}
+
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
   .stat{font-size:11px;min-width:68px;padding:5px 8px}
@@ -397,6 +407,7 @@ transition:all .25s ease;
 
 <canvas id="bg-canvas"></canvas>
 <button class="music-btn" id="music-toggle" title="音效开关">🔊</button>
+<canvas id="pet-canvas" title="点击切换宠物"></canvas>
 <div class="app">
 
   <!-- ============ ENTRY ============ -->
@@ -826,6 +837,138 @@ function toggleBGM(){
 document.addEventListener('DOMContentLoaded',function(){
   $('music-toggle').addEventListener('click',toggleBGM);
 });
+
+/* ====================================================================
+   Pet Mascot (桌宠 — 点击切换 蟑螂/猫/狗)
+   ==================================================================== */
+(function(){
+  const pets=['cockroach','cat','dog'];
+  const petNames={cockroach:'小强',cat:'咪咪',dog:'旺财'};
+  let petIndex=1; // 默认猫
+  let bounce=0, tailWag=0, blinkTimer=0, isBlinking=false;
+  const petSound={cat:[600,800],dog:[300,200],cockroach:[900,1000]};
+
+  function petVo(){
+    if(!sfxEnabled)return;
+    const n=petSound[pets[petIndex]];
+    snd(n[0],.12,'sine',.08);setTimeout(()=>snd(n[1],.1,'sine',.06),90);
+  }
+
+  function drawPet(){
+    const c=document.getElementById('pet-canvas');if(!c)return;
+    const ctx=c.getContext('2d');
+    c.width=112;c.height=112;
+    ctx.clearRect(0,0,112,112);
+    const cx=56,cy=56+bounce;
+    const p=pets[petIndex];
+
+    if(p==='cockroach'){
+      // 身体
+      ctx.fillStyle='#5a3825';
+      ctx.beginPath();ctx.ellipse(cx,cy+8,16,22,0,0,Math.PI*2);ctx.fill();
+      // 头部
+      ctx.fillStyle='#6b4423';
+      ctx.beginPath();ctx.arc(cx,cy-18,10,0,Math.PI*2);ctx.fill();
+      // 眼睛
+      ctx.fillStyle=isBlinking?'#5a3825':'#fff';
+      ctx.beginPath();ctx.arc(cx-4,cy-20,2.5,0,Math.PI*2);ctx.arc(cx+4,cy-20,2.5,0,Math.PI*2);ctx.fill();
+      if(!isBlinking){ctx.fillStyle='#000';ctx.beginPath();ctx.arc(cx-3.5,cy-20,1.2,0,Math.PI*2);ctx.arc(cx+4.5,cy-20,1.2,0,Math.PI*2);ctx.fill();}
+      // 触角
+      ctx.strokeStyle='#3e2714';ctx.lineWidth=2;ctx.beginPath();
+      ctx.moveTo(cx-5,cy-26);ctx.lineTo(cx-14,cy-40-Math.sin(tailWag)*3);
+      ctx.moveTo(cx+5,cy-26);ctx.lineTo(cx+14,cy-38-Math.cos(tailWag)*3);ctx.stroke();
+      // 腿
+      ctx.lineWidth=2;
+      for(let i=-1;i<=1;i++){
+        ctx.beginPath();ctx.moveTo(cx+i*7,cy+2);ctx.lineTo(cx+i*10,cy+20);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cx+i*7,cy+10);ctx.lineTo(cx+i*10,cy+26);ctx.stroke();
+      }
+    } else if(p==='cat'){
+      // 身体
+      ctx.fillStyle='#ffb366';
+      ctx.beginPath();ctx.ellipse(cx,cy+12,15,17,0,0,Math.PI*2);ctx.fill();
+      // 头
+      ctx.beginPath();ctx.arc(cx,cy-12,13,0,Math.PI*2);ctx.fill();
+      // 耳朵
+      ctx.fillStyle='#ff9500';
+      ctx.beginPath();ctx.moveTo(cx-11,cy-20);ctx.lineTo(cx-5,cy-32);ctx.lineTo(cx-1,cy-19);ctx.fill();
+      ctx.beginPath();ctx.moveTo(cx+11,cy-20);ctx.lineTo(cx+5,cy-32);ctx.lineTo(cx+1,cy-19);ctx.fill();
+      // 内耳
+      ctx.fillStyle='#ffd1a8';
+      ctx.beginPath();ctx.moveTo(cx-8,cy-20);ctx.lineTo(cx-5,cy-28);ctx.lineTo(cx-3,cy-20);ctx.fill();
+      ctx.beginPath();ctx.moveTo(cx+8,cy-20);ctx.lineTo(cx+5,cy-28);ctx.lineTo(cx+3,cy-20);ctx.fill();
+      // 眼睛
+      ctx.fillStyle=isBlinking?'#ffb366':'#2d1b00';
+      ctx.beginPath();ctx.ellipse(cx-5,cy-12,2.5,isBlinking?1:4,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(cx+5,cy-12,2.5,isBlinking?1:4,0,0,Math.PI*2);ctx.fill();
+      if(!isBlinking){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx-4,cy-13,1,0,Math.PI*2);ctx.arc(cx+6,cy-13,1,0,Math.PI*2);ctx.fill();}
+      // 鼻子
+      ctx.fillStyle='#ff6b6b';ctx.beginPath();ctx.moveTo(cx,cy-7);ctx.lineTo(cx-2,cy-5);ctx.lineTo(cx+2,cy-5);ctx.fill();
+      // 嘴巴
+      ctx.strokeStyle='#2d1b00';ctx.lineWidth=1;ctx.beginPath();
+      ctx.moveTo(cx,cy-5);ctx.lineTo(cx,cy-3);ctx.arc(cx-2,cy-2,2,0,Math.PI,false);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx,cy-3);ctx.arc(cx+2,cy-2,2,0,Math.PI,false);ctx.stroke();
+      // 胡须
+      ctx.strokeStyle='#2d1b00';ctx.lineWidth=.7;
+      ctx.beginPath();ctx.moveTo(cx-5,cy-6);ctx.lineTo(cx-15,cy-8);ctx.moveTo(cx-5,cy-4);ctx.lineTo(cx-15,cy-3);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+5,cy-6);ctx.lineTo(cx+15,cy-8);ctx.moveTo(cx+5,cy-4);ctx.lineTo(cx+15,cy-3);ctx.stroke();
+      // 尾巴
+      ctx.strokeStyle='#ff9500';ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();
+      ctx.moveTo(cx+10,cy+22);ctx.quadraticCurveTo(cx+22,cy+12,cx+18+Math.sin(tailWag)*4,cy-2);ctx.stroke();
+    } else if(p==='dog'){
+      // 身体
+      ctx.fillStyle='#d4a574';
+      ctx.beginPath();ctx.ellipse(cx,cy+14,16,16,0,0,Math.PI*2);ctx.fill();
+      // 肚皮
+      ctx.fillStyle='#f5deb3';
+      ctx.beginPath();ctx.ellipse(cx,cy+20,9,9,0,0,Math.PI*2);ctx.fill();
+      // 头
+      ctx.fillStyle='#d4a574';
+      ctx.beginPath();ctx.arc(cx,cy-10,13,0,Math.PI*2);ctx.fill();
+      // 耳朵
+      ctx.fillStyle='#a67b44';
+      ctx.beginPath();ctx.ellipse(cx-13,cy-8,5,11,-.4,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(cx+13,cy-8,5,11,.4,0,Math.PI*2);ctx.fill();
+      // 嘴部
+      ctx.fillStyle='#f5deb3';
+      ctx.beginPath();ctx.ellipse(cx,cy-4,7,6,0,0,Math.PI*2);ctx.fill();
+      // 眼睛
+      ctx.fillStyle=isBlinking?'#d4a574':'#2d1b00';
+      ctx.beginPath();ctx.ellipse(cx-5,cy-12,2.5,isBlinking?1:4,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(cx+5,cy-12,2.5,isBlinking?1:4,0,0,Math.PI*2);ctx.fill();
+      if(!isBlinking){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx-4,cy-13,1.1,0,Math.PI*2);ctx.arc(cx+6,cy-13,1.1,0,Math.PI*2);ctx.fill();}
+      // 鼻子
+      ctx.fillStyle='#2d1b00';ctx.beginPath();ctx.ellipse(cx,cy-4,2.5,1.8,0,0,Math.PI*2);ctx.fill();
+      // 舌头
+      ctx.fillStyle='#ff6b9d';
+      const tongueY=cy-1+Math.abs(Math.sin(tailWag))*1.5;
+      ctx.beginPath();ctx.ellipse(cx,tongueY,2,2.5,0,0,Math.PI*2);ctx.fill();
+      // 尾巴
+      ctx.strokeStyle='#d4a574';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();
+      ctx.moveTo(cx+11,cy+18);ctx.quadraticCurveTo(cx+24,cy+6,cx+20+Math.cos(tailWag)*4,cy-6);ctx.stroke();
+    }
+
+    tailWag+=.12;
+    blinkTimer++;
+    if(!isBlinking&&blinkTimer>180+Math.random()*120){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},120);}
+    if(bounce>0)bounce-=.5;
+    requestAnimationFrame(drawPet);
+  }
+
+  function initPet(){
+    const c=document.getElementById('pet-canvas');if(!c)return;
+    c.addEventListener('click',function(){
+      petIndex=(petIndex+1)%pets.length;
+      c.title=petNames[pets[petIndex]]+' (点击切换)';
+      bounce=8;
+      petVo();
+    });
+    c.addEventListener('mouseenter',function(){c.style.transform='scale(1.1)';});
+    c.addEventListener('mouseleave',function(){c.style.transform='';});
+    drawPet();
+  }
+  document.addEventListener('DOMContentLoaded',initPet);
+})();
 
 /* ====================================================================
    Colours
