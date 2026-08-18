@@ -912,11 +912,14 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     wave+=.08;
 
     ctx.save();
-    // 旋转动画
+    // 旋转动画 — 像人一样转圈 (带纵深感 + 弹跳)
     if(spin>0){
       const angle=(1-spin)*Math.PI*2;
+      const sy=Math.abs(Math.cos(angle)); // 1→0→1 模拟前后翻转
+      bounce=Math.max(bounce, Math.sin(spin*Math.PI*4)*6); // 转圈时弹跳
       ctx.translate(cx,cy);
-      ctx.rotate(angle);
+      ctx.scale(0.6+0.4*sy, 1); // 水平收缩模拟3D
+      ctx.rotate(angle*0.3); // 轻微倾斜
       ctx.translate(-cx,-cy);
     } else if(dance>0){
       const sw=Math.sin(dance*Math.PI*6)*12*dance;
@@ -969,11 +972,13 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       ctx.fillStyle='#fff';
       ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
       ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle=tileValue>=8?'#fff':'#3a2010';
+      // 瞳孔 — 深色, 任何背景都可见
+      ctx.fillStyle='#1a0e05';
       ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
       ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
+      // 高光点 — 小而亮
       ctx.fillStyle='#fff';
-      ctx.beginPath();ctx.arc(cx-eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.arc(cx+eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(cx-eyeSpacing-1.5,eyeY-1.5,1.2,0,Math.PI*2);ctx.arc(cx+eyeSpacing-1.5,eyeY-1.5,1.2,0,Math.PI*2);ctx.fill();
     }
 
     // 嘴
