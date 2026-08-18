@@ -384,16 +384,15 @@ transition:all .25s ease;
 .music-btn:hover{background:rgba(255,255,255,.15);color:#fff;transform:scale(1.08)}
 .music-btn.off{color:rgba(255,255,255,.35)}
 
-/* pet mascot bottom-right */
+/* tile spirit - inside board-wrap */
 #pet-canvas{
-  position:fixed;bottom:12px;right:20px;z-index:98;
-  width:90px;height:90px;cursor:pointer;
-  pointer-events:auto;
-  filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));
-  transition:transform .15s ease;
+  position:absolute;bottom:6px;right:6px;z-index:5;
+  width:64px;height:64px;cursor:pointer;pointer-events:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));
+  transition:transform .12s ease;
+  opacity:.9;
 }
-#pet-canvas:hover{transform:scale(1.08) translateY(-2px)}
-#pet-canvas:active{transform:scale(.95)}
+#pet-canvas:hover{transform:scale(1.1);opacity:1}
 
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
@@ -408,7 +407,6 @@ transition:all .25s ease;
 
 <canvas id="bg-canvas"></canvas>
 <button class="music-btn" id="music-toggle" title="音效开关">🔊</button>
-<canvas id="pet-canvas" title="点击切换宠物"></canvas>
 <div class="app">
 
   <!-- ============ ENTRY ============ -->
@@ -601,6 +599,7 @@ transition:all .25s ease;
     </div>
     <div class="board-wrap">
       <div id="board"></div>
+      <canvas id="pet-canvas" title="方块精灵"></canvas>
       <div id="overlay"><div id="ov-card"><h2 id="ov-title"></h2><div id="ov-sub"></div><button id="ov-btn">Play Again</button></div></div>
     </div>
     <div id="training-panel" hidden>
@@ -840,26 +839,25 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 /* ====================================================================
-   Pet Mascot (桌宠 — 右键切换 蟑螂/猫/狗)
+   2048 Block Sprite Pet (方块精灵 — 右键切换 2/4/8/16/32/64/128/256/512/1024/2048)
    ==================================================================== */
 (function(){
-  const pets=['cockroach','cat','dog'];
-  const petNames={cockroach:'小强',cat:'咪咪',dog:'旺财'};
-  let petIndex=2; // 默认狗
-  let bounce=0, tailWag=0, blinkTimer=0, isBlinking=false, yOffset=0;
-  let breathe=0; // breathing cycle for idle animation
-  const petSound={cat:[520,720],dog:[280,180],cockroach:[880,980]};
+  // 精灵等级对应2048方块值
+  const PET_TILES=[2,4,8,16,32,64,128,256,512,1024,2048];
+  const PET_NAMES={2:'小2',4:'小4',8:'小8',16:'小16',32:'小32',64:'小64',128:'小128',256:'小256',512:'小512',1024:'小1024',2048:'小2048'};
+  let petIndex=0; // 默认 2
+  let bounce=0, wave=0, blinkTimer=0, isBlinking=false;
+  let breathe=0;
 
+  // 精灵音效（合成"嘟"声，越高等级音调越高）
   function petVo(){
     if(!sfxEnabled)return;
-    const n=petSound[pets[petIndex]];
-    snd(n[0],.1,'sine',.07);setTimeout(()=>snd(n[1],.08,'sine',.05),80);
+    const baseFreq=300+petIndex*40;
+    snd(baseFreq,.08,'sine',.06);
+    setTimeout(()=>snd(baseFreq*1.5,.06,'sine',.04),60);
   }
 
-  // helper: filled ellipse
-  function fellipse(ctx,x,y,rx,ry,fill){
-    ctx.fillStyle=fill;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();
-  }
+  // 圆角矩形
   function roundRect(ctx,x,y,w,h,r){
     ctx.beginPath();
     ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
@@ -868,185 +866,123 @@ document.addEventListener('DOMContentLoaded',function(){
     ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
   }
 
+  // 获取2048方块的颜色
+  function tileColor(v){const c=BG[v]||[40,38,32];return`rgb(${c[0]},${c[1]},${c[2]})`}
+  function tileTextColor(v){return v<=4?'#776e65':'#f9f6f2'}
+
   function drawPet(){
     const c=document.getElementById('pet-canvas');if(!c)return;
     const ctx=c.getContext('2d');
     const S=180;
     c.width=S;c.height=S;
     ctx.clearRect(0,0,S,S);
-    const cx=S/2,cy=S/2+10+bounce;
-    const p=pets[petIndex];
-    breathe+=.04;
-    const breatheY=Math.sin(breathe)*1.5;
+    const cx=S/2,cy=S/2+bounce;
+    const tileValue=PET_TILES[petIndex];
+    breathe+=.03;
+    const breatheY=Math.sin(breathe)*2;
+    wave+=.08;
 
-    if(p==='cockroach'){
-      // Shadow
-      fellipse(ctx,cx,S-14,28,6,'rgba(0,0,0,.18)');
-      // Body - glossy brown oval
-      ctx.fillStyle='#6b3a1f';
-      ctx.beginPath();ctx.ellipse(cx,cy+breatheY,28,36,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#8b5a3c';
-      ctx.beginPath();ctx.ellipse(cx,cy+breatheY-4,22,28,0,0,Math.PI*2);ctx.fill();
-      // Head
-      ctx.fillStyle='#4e2a15';
-      ctx.beginPath();ctx.arc(cx,cy-34+breatheY,16,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#6b3a1f';
-      ctx.beginPath();ctx.arc(cx,cy-36+breatheY,12,0,Math.PI*2);ctx.fill();
-      // Eyes (cute dot)
-      ctx.fillStyle=isBlinking?'#4e2a15':'#fff';
-      ctx.beginPath();ctx.arc(cx-7,cy-35+breatheY,4,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.arc(cx+7,cy-35+breatheY,4,0,Math.PI*2);ctx.fill();
-      if(!isBlinking){
-        ctx.fillStyle='#1a0a00';
-        ctx.beginPath();ctx.arc(cx-6,cy-34+breatheY,2.2,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();ctx.arc(cx+8,cy-34+breatheY,2.2,0,Math.PI*2);ctx.fill();
-        // Eye shine
-        ctx.fillStyle='#fff';
-        ctx.beginPath();ctx.arc(cx-5,cy-35.5+breatheY,1,0,Math.PI*2);ctx.arc(cx+9,cy-35.5+breatheY,1,0,Math.PI*2);ctx.fill();
-      }
-      // Cute smile
-      ctx.strokeStyle='#2a1500';ctx.lineWidth=1.5;ctx.beginPath();
-      ctx.moveTo(cx-4,cy-28+breatheY);ctx.lineTo(cx+4,cy-28+breatheY);
-      ctx.arc(cx,cy-26+breatheY,5,0,Math.PI);ctx.stroke();
-      // Antennae
-      ctx.strokeStyle='#3e2010';ctx.lineWidth=2.5;ctx.lineCap='round';
-      const aw=Math.sin(tailWag)*4;
-      ctx.beginPath();ctx.moveTo(cx-8,cy-46+breatheY);
-      ctx.bezierCurveTo(cx-16,cy-60+breatheY+aw,cx-24,cy-58+breatheY-aw,cx-28,cy-52+breatheY+aw);
-      ctx.moveTo(cx+8,cy-46+breatheY);
-      ctx.bezierCurveTo(cx+16,cy-60+breatheY-aw,cx+24,cy-58+breatheY+aw,cx+28,cy-52+breatheY-aw);
-      ctx.stroke();
-      // Antenna tips
-      ctx.fillStyle='#8b5a3c';
-      fellipse(ctx,cx-28,cy-52+breatheY+aw,3,3,'#a07050');
-      fellipse(ctx,cx+28,cy-52+breatheY-aw,3,3,'#a07050');
-      // Legs
-      ctx.strokeStyle='#3e2010';ctx.lineWidth=3;
-      const legPhase=Math.sin(tailWag*1.3);
-      for(let i=-1;i<=1;i++){
-        const ox=i*10;
-        ctx.beginPath();ctx.moveTo(cx+ox,cy-5+breatheY);
-        ctx.lineTo(cx+ox+(i<0?-8:8),cy+15+breatheY+legPhase*(i*2));ctx.stroke();
-        ctx.beginPath();ctx.moveTo(cx+ox,cy+8+breatheY);
-        ctx.lineTo(cx+ox+(i<0?-10:10),cy+26+breatheY-legPhase*(i*2));ctx.stroke();
-      }
-    } else if(p==='cat'){
-      // Shadow
-      fellipse(ctx,cx,S-16,32,7,'rgba(0,0,0,.18)');
-      // Tail behind body
-      ctx.strokeStyle='#f5a03d';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();
-      ctx.moveTo(cx+18,cy+20+breatheY);
-      ctx.bezierCurveTo(cx+38,cy+10+breatheY,cx+36+breatheY,cy-18,cx+28+Math.sin(tailWag)*6,cy-32+breatheY);ctx.stroke();
-      // Body
-      ctx.fillStyle='#ffcf87';
-      ctx.beginPath();ctx.ellipse(cx,cy+16+breatheY,22,24,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#ffe0b0';
-      ctx.beginPath();ctx.ellipse(cx,cy+20+breatheY,14,16,0,0,Math.PI*2);ctx.fill();
-      // Head
-      ctx.fillStyle='#ffcf87';
-      ctx.beginPath();ctx.arc(cx,cy-16+breatheY,20,0,Math.PI*2);ctx.fill();
-      // Ears
-      ctx.fillStyle='#ffaf50';
-      ctx.beginPath();ctx.moveTo(cx-18,cy-24+breatheY);ctx.lineTo(cx-10,cy-44+breatheY);ctx.lineTo(cx-4,cy-22+breatheY);ctx.fill();
-      ctx.beginPath();ctx.moveTo(cx+18,cy-24+breatheY);ctx.lineTo(cx+10,cy-44+breatheY);ctx.lineTo(cx+4,cy-22+breatheY);ctx.fill();
-      // Inner ears
-      ctx.fillStyle='#ffd6b0';
-      ctx.beginPath();ctx.moveTo(cx-14,cy-25+breatheY);ctx.lineTo(cx-9,cy-40+breatheY);ctx.lineTo(cx-6,cy-24+breatheY);ctx.fill();
-      ctx.beginPath();ctx.moveTo(cx+14,cy-25+breatheY);ctx.lineTo(cx+9,cy-40+breatheY);ctx.lineTo(cx+6,cy-24+breatheY);ctx.fill();
-      // Cheeks
-      ctx.fillStyle='rgba(255,180,180,.5)';
-      fellipse(ctx,cx-12,cy-8+breatheY,5,4,'rgba(255,180,180,.4)');
-      fellipse(ctx,cx+12,cy-8+breatheY,5,4,'rgba(255,180,180,.4)');
-      // Eyes - bigger and cuter
-      if(isBlinking){
-        ctx.strokeStyle='#3a2010';ctx.lineWidth=2.5;ctx.lineCap='round';
-        ctx.beginPath();ctx.moveTo(cx-9,cy-16+breatheY);ctx.lineTo(cx-3,cy-16+breatheY);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(cx+3,cy-16+breatheY);ctx.lineTo(cx+9,cy-16+breatheY);ctx.stroke();
-      } else {
-        ctx.fillStyle='#3a2010';
-        fellipse(ctx,cx-6,cy-16+breatheY,5,6,'#3a2010');
-        fellipse(ctx,cx+6,cy-16+breatheY,5,6,'#3a2010');
-        // Shine
-        ctx.fillStyle='#fff';
-        fellipse(ctx,cx-4.5,cy-17.5+breatheY,2.2,2.5,'#fff');
-        fellipse(ctx,cx+7.5,cy-17.5+breatheY,2.2,2.5,'#fff');
-        ctx.fillStyle='#fff';
-        fellipse(ctx,cx-7,cy-14.5+breatheY,1,1.2,'#fff');
-        fellipse(ctx,cx+5,cy-14.5+breatheY,1,1.2,'#fff');
-      }
-      // Nose
-      ctx.fillStyle='#ff7080';
-      ctx.beginPath();ctx.moveTo(cx,cy-7+breatheY);ctx.lineTo(cx-2.5,cy-5+breatheY);ctx.lineTo(cx+2.5,cy-5+breatheY);ctx.fill();
-      // Mouth
-      ctx.strokeStyle='#3a2010';ctx.lineWidth=1.4;ctx.lineCap='round';
-      ctx.beginPath();ctx.moveTo(cx,cy-5+breatheY);ctx.lineTo(cx,cy-3+breatheY);
-      ctx.arc(cx-2.5,cy-2+breatheY,2.5,0,Math.PI,false);
-      ctx.moveTo(cx,cy-3+breatheY);
-      ctx.arc(cx+2.5,cy-2+breatheY,2.5,0,Math.PI,false);ctx.stroke();
-      // Whiskers
-      ctx.strokeStyle='rgba(58,32,16,.4)';ctx.lineWidth=1;
-      ctx.beginPath();
-      ctx.moveTo(cx-8,cy-7+breatheY);ctx.lineTo(cx-22,cy-10+breatheY);
-      ctx.moveTo(cx-8,cy-4+breatheY);ctx.lineTo(cx-22,cy-3+breatheY);
-      ctx.moveTo(cx+8,cy-7+breatheY);ctx.lineTo(cx+22,cy-10+breatheY);
-      ctx.moveTo(cx+8,cy-4+breatheY);ctx.lineTo(cx+22,cy-3+breatheY);
-      ctx.stroke();
-    } else if(p==='dog'){
-      // Shadow
-      fellipse(ctx,cx,S-16,34,8,'rgba(0,0,0,.18)');
-      // Tail
-      const wagX=Math.sin(tailWag)*8;
-      ctx.fillStyle='#c4915c';
-      ctx.beginPath();ctx.ellipse(cx+22,cy-2+breatheY,6,10,.3+wagX*.02,0,Math.PI*2);ctx.fill();
-      // Body
-      ctx.fillStyle='#d4a060';
-      ctx.beginPath();ctx.ellipse(cx,cy+18+breatheY,24,22,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#f0d5a8';
-      ctx.beginPath();ctx.ellipse(cx,cy+24+breatheY,14,14,0,0,Math.PI*2);ctx.fill();
-      // Head
-      ctx.fillStyle='#d4a060';
-      ctx.beginPath();ctx.arc(cx,cy-12+breatheY,20,0,Math.PI*2);ctx.fill();
-      // Floppy ears
-      ctx.fillStyle='#a07040';
-      ctx.beginPath();ctx.ellipse(cx-20,cy-8+breatheY,8,14,-.3,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.ellipse(cx+20,cy-8+breatheY,8,14,.3,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#c4915c';
-      ctx.beginPath();ctx.ellipse(cx-19,cy-6+breatheY,5,9,-.3,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.ellipse(cx+19,cy-6+breatheY,5,9,.3,0,Math.PI*2);ctx.fill();
-      // Muzzle
-      ctx.fillStyle='#f0d5a8';
-      ctx.beginPath();ctx.ellipse(cx,cy-2+breatheY,12,9,0,0,Math.PI*2);ctx.fill();
-      // Eyes
-      if(isBlinking){
-        ctx.strokeStyle='#3a2010';ctx.lineWidth=2.5;ctx.lineCap='round';
-        ctx.beginPath();ctx.moveTo(cx-9,cy-14+breatheY);ctx.lineTo(cx-3,cy-14+breatheY);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(cx+3,cy-14+breatheY);ctx.lineTo(cx+9,cy-14+breatheY);ctx.stroke();
-      } else {
-        ctx.fillStyle='#3a2010';
-        fellipse(ctx,cx-6,cy-14+breatheY,4.5,5.5,'#3a2010');
-        fellipse(ctx,cx+6,cy-14+breatheY,4.5,5.5,'#3a2010');
-        ctx.fillStyle='#fff';
-        fellipse(ctx,cx-4.5,cy-15.5+breatheY,2,2.2,'#fff');
-        fellipse(ctx,cx+7.5,cy-15.5+breatheY,2,2.2,'#fff');
-        ctx.fillStyle='#fff';
-        fellipse(ctx,cx-7,cy-12.5+breatheY,.9,1,'#fff');
-        fellipse(ctx,cx+5,cy-12.5+breatheY,.9,1,'#fff');
-      }
-      // Nose
-      ctx.fillStyle='#2a1a08';
-      ctx.beginPath();ctx.moveTo(cx,cy-1+breatheY);ctx.lineTo(cx-3.5,cy+1+breatheY);ctx.lineTo(cx+3.5,cy+1+breatheY);ctx.fill();
-      // Mouth + tongue
-      ctx.strokeStyle='#3a2010';ctx.lineWidth=1.3;ctx.lineCap='round';
-      ctx.beginPath();ctx.moveTo(cx,cy+1+breatheY);ctx.lineTo(cx,cy+4+breatheY);ctx.stroke();
-      // Tongue wagging
-      const tongueLen=3+Math.abs(Math.sin(tailWag*.8))*1.5;
-      ctx.fillStyle='#ff7090';
-      ctx.beginPath();ctx.ellipse(cx,cy+6+breatheY+tongueLen*.3,3.5,tongueLen,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#ff90a8';
-      ctx.beginPath();ctx.ellipse(cx,cy+5.5+breatheY+tongueLen*.3,2,tongueLen*.6,0,0,Math.PI*2);ctx.fill();
+    // ---- 阴影 ----
+    ctx.fillStyle='rgba(0,0,0,.18)';
+    ctx.beginPath();ctx.ellipse(cx,S-18,38,8,0,0,Math.PI*2);ctx.fill();
+
+    // ---- 小方块"脚" ----
+    const footWave=Math.sin(wave)*3;
+    // 左脚
+    ctx.fillStyle=tileColor(2);
+    roundRect(ctx,cx-32,cy+52+footWave,22,18,5);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.15)';
+    roundRect(ctx,cx-30,cy+54+footWave,18,6,3);ctx.fill();
+    // 右脚
+    ctx.fillStyle=tileColor(2);
+    roundRect(ctx,cx+10,cy+52-footWave,22,18,5);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.15)';
+    roundRect(ctx,cx+12,cy+54-footWave,18,6,3);ctx.fill();
+
+    // ---- 主体：一个大2048方块 ----
+    const bx=cx-42,by=cy-32+breatheY,bw=84,bh=84,br=12;
+    // 主体底色（当前等级方块颜色）
+    ctx.fillStyle=tileColor(tileValue);
+    roundRect(ctx,bx,by,bw,bh,br);ctx.fill();
+
+    // 高光效果
+    ctx.fillStyle='rgba(255,255,255,.12)';
+    roundRect(ctx,bx+4,by+4,bw-8,bh*.4,br-2);ctx.fill();
+
+    // 边框
+    ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=2;
+    roundRect(ctx,bx,by,bw,bh,br);ctx.stroke();
+
+    // ---- 方块上的数字 ----
+    const numStr=String(tileValue);
+    ctx.fillStyle=tileTextColor(tileValue);
+    ctx.fontWeight='800';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    if(numStr.length<=2) ctx.font='36px Segoe UI, sans-serif';
+    else if(numStr.length===3) ctx.font='28px Segoe UI, sans-serif';
+    else ctx.font='22px Segoe UI, sans-serif';
+    ctx.fillText(numStr,cx,cy-5+breatheY);
+
+    // ---- 方块上的表情 ----
+    const eyeY=cy+22+breatheY;
+    const eyeSpacing=14;
+    // 眼睛
+    if(isBlinking){
+      ctx.strokeStyle=tileTextColor(tileValue);ctx.lineWidth=2.5;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(cx-eyeSpacing-4,eyeY);ctx.lineTo(cx-eyeSpacing+4,eyeY);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+eyeSpacing-4,eyeY);ctx.lineTo(cx+eyeSpacing+4,eyeY);ctx.stroke();
+    } else {
+      // 眼白
+      ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
+      // 瞳孔（黑色，但深色方块用深色瞳孔也看得清）
+      ctx.fillStyle=tileValue>=8?'#fff':'#3a2010';
+      ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
+      // 眼睛高光
+      ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.arc(cx-eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.arc(cx+eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.fill();
     }
 
-    tailWag+=.1;
+    // 嘴巴（微笑）
+    ctx.strokeStyle=tileTextColor(tileValue);ctx.lineWidth=2;ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(cx-6,eyeY+12);
+    ctx.quadraticCurveTo(cx,eyeY+18,cx+6,eyeY+12);
+    ctx.stroke();
+
+    // 腮红
+    ctx.fillStyle='rgba(255,200,200,.35)';
+    ctx.beginPath();ctx.ellipse(cx-24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(cx+24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
+
+    // ---- 顶部小触角/天线（像2048方块的延伸）----
+    const antWave=Math.sin(wave*1.5)*3;
+    ctx.fillStyle=tileColor(2);
+    roundRect(ctx,cx-8,by-14+antWave,6,16,3);ctx.fill();
+    ctx.fillStyle=tileColor(4);
+    roundRect(ctx,cx+2,by-14-antWave,6,16,3);ctx.fill();
+    // 触角顶端小圆点
+    ctx.fillStyle=tileColor(8);
+    ctx.beginPath();ctx.arc(cx-5,by-16+antWave,4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(cx+5,by-16-antWave,4,0,Math.PI*2);ctx.fill();
+
+    // ---- 两侧小方块"手臂" ----
+    const armWave=Math.sin(wave*1.2)*4;
+    // 左臂
+    ctx.fillStyle=tileColor(4);
+    roundRect(ctx,bx-16,cy+armWave,14,20,4);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.12)';
+    roundRect(ctx,bx-14,cy+2+armWave,10,6,2);ctx.fill();
+    // 右臂
+    ctx.fillStyle=tileColor(4);
+    roundRect(ctx,bx+bw+2,cy-armWave,14,20,4);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.12)';
+    roundRect(ctx,bx+bw+4,cy-2-armWave,10,6,2);ctx.fill();
+
+    // ---- 动画更新 ----
     blinkTimer++;
     if(!isBlinking&&blinkTimer>150+Math.random()*100){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},100);}
     if(bounce>0)bounce-=.4;
@@ -1055,20 +991,22 @@ document.addEventListener('DOMContentLoaded',function(){
 
   function initPet(){
     const c=document.getElementById('pet-canvas');if(!c)return;
-    // Right-click to switch pet
+    // 右键切换方块等级
     c.addEventListener('contextmenu',function(e){
       e.preventDefault();
-      petIndex=(petIndex+1)%pets.length;
-      c.title=petNames[pets[petIndex]]+' (右键切换)';
+      petIndex=(petIndex+1)%PET_TILES.length;
+      c.title='2048方块精灵: '+PET_NAMES[PET_TILES[petIndex]]+' (右键切换)';
       bounce=8;
       petVo();
+      // 切换时也播放 merge 音效增加趣味
+      SFX.merge();
     });
     c.addEventListener('click',function(){
-      // left click: just play sound + little jump
+      // 左键点击：弹跳 + 音效
       bounce=6;
       petVo();
     });
-    // Prevent context menu on pet
+    // 阻止右键菜单
     document.addEventListener('contextmenu',function(e){
       if(e.target===c)e.preventDefault();
     });
