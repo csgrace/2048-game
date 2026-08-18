@@ -384,15 +384,15 @@ transition:all .25s ease;
 .music-btn:hover{background:rgba(255,255,255,.15);color:#fff;transform:scale(1.08)}
 .music-btn.off{color:rgba(255,255,255,.35)}
 
-/* tile spirit - inside board-wrap */
+/* tile spirit - fixed to page bottom-right */
 #pet-canvas{
-  position:absolute;bottom:6px;right:6px;z-index:5;
-  width:64px;height:64px;cursor:pointer;pointer-events:none;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));
+  position:fixed;bottom:16px;right:16px;z-index:99;
+  width:64px;height:64px;cursor:pointer;pointer-events:auto;
+  filter:drop-shadow(0 2px 8px rgba(0,0,0,.3));
   transition:transform .12s ease;
   opacity:.9;
 }
-#pet-canvas:hover{transform:scale(1.1);opacity:1}
+#pet-canvas:hover{transform:scale(1.15);opacity:1}
 
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
@@ -599,7 +599,6 @@ transition:all .25s ease;
     </div>
     <div class="board-wrap">
       <div id="board"></div>
-      <canvas id="pet-canvas" title="方块精灵"></canvas>
       <div id="overlay"><div id="ov-card"><h2 id="ov-title"></h2><div id="ov-sub"></div><button id="ov-btn">Play Again</button></div></div>
     </div>
     <div id="training-panel" hidden>
@@ -839,25 +838,23 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 /* ====================================================================
-   2048 Block Sprite Pet (方块精灵 — 右键切换 2/4/8/16/32/64/128/256/512/1024/2048)
+   2048 Block Sprite Pet (方块精灵 — 自动循环 2→2048, 右键手动切换)
    ==================================================================== */
+document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方块精灵 — 右键切换等级"></canvas>');
 (function(){
-  // 精灵等级对应2048方块值
   const PET_TILES=[2,4,8,16,32,64,128,256,512,1024,2048];
   const PET_NAMES={2:'小2',4:'小4',8:'小8',16:'小16',32:'小32',64:'小64',128:'小128',256:'小256',512:'小512',1024:'小1024',2048:'小2048'};
-  let petIndex=0; // 默认 2
+  let petIndex=0;
   let bounce=0, wave=0, blinkTimer=0, isBlinking=false;
   let breathe=0;
+  let autoCycleTimer=null;
 
-  // 精灵音效（合成"嘟"声，越高等级音调越高）
   function petVo(){
     if(!sfxEnabled)return;
     const baseFreq=300+petIndex*40;
     snd(baseFreq,.08,'sine',.06);
     setTimeout(()=>snd(baseFreq*1.5,.06,'sine',.04),60);
   }
-
-  // 圆角矩形
   function roundRect(ctx,x,y,w,h,r){
     ctx.beginPath();
     ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
@@ -865,8 +862,6 @@ document.addEventListener('DOMContentLoaded',function(){
     ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y,r);
     ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
   }
-
-  // 获取2048方块的颜色
   function tileColor(v){const c=BG[v]||[40,38,32];return`rgb(${c[0]},${c[1]},${c[2]})`}
   function tileTextColor(v){return v<=4?'#776e65':'#f9f6f2'}
 
@@ -882,38 +877,27 @@ document.addEventListener('DOMContentLoaded',function(){
     const breatheY=Math.sin(breathe)*2;
     wave+=.08;
 
-    // ---- 阴影 ----
     ctx.fillStyle='rgba(0,0,0,.18)';
     ctx.beginPath();ctx.ellipse(cx,S-18,38,8,0,0,Math.PI*2);ctx.fill();
 
-    // ---- 小方块"脚" ----
     const footWave=Math.sin(wave)*3;
-    // 左脚
     ctx.fillStyle=tileColor(2);
     roundRect(ctx,cx-32,cy+52+footWave,22,18,5);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.15)';
     roundRect(ctx,cx-30,cy+54+footWave,18,6,3);ctx.fill();
-    // 右脚
     ctx.fillStyle=tileColor(2);
     roundRect(ctx,cx+10,cy+52-footWave,22,18,5);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.15)';
     roundRect(ctx,cx+12,cy+54-footWave,18,6,3);ctx.fill();
 
-    // ---- 主体：一个大2048方块 ----
     const bx=cx-42,by=cy-32+breatheY,bw=84,bh=84,br=12;
-    // 主体底色（当前等级方块颜色）
     ctx.fillStyle=tileColor(tileValue);
     roundRect(ctx,bx,by,bw,bh,br);ctx.fill();
-
-    // 高光效果
     ctx.fillStyle='rgba(255,255,255,.12)';
     roundRect(ctx,bx+4,by+4,bw-8,bh*.4,br-2);ctx.fill();
-
-    // 边框
     ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=2;
     roundRect(ctx,bx,by,bw,bh,br);ctx.stroke();
 
-    // ---- 方块上的数字 ----
     const numStr=String(tileValue);
     ctx.fillStyle=tileTextColor(tileValue);
     ctx.fontWeight='800';
@@ -924,92 +908,87 @@ document.addEventListener('DOMContentLoaded',function(){
     else ctx.font='22px Segoe UI, sans-serif';
     ctx.fillText(numStr,cx,cy-5+breatheY);
 
-    // ---- 方块上的表情 ----
     const eyeY=cy+22+breatheY;
     const eyeSpacing=14;
-    // 眼睛
     if(isBlinking){
       ctx.strokeStyle=tileTextColor(tileValue);ctx.lineWidth=2.5;ctx.lineCap='round';
       ctx.beginPath();ctx.moveTo(cx-eyeSpacing-4,eyeY);ctx.lineTo(cx-eyeSpacing+4,eyeY);ctx.stroke();
       ctx.beginPath();ctx.moveTo(cx+eyeSpacing-4,eyeY);ctx.lineTo(cx+eyeSpacing+4,eyeY);ctx.stroke();
     } else {
-      // 眼白
       ctx.fillStyle='#fff';
       ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
       ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
-      // 瞳孔（黑色，但深色方块用深色瞳孔也看得清）
       ctx.fillStyle=tileValue>=8?'#fff':'#3a2010';
       ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
       ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
-      // 眼睛高光
       ctx.fillStyle='#fff';
       ctx.beginPath();ctx.arc(cx-eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.arc(cx+eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.fill();
     }
 
-    // 嘴巴（微笑）
     ctx.strokeStyle=tileTextColor(tileValue);ctx.lineWidth=2;ctx.lineCap='round';
     ctx.beginPath();
     ctx.moveTo(cx-6,eyeY+12);
     ctx.quadraticCurveTo(cx,eyeY+18,cx+6,eyeY+12);
     ctx.stroke();
 
-    // 腮红
     ctx.fillStyle='rgba(255,200,200,.35)';
     ctx.beginPath();ctx.ellipse(cx-24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.ellipse(cx+24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
 
-    // ---- 顶部小触角/天线（像2048方块的延伸）----
     const antWave=Math.sin(wave*1.5)*3;
     ctx.fillStyle=tileColor(2);
     roundRect(ctx,cx-8,by-14+antWave,6,16,3);ctx.fill();
     ctx.fillStyle=tileColor(4);
     roundRect(ctx,cx+2,by-14-antWave,6,16,3);ctx.fill();
-    // 触角顶端小圆点
     ctx.fillStyle=tileColor(8);
     ctx.beginPath();ctx.arc(cx-5,by-16+antWave,4,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(cx+5,by-16-antWave,4,0,Math.PI*2);ctx.fill();
 
-    // ---- 两侧小方块"手臂" ----
     const armWave=Math.sin(wave*1.2)*4;
-    // 左臂
     ctx.fillStyle=tileColor(4);
     roundRect(ctx,bx-16,cy+armWave,14,20,4);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.12)';
     roundRect(ctx,bx-14,cy+2+armWave,10,6,2);ctx.fill();
-    // 右臂
     ctx.fillStyle=tileColor(4);
     roundRect(ctx,bx+bw+2,cy-armWave,14,20,4);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.12)';
     roundRect(ctx,bx+bw+4,cy-2-armWave,10,6,2);ctx.fill();
 
-    // ---- 动画更新 ----
     blinkTimer++;
     if(!isBlinking&&blinkTimer>150+Math.random()*100){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},100);}
     if(bounce>0)bounce-=.4;
     requestAnimationFrame(drawPet);
   }
 
+  function startAutoCycle(){
+    stopAutoCycle();
+    autoCycleTimer=setInterval(function(){
+      petIndex=(petIndex+1)%PET_TILES.length;
+      bounce=4;
+    },3000);
+  }
+  function stopAutoCycle(){
+    if(autoCycleTimer){clearInterval(autoCycleTimer);autoCycleTimer=null;}
+  }
+
   function initPet(){
     const c=document.getElementById('pet-canvas');if(!c)return;
-    // 右键切换方块等级
     c.addEventListener('contextmenu',function(e){
       e.preventDefault();
       petIndex=(petIndex+1)%PET_TILES.length;
       c.title='2048方块精灵: '+PET_NAMES[PET_TILES[petIndex]]+' (右键切换)';
       bounce=8;
       petVo();
-      // 切换时也播放 merge 音效增加趣味
       SFX.merge();
     });
     c.addEventListener('click',function(){
-      // 左键点击：弹跳 + 音效
       bounce=6;
       petVo();
     });
-    // 阻止右键菜单
     document.addEventListener('contextmenu',function(e){
       if(e.target===c)e.preventDefault();
     });
+    startAutoCycle();
     drawPet();
   }
   document.addEventListener('DOMContentLoaded',initPet);
