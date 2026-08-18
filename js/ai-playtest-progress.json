@@ -1,94 +1,22 @@
 {
-  "active": false,
-  "timestamp": "2026-08-18T05:19:25.905Z",
+  "active": true,
+  "timestamp": "2026-08-18T10:36:22.003Z",
   "totalGames": 10,
-  "completedGames": 10,
-  "wins": 5,
-  "fails": 5,
-  "winRate": 50,
-  "avgScore": 25280,
-  "bestMaxTile": 4096,
-  "totalDurationMs": 913149,
+  "completedGames": 1,
+  "wins": 1,
+  "fails": 0,
+  "winRate": 100,
+  "avgScore": 32160,
+  "bestMaxTile": 2048,
+  "totalDurationMs": 61469,
   "results": [
     {
       "game": 1,
       "result": "win",
-      "score": 26548,
+      "score": 32160,
       "maxTile": 2048,
-      "steps": 1388,
-      "duration": 92240
-    },
-    {
-      "game": 2,
-      "result": "fail",
-      "score": 16408,
-      "maxTile": 1024,
-      "steps": 964,
-      "duration": 66496
-    },
-    {
-      "game": 3,
-      "result": "win",
-      "score": 28128,
-      "maxTile": 2048,
-      "steps": 1453,
-      "duration": 101429
-    },
-    {
-      "game": 4,
-      "result": "fail",
-      "score": 11180,
-      "maxTile": 1024,
-      "steps": 658,
-      "duration": 43689
-    },
-    {
-      "game": 5,
-      "result": "win",
-      "score": 26240,
-      "maxTile": 2048,
-      "steps": 1359,
-      "duration": 91284
-    },
-    {
-      "game": 6,
-      "result": "win",
-      "score": 36136,
-      "maxTile": 2048,
-      "steps": 1861,
-      "duration": 125939
-    },
-    {
-      "game": 7,
-      "result": "fail",
-      "score": 13988,
-      "maxTile": 1024,
-      "steps": 804,
-      "duration": 50077
-    },
-    {
-      "game": 8,
-      "result": "fail",
-      "score": 15784,
-      "maxTile": 1024,
-      "steps": 913,
-      "duration": 58697
-    },
-    {
-      "game": 9,
-      "result": "win",
-      "score": 60516,
-      "maxTile": 4096,
-      "steps": 2834,
-      "duration": 213373
-    },
-    {
-      "game": 10,
-      "result": "fail",
-      "score": 17872,
-      "maxTile": 1024,
-      "steps": 1060,
-      "duration": 69925
+      "steps": 1631,
+      "duration": 61469
     }
   ]
 }
