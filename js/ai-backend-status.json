@@ -4,10 +4,10 @@
   "round": 2,
   "maxRounds": 50,
   "version": 1442,
-  "testProgress": "1/10",
+  "testProgress": "2/10",
   "wins": 1,
-  "winRate": 100,
-  "message": "Testing game 1/10 - 1 wins (100%)",
-  "lastUpdate": "2026-08-18T05:05:06.942Z",
+  "winRate": 50,
+  "message": "Testing game 2/10 - 1 wins (50%)",
+  "lastUpdate": "2026-08-18T05:06:17.438Z",
   "pid": 62876
 }
