@@ -912,14 +912,13 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     wave+=.08;
 
     ctx.save();
-    // 旋转动画 — 像人一样转圈 (带纵深感 + 弹跳)
+    // 旋转动画 — 像人一样转圈 (身体翻转感 + 弹跳)
     if(spin>0){
       const angle=(1-spin)*Math.PI*2;
-      const sy=Math.abs(Math.cos(angle)); // 1→0→1 模拟前后翻转
+      const sy=Math.abs(Math.cos(angle)); // 1→0→1 模拟身体转向远处再回来
       bounce=Math.max(bounce, Math.sin(spin*Math.PI*4)*6); // 转圈时弹跳
       ctx.translate(cx,cy);
-      ctx.scale(0.6+0.4*sy, 1); // 水平收缩模拟3D
-      ctx.rotate(angle*0.3); // 轻微倾斜
+      ctx.scale(0.5+0.5*sy, 1); // 水平收缩模拟3D翻转, 朝正面时最宽
       ctx.translate(-cx,-cy);
     } else if(dance>0){
       const sw=Math.sin(dance*Math.PI*6)*12*dance;
