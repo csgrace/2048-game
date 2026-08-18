@@ -608,7 +608,7 @@ transition:all .25s ease;
     </div>
     <div class="board-wrap">
       <div id="board"></div>
-      <div id="overlay"><div id="ov-card"><h2 id="ov-title"></h2><div id="ov-sub"></div><button id="ov-btn">Play Again</button></div></div>
+      <div id="overlay"><div id="ov-card"><h2 id="ov-title"></h2><div id="ov-sub"></div><button id="ov-btn">Play Again</button><button id="ov-stats-btn" style="background:transparent;color:#ffd166;border:1px solid rgba(255,209,102,.4);font-weight:600;padding:8px 20px;font-size:13px;border-radius:8px;cursor:pointer;margin-top:4px">📊 Statistics</button></div></div>
     </div>
     <div id="training-panel" hidden>
       <div class="training-head">
@@ -729,6 +729,47 @@ transition:all .25s ease;
       <tbody id="lb-personal-body"></tbody>
     </table>
     <button class="modal-close" id="lb-close">Close</button>
+  </div>
+</div>
+
+<!-- statistics modal -->
+<div class="modal" id="stats-modal">
+  <div class="modal-box" style="min-width:400px;max-width:480px">
+    <h2>📊 Game Statistics</h2>
+    <div id="stats-content" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">
+      <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Games Played</div>
+        <div id="stat-gp" style="font-size:28px;font-weight:700;color:#ffd166;margin-top:4px">0</div>
+      </div>
+      <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Win Rate</div>
+        <div id="stat-wr" style="font-size:28px;font-weight:700;color:#6bcb77;margin-top:4px">0%</div>
+      </div>
+      <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Best Score</div>
+        <div id="stat-bs" style="font-size:28px;font-weight:700;color:#e67e22;margin-top:4px">0</div>
+      </div>
+      <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Total Moves</div>
+        <div id="stat-tm" style="font-size:28px;font-weight:700;color:#3498db;margin-top:4px">0</div>
+      </div>
+      <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Max Tile</div>
+        <div id="stat-mt" style="font-size:28px;font-weight:700;color:#9b59b6;margin-top:4px">2</div>
+      </div>
+      <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Avg Score</div>
+        <div id="stat-as" style="font-size:28px;font-weight:700;color:#1abc9c;margin-top:4px">0</div>
+      </div>
+    </div>
+    <div style="background:rgba(143,122,102,.06);border:1px solid rgba(143,122,102,.12);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+      <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Score Distribution</div>
+      <div id="stat-dist" style="display:flex;gap:4px;align-items:flex-end;height:40px"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="stats-reset" style="background:transparent;color:#e74c3c;border:1px solid rgba(231,76,60,.3);font-weight:600;padding:8px 16px;font-size:13px;border-radius:8px;cursor:pointer">Reset Stats</button>
+      <button class="modal-close" id="stats-close" style="position:static;margin:0">Close</button>
+    </div>
   </div>
 </div>
 
@@ -1519,11 +1560,15 @@ function move(dir,fromAI=false){
       inputLocked=false;
 if(reachedTarget){
 won=true;SFX.win();stopAiAutoPlay();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;
+const maxTile=Math.max(...board.flat());
+recordGameResult(score,steps,maxTile,true);
 if(batchPlaytestMode){recordAiPlaytest('win');advanceBatchPlaytest();}
 else{showOverlay('🎉 You Win!',info);schedulePostGameLeaderboard();}
 }else if(!hasMoves()){
 over=true;SFX.lose();stopTimer();
 recordScore();
+const maxTile=Math.max(...board.flat());
+recordGameResult(score,steps,maxTile,false);
 if(aiAutoPlay||batchPlaytestMode)recordAiPlaytest('fail');
 if(batchPlaytestMode){advanceBatchPlaytest();}
 else{showOverlay('💀 Game Over',`score: ${score} · moves: ${steps}`);schedulePostGameLeaderboard();}
@@ -3275,6 +3320,50 @@ bind('b-leaderboard',()=>{SFX.button();showLeaderboard()});
 bind('b-exit',()=>{SFX.button();stopBackendStatusPolling();stopPollingProgress();exitGame()});
 bind('lb-close',()=>{SFX.button();$('lb-modal').classList.remove('show')});
 bind('ov-btn',()=>{SFX.button();init(boardSize)});
+bind('ov-stats-btn',()=>{SFX.button();hideOverlay();showStatsPanel()});
+bind('stats-close',()=>{SFX.button();$('stats-modal').classList.remove('show')});
+bind('stats-reset',()=>{SFX.button();resetStats()});
+
+/* ------------------------------------------------------------------ game statistics */
+const STATS_KEY='g2048_stats_v1';
+function loadStats(){try{const s=localStorage.getItem(STATS_KEY);return s?JSON.parse(s):{gamesPlayed:0,wins:0,bestScore:0,totalMoves:0,maxTile:0,scores:[]}}catch(e){return{gamesPlayed:0,wins:0,bestScore:0,totalMoves:0,maxTile:0,scores:[]}}}
+function saveStats(s){try{localStorage.setItem(STATS_KEY,JSON.stringify(s))}catch(e){}}
+function recordGameResult(score,moves,maxTile,isWin){
+  const s=loadStats();
+  s.gamesPlayed++;
+  if(isWin)s.wins++;
+  if(score>s.bestScore)s.bestScore=score;
+  s.totalMoves+=moves;
+  if(maxTile>s.maxTile)s.maxTile=maxTile;
+  s.scores.push(score);
+  if(s.scores.length>50)s.scores=s.scores.slice(-50);
+  saveStats(s);
+}
+function showStatsPanel(){
+  const s=loadStats();
+  $('stat-gp').textContent=s.gamesPlayed;
+  $('stat-wr').textContent=s.gamesPlayed>0?Math.round(s.wins/s.gamesPlayed*100)+'%':'0%';
+  $('stat-bs').textContent=s.bestScore;
+  $('stat-tm').textContent=s.totalMoves;
+  $('stat-mt').textContent=s.maxTile||2;
+  $('stat-as').textContent=s.gamesPlayed>0?Math.round(s.scores.reduce((a,b)=>a+b,0)/s.gamesPlayed):0;
+  // Score distribution
+  const dist=$('stat-dist');
+  dist.innerHTML='';
+  const bins=[0,500,1000,2000,4000,8000,16000,32000];
+  const counts=new Array(bins.length).fill(0);
+  for(const sc of s.scores){for(let i=bins.length-1;i>=0;i--){if(sc>=bins[i]){counts[i]++;break}}}
+  const maxCount=Math.max(...counts,1);
+  for(let i=0;i<bins.length;i++){
+    const h=Math.max(4,counts[i]/maxCount*40);
+    const bar=document.createElement('div');
+    bar.style.cssText=`flex:1;height:${h}px;background:linear-gradient(to top,#ffd166,#e67e22);border-radius:2px 2px 0 0;min-width:6px`;
+    bar.title=bins[i]>=1000?`${bins[i]/1000}k+: ${counts[i]}`:`${bins[i]}+: ${counts[i]}`;
+    dist.appendChild(bar);
+  }
+  $('stats-modal').classList.add('show');
+}
+function resetStats(){if(confirm('Reset all game statistics?')){localStorage.removeItem(STATS_KEY);showStatsPanel()}}
 
 /* keyboard */
 document.addEventListener('keydown',e=>{
