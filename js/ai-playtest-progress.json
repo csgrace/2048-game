@@ -1,94 +1,22 @@
 {
-  "active": false,
-  "timestamp": "2026-08-17T13:56:19.107Z",
+  "active": true,
+  "timestamp": "2026-08-18T05:05:06.940Z",
   "totalGames": 10,
-  "completedGames": 10,
-  "wins": 7,
-  "fails": 3,
-  "winRate": 70,
-  "avgScore": 25316,
+  "completedGames": 1,
+  "wins": 1,
+  "fails": 0,
+  "winRate": 100,
+  "avgScore": 26548,
   "bestMaxTile": 2048,
-  "totalDurationMs": 409649,
+  "totalDurationMs": 92240,
   "results": [
     {
       "game": 1,
       "result": "win",
-      "score": 32520,
+      "score": 26548,
       "maxTile": 2048,
-      "steps": 1676,
-      "duration": 59093
-    },
-    {
-      "game": 2,
-      "result": "win",
-      "score": 25852,
-      "maxTile": 2048,
-      "steps": 1333,
-      "duration": 41747
-    },
-    {
-      "game": 3,
-      "result": "win",
-      "score": 33008,
-      "maxTile": 2048,
-      "steps": 1719,
-      "duration": 49731
-    },
-    {
-      "game": 4,
-      "result": "win",
-      "score": 36268,
-      "maxTile": 2048,
-      "steps": 1881,
-      "duration": 55993
-    },
-    {
-      "game": 5,
-      "result": "win",
-      "score": 32324,
-      "maxTile": 2048,
-      "steps": 1648,
-      "duration": 49977
-    },
-    {
-      "game": 6,
-      "result": "fail",
-      "score": 16828,
-      "maxTile": 1024,
-      "steps": 1002,
-      "duration": 28438
-    },
-    {
-      "game": 7,
-      "result": "win",
-      "score": 34552,
-      "maxTile": 2048,
-      "steps": 1769,
-      "duration": 56263
-    },
-    {
-      "game": 8,
-      "result": "win",
-      "score": 27260,
-      "maxTile": 2048,
-      "steps": 1418,
-      "duration": 43414
-    },
-    {
-      "game": 9,
-      "result": "fail",
-      "score": 7332,
-      "maxTile": 512,
-      "steps": 504,
-      "duration": 12475
-    },
-    {
-      "game": 10,
-      "result": "fail",
-      "score": 7212,
-      "maxTile": 512,
-      "steps": 498,
-      "duration": 12518
+      "steps": 1388,
+      "duration": 92240
     }
   ]
 }
