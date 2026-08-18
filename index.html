@@ -23,6 +23,35 @@
   --c-glow:rgba(143,122,102,.35);
   --radius:14px;
 }
+/* Theme variants */
+[data-theme="dark"]{
+  --c-empty:#3a3a3a;--c-board:#1a1a2e;
+  --c-bg-top:#0a0a14;--c-bg-bot:#16213e;
+  --c-text-dark:#e0e0e0;--c-text-light:#ffffff;
+  --c-accent:#5a4a3a;--c-accent-h:#7a6a5a;
+  --c-glow:rgba(90,74,58,.35);
+}
+[data-theme="ocean"]{
+  --c-empty:#b8d4e3;--c-board:#7eb8d4;
+  --c-bg-top:#0c2d48;--c-bg-bot:#145374;
+  --c-text-dark:#1a3a4a;--c-text-light:#ffffff;
+  --c-accent:#2a7a9a;--c-accent-h:#3a8aaa;
+  --c-glow:rgba(42,122,154,.35);
+}
+[data-theme="forest"]{
+  --c-empty:#c8d6af;--c-board:#8fb369;
+  --c-bg-top:#1a2f1a;--c-bg-bot:#2d4a2d;
+  --c-text-dark:#2d4a2d;--c-text-light:#f0f5e8;
+  --c-accent:#5a7a3a;--c-accent-h:#6a8a4a;
+  --c-glow:rgba(90,122,58,.35);
+}
+[data-theme="sunset"]{
+  --c-empty:#f5d0c5;--c-board:#e8a89a;
+  --c-bg-top:#2d1b4e;--c-bg-bot:#6b3a6b;
+  --c-text-dark:#4a2d4a;--c-text-light:#fff5f0;
+  --c-accent:#c46a5a;--c-accent-h:#d47a6a;
+  --c-glow:rgba(196,106,90,.35);
+}
 html,body{height:100%}
 body{font-family:'Segoe UI','Helvetica Neue',sans-serif;color:var(--c-text-light);overflow-x:hidden;position:relative}
 
@@ -588,6 +617,20 @@ transition:all .25s ease;
             <option value="down-300">⏳ Count Down 5 min</option>
           </select>
         </div>
+        <div class="setting-group">
+          <label>Theme</label>
+          <select id="sel-theme">
+            <option value="default">🎨 Default (Purple Night)</option>
+            <option value="dark">🌑 Dark (Midnight)</option>
+            <option value="ocean">🌊 Ocean (Blue Sea)</option>
+            <option value="forest">🌲 Forest (Nature)</option>
+            <option value="sunset">🌅 Sunset (Warm)</option>
+          </select>
+        </div>
+        <div class="setting-group" style="grid-column:1/-1">
+          <label>Sound Volume: <span id="vol-label" style="color:#ffd166">80%</span></label>
+          <input type="range" id="vol-slider" min="0" max="100" value="80" style="width:100%;accent-color:#ffd166;cursor:pointer">
+        </div>
       </div>
       <div class="btn-row" style="margin-top:24px">
         <button class="btn" id="btn-start-game" style="padding:14px;font-size:16px">Start Game →</button>
@@ -773,6 +816,39 @@ transition:all .25s ease;
   </div>
 </div>
 
+<!-- help / keyboard shortcuts modal -->
+<div class="modal" id="help-modal">
+  <div class="modal-box" style="min-width:380px;max-width:520px">
+    <h2>⌨️ Keyboard Shortcuts</h2>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 18px;margin:18px 0;font-size:14px">
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">↑ ↓ ← →</kbd>
+      <span style="display:flex;align-items:center">Arrow keys to move tiles</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">W A S D</kbd>
+      <span style="display:flex;align-items:center">WASD keys to move tiles (alternative)</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">U</kbd>
+      <span style="display:flex;align-items:center">Undo last move</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">R</kbd>
+      <span style="display:flex;align-items:center">Restart game</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">S</kbd>
+      <span style="display:flex;align-items:center">Save game</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">L</kbd>
+      <span style="display:flex;align-items:center">Load saved game</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">T</kbd>
+      <span style="display:flex;align-items:center">View statistics</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">M</kbd>
+      <span style="display:flex;align-items:center">Toggle sound / music</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">?</kbd>
+      <span style="display:flex;align-items:center">Show this help dialog</span>
+      <kbd style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-family:monospace;font-weight:700;text-align:center">Esc</kbd>
+      <span style="display:flex;align-items:center">Close dialogs</span>
+    </div>
+    <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.6">
+      <strong style="color:#ffd166">Tips:</strong> You can also use the on-screen buttons and swipe gestures on mobile. Press the <strong style="color:#ffd166">?</strong> key anytime to see these shortcuts.
+    </div>
+    <button class="modal-close" id="help-close">Close</button>
+  </div>
+</div>
+
 <!-- compact practice-tools menu; scores after using a tool are not submitted to the public board -->
 <div class="modal" id="tools-modal" role="dialog" aria-modal="true" aria-labelledby="tools-title">
   <div class="tool-box">
@@ -872,15 +948,33 @@ async function sha256(t){
    ==================================================================== */
 let audioCtx=null;
 let sfxEnabled=true; // Sound on by default
+let sfxVolume=0.8; // Master volume (0-1)
+const VOL_KEY='g2048_volume_v1';
 function snd(freq,dur=.08,type='sine',vol=.15){
   if(!sfxEnabled)return; // Don't play when sound is off
   try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();
     o.type=type;o.frequency.value=freq;
-    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    const v=vol*sfxVolume;
+    g.gain.setValueAtTime(v,audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
     o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur);
   }catch{}
+}
+function initVolume(){
+  try{
+    const saved=localStorage.getItem(VOL_KEY);
+    if(saved!==null)sfxVolume=Math.max(0,Math.min(1,parseFloat(saved)));
+  }catch(e){}
+  const slider=$('vol-slider');
+  const label=$('vol-label');
+  if(slider){slider.value=Math.round(sfxVolume*100)}
+  if(label){label.textContent=Math.round(sfxVolume*100)+'%'}
+  if(slider)slider.addEventListener('input',()=>{
+    sfxVolume=slider.value/100;
+    if(label)label.textContent=slider.value+'%';
+    try{localStorage.setItem(VOL_KEY,String(sfxVolume))}catch(e){}
+  });
 }
 const SFX={
   move:()=>snd(330,.05,'square',.06),
@@ -914,6 +1008,8 @@ function toggleBGM(){
 }
 document.addEventListener('DOMContentLoaded',function(){
   $('music-toggle').addEventListener('click',toggleBGM);
+  initTheme();
+  initVolume();
 });
 
 /* ====================================================================
@@ -1592,6 +1688,8 @@ function gameOverByTime(){
 if(over)return;
 over=true;SFX.timeout();
 recordScore();
+const maxTile=Math.max(...board.flat());
+recordGameResult(score,steps,maxTile,false);
 showOverlay('⏰ Time\'s Up!',`score: ${score} · moves: ${steps}`);
 schedulePostGameLeaderboard();
 }
@@ -2511,7 +2609,7 @@ async function dispatchPlaytestWorkflow(){
   sessionStorage.setItem(LS_PLAYTEST_TRIGGERED,Date.now());
 
   try{
-    const token=getGHToken();
+    const token=await getGHToken();
     const apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+PLAYTEST_WORKFLOW_ID+'/dispatches';
     const resp=await fetch(apiUrl,{
       method:'POST',
@@ -2763,21 +2861,91 @@ function updateLiveStats(d){
   setStat('ts-avg',last.avgScore);
   setStat('ts-loss',last.loss.toFixed(6));
 }
-/* Token management — password-protected, token stored encrypted in repo */
-const LS_GH_TOKEN='g2048_gh_token';
+/* Token management — password-protected, AES-GCM encrypted storage */
+const LS_GH_TOKEN='g2048_gh_token_v2';
+const LS_TOKEN_META='g2048_token_meta_v2';
 const PW_HASH='9f330ba12e3f7747830c3fc8a5984e2f2394c689c6776f4c5ba5a61fafbba238';
 const CONFIG_URL='js/ai-config.json';
-function getGHToken(){
-  return localStorage.getItem(LS_GH_TOKEN)||window.GH_TOKEN||'';
-}
-function setGHToken(token){
-  if(token){localStorage.setItem(LS_GH_TOKEN,token);window.GH_TOKEN=token;}
-  else{localStorage.removeItem(LS_GH_TOKEN);window.GH_TOKEN='';}
-}
-// Load token on page load
-(function(){const t=localStorage.getItem(LS_GH_TOKEN);if(t)window.GH_TOKEN=t;})();
+const TOKEN_SALT='g2048_secure_salt_v2';
 
-/* XOR decrypt: key = first 32 chars of password SHA-256 */
+/* Derive AES-GCM key from browser fingerprint + salt (non-extractable) */
+async function deriveEncKey(){
+  const base=TOKEN_SALT+navigator.userAgent+screen.width;
+  const buf=new TextEncoder().encode(base);
+  const hash=await crypto.subtle.digest('SHA-256',buf);
+  return crypto.subtle.importKey('raw',hash,'AES-GCM',false,['encrypt','decrypt']);
+}
+
+/* Encrypt token before storage */
+async function encryptToken(token){
+  try{
+    const key=await deriveEncKey();
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const enc=new TextEncoder().encode(token);
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc);
+    const ivB64=btoa(String.fromCharCode(...iv));
+    const ctB64=btoa(String.fromCharCode(...new Uint8Array(ct)));
+    return ivB64+'.'+ctB64;
+  }catch(e){return token;}
+}
+
+/* Decrypt token after retrieval */
+async function decryptToken(data){
+  try{
+    const parts=data.split('.');
+    if(parts.length!==2)return data;
+    const key=await deriveEncKey();
+    const iv=new Uint8Array(atob(parts[0]).split('').map(c=>c.charCodeAt(0)));
+    const ct=new Uint8Array(atob(parts[1]).split('').map(c=>c.charCodeAt(0)));
+    const dec=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+    return new TextDecoder().decode(dec);
+  }catch(e){return '';}
+}
+
+/* Secure token getter — decrypts on the fly */
+async function getGHToken(){
+  const stored=localStorage.getItem(LS_GH_TOKEN);
+  if(stored)return decryptToken(stored);
+  return window.GH_TOKEN||'';
+}
+
+/* Synchronous fallback for non-async contexts (returns cached) */
+function getGHTokenSync(){
+  return window.GH_TOKEN||'';
+}
+
+/* Secure token setter — encrypts before storage */
+async function setGHToken(token){
+  if(token){
+    const enc=await encryptToken(token);
+    localStorage.setItem(LS_GH_TOKEN,enc);
+    localStorage.setItem(LS_TOKEN_META,JSON.stringify({ts:Date.now(),ua:navigator.userAgent.substring(0,50)}));
+    window.GH_TOKEN=token;
+  }else{
+    localStorage.removeItem(LS_GH_TOKEN);
+    localStorage.removeItem(LS_TOKEN_META);
+    window.GH_TOKEN='';
+  }
+}
+
+/* Load token on page load (async) */
+(async function(){const t=await getGHToken();if(t)window.GH_TOKEN=t;})();
+
+/* Clear token if browser/session mismatch (anti-theft) */
+(function(){
+  try{
+    const meta=localStorage.getItem(LS_TOKEN_META);
+    if(meta){
+      const m=JSON.parse(meta);
+      if(m.ua&&m.ua!==navigator.userAgent.substring(0,50)){
+        localStorage.removeItem(LS_GH_TOKEN);
+        localStorage.removeItem(LS_TOKEN_META);
+      }
+    }
+  }catch(e){}
+})();
+
+/* XOR decrypt: key = first 32 chars of password SHA-256 (for repo config) */
 function xorDecrypt(encrypted, keyHex){
   const key=[];
   for(let i=0;i<keyHex.length;i+=2)key.push(parseInt(keyHex.substr(i,2),16));
@@ -2788,6 +2956,11 @@ function xorDecrypt(encrypted, keyHex){
 }
 
 /* Password modal handlers */
+let pwAttemptCount=0;
+let pwLockoutUntil=0;
+const PW_MAX_ATTEMPTS=5;
+const PW_LOCKOUT_MS=60000; // 1 minute lockout
+
 function openTokenModal(){
   const m=$('token-modal');
   // The modal starts inside the training panel. Move it to <body> so it can also
@@ -2797,22 +2970,45 @@ function openTokenModal(){
     if(m.style.display==='flex')$('token-input').focus();
     return;
   }
+  // Check lockout
+  if(Date.now()<pwLockoutUntil){
+    const secs=Math.ceil((pwLockoutUntil-Date.now())/1000);
+    if($('token-err')){$('token-err').style.display='block';$('token-err').textContent='⚠️ Too many attempts. Wait '+secs+'s.';}
+    return;
+  }
   isTokenModalOpen=true;
   m.style.display='flex';
   const inp=$('token-input');inp.value='';
   $('token-err').style.display='none';
   $('token-modal-title').textContent=tokenModalAction==='playtest'?'🔑 Cloud Test Authorization':'🔑 Training Authorization';
+  // Show attempt counter hint
+  if(pwAttemptCount>0&&$('token-err')){
+    $('token-err').style.display='block';
+    $('token-err').textContent='⚠️ '+(PW_MAX_ATTEMPTS-pwAttemptCount)+' attempts remaining';
+  }
   setTimeout(function(){inp.focus();},100);
 }
 function closeTokenModal(){$('token-modal').style.display='none';isTokenModalOpen=false;}
 
-/* Verify password and fetch+decrypt token from repo config */
+/* Verify password with rate limiting and fetch+decrypt token from repo config */
 async function verifyPasswordAndLoadToken(password){
-  // Hash password and compare
+  // Check lockout (rate limiting to prevent brute-force)
+  if(Date.now()<pwLockoutUntil)return false;
+  // Compute SHA-256 hash
   const enc=new TextEncoder().encode(password);
   const buf=await crypto.subtle.digest('SHA-256',enc);
-  const hash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
-  if(hash!==PW_HASH)return false;
+  const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash!==PW_HASH){
+    pwAttemptCount++;
+    if(pwAttemptCount>=PW_MAX_ATTEMPTS){
+      pwLockoutUntil=Date.now()+PW_LOCKOUT_MS;
+      pwAttemptCount=0;
+      if($('token-err')){$('token-err').style.display='block';$('token-err').textContent='🔒 Too many attempts. Locked for 60s.';}
+    }
+    return false;
+  }
+  // Reset on success
+  pwAttemptCount=0;pwLockoutUntil=0;
   // Fetch encrypted token from repo config file
   try{
     const resp=await fetch(CONFIG_URL+'?t='+Date.now());
@@ -2820,7 +3016,7 @@ async function verifyPasswordAndLoadToken(password){
     const cfg=await resp.json();
     if(cfg.encrypted_token&&cfg.encrypted_token!=='REPLACE_WITH_ENCRYPTED_TOKEN'){
       const token=xorDecrypt(cfg.encrypted_token,hash.substring(0,32));
-      setGHToken(token);
+      await setGHToken(token);
       return true;
     }
   }catch(e){}
@@ -2837,7 +3033,7 @@ async function startTraining(){
     return;
   }
   const log=$('training-log');
-  const token=getGHToken();
+  const token=await getGHToken();
   if(!token){
     // No token — open password modal
     openTokenModal();
@@ -3323,6 +3519,8 @@ bind('ov-btn',()=>{SFX.button();init(boardSize)});
 bind('ov-stats-btn',()=>{SFX.button();hideOverlay();showStatsPanel()});
 bind('stats-close',()=>{SFX.button();$('stats-modal').classList.remove('show')});
 bind('stats-reset',()=>{SFX.button();resetStats()});
+bind('help-close',()=>{SFX.button();$('help-modal').classList.remove('show')});
+bind('help-modal',(e)=>{if(e.target.id==='help-modal')$('help-modal').classList.remove('show')});
 
 /* ------------------------------------------------------------------ game statistics */
 const STATS_KEY='g2048_stats_v1';
@@ -3365,9 +3563,28 @@ function showStatsPanel(){
 }
 function resetStats(){if(confirm('Reset all game statistics?')){localStorage.removeItem(STATS_KEY);showStatsPanel()}}
 
+/* help modal */
+function showHelpModal(){SFX.button();$('help-modal').classList.add('show')}
+
+/* ------------------------------------------------------------------ theme switching */
+const THEME_KEY='g2048_theme_v1';
+function applyTheme(t){
+  if(t==='default'){document.documentElement.removeAttribute('data-theme')}
+  else{document.documentElement.setAttribute('data-theme',t)}
+  try{localStorage.setItem(THEME_KEY,t)}catch(e){}
+}
+function initTheme(){
+  let t='default';
+  try{t=localStorage.getItem(THEME_KEY)||'default'}catch(e){}
+  applyTheme(t);
+  const sel=$('sel-theme');
+  if(sel){sel.value=t;sel.addEventListener('change',()=>{applyTheme(sel.value)})}
+}
+
 /* keyboard */
 document.addEventListener('keydown',e=>{
   if(!$('game-screen').classList.contains('active'))return;
+  if(e.key==='?'||e.key==='h'||e.key==='H'){showHelpModal();return;}
   const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',
     w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
   if(map[e.key]){e.preventDefault();move(map[e.key])}
