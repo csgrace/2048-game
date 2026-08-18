@@ -384,15 +384,17 @@ transition:all .25s ease;
 .music-btn:hover{background:rgba(255,255,255,.15);color:#fff;transform:scale(1.08)}
 .music-btn.off{color:rgba(255,255,255,.35)}
 
-/* tile spirit - fixed to page bottom-right */
-#pet-canvas{
+/* tile spirit wrapper - fixed bottom-right, draggable */
+#pet-canvas-wrap{
   position:fixed;bottom:16px;right:16px;z-index:99;
-  width:64px;height:64px;cursor:pointer;pointer-events:auto;
-  filter:drop-shadow(0 2px 8px rgba(0,0,0,.3));
+  width:96px;height:96px;cursor:grab;user-select:none;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));
   transition:transform .12s ease;
-  opacity:.9;
+  touch-action:none;
 }
-#pet-canvas:hover{transform:scale(1.15);opacity:1}
+#pet-canvas-wrap.dragging{cursor:grabbing;transition:none}
+#pet-canvas-wrap:hover{transform:scale(1.08);opacity:1}
+#pet-canvas{display:block;width:100%;height:100%;pointer-events:none}
 
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
@@ -838,16 +840,24 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 /* ====================================================================
-   2048 Block Sprite Pet (方块精灵 — 自动循环 2→2048, 右键手动切换)
+   2048 Block Sprite Pet (方块精灵 — 可拖拽, 点击说话, 自动循环)
    ==================================================================== */
-document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方块精灵 — 右键切换等级"></canvas>');
+document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas id="pet-canvas"></canvas></div>');
 (function(){
   const PET_TILES=[2,4,8,16,32,64,128,256,512,1024,2048];
   const PET_NAMES={2:'小2',4:'小4',8:'小8',16:'小16',32:'小32',64:'小64',128:'小128',256:'小256',512:'小512',1024:'小1024',2048:'小2048'};
+  const PET_GREETINGS=['Hi!','你好~','Hello!','嗨👋','Yo!','~'];
   let petIndex=0;
   let bounce=0, wave=0, blinkTimer=0, isBlinking=false;
   let breathe=0;
   let autoCycleTimer=null;
+  /* --- drag state --- */
+  let drag=false, dragStartX=0, dragStartY=0, wrapStartL=0, wrapStartT=0;
+  let dragMoved=false;
+  /* --- bubble --- */
+  let bubble=null;
+  /* --- particles --- */
+  let particles=[];
 
   function petVo(){
     if(!sfxEnabled)return;
@@ -863,7 +873,28 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
     ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
   }
   function tileColor(v){const c=BG[v]||[40,38,32];return`rgb(${c[0]},${c[1]},${c[2]})`}
-  function tileTextColor(v){return v<=4?'#776e65':'#f9f6f2'}
+  // 文字颜色: ≤4 深色; 8–64 白色; ≥128 黄色背景→深色字
+  function tileTextColor(v){
+    if(v<=4) return '#776e65';
+    if(v>=128) return '#3a2010';
+    return '#f9f6f2';
+  }
+  // 粒子 (点击/拖动反馈特效)
+  function spawnParticles(px,py,count,color){
+    for(let i=0;i<count;i++){
+      const a=Math.random()*Math.PI*2;
+      const sp=1+Math.random()*3;
+      particles.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,
+        life:40+Math.random()*20,max:60,color});
+    }
+  }
+  function updateParticles(){
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.life--;
+      if(p.life<=0) particles.splice(i,1);
+    }
+  }
 
   function drawPet(){
     const c=document.getElementById('pet-canvas');if(!c)return;
@@ -877,9 +908,11 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
     const breatheY=Math.sin(breathe)*2;
     wave+=.08;
 
+    // 阴影
     ctx.fillStyle='rgba(0,0,0,.18)';
-    ctx.beginPath();ctx.ellipse(cx,S-18,38,8,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(cx,S-14,38,8,0,0,Math.PI*2);ctx.fill();
 
+    // 脚
     const footWave=Math.sin(wave)*3;
     ctx.fillStyle=tileColor(2);
     roundRect(ctx,cx-32,cy+52+footWave,22,18,5);ctx.fill();
@@ -890,6 +923,7 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
     ctx.fillStyle='rgba(255,255,255,.15)';
     roundRect(ctx,cx+12,cy+54-footWave,18,6,3);ctx.fill();
 
+    // 主体方块
     const bx=cx-42,by=cy-32+breatheY,bw=84,bh=84,br=12;
     ctx.fillStyle=tileColor(tileValue);
     roundRect(ctx,bx,by,bw,bh,br);ctx.fill();
@@ -898,6 +932,7 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
     ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=2;
     roundRect(ctx,bx,by,bw,bh,br);ctx.stroke();
 
+    // 数字
     const numStr=String(tileValue);
     ctx.fillStyle=tileTextColor(tileValue);
     ctx.fontWeight='800';
@@ -908,6 +943,7 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
     else ctx.font='22px Segoe UI, sans-serif';
     ctx.fillText(numStr,cx,cy-5+breatheY);
 
+    // 表情
     const eyeY=cy+22+breatheY;
     const eyeSpacing=14;
     if(isBlinking){
@@ -925,16 +961,19 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
       ctx.beginPath();ctx.arc(cx-eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.arc(cx+eyeSpacing-2,eyeY-2,1.5,0,Math.PI*2);ctx.fill();
     }
 
+    // 嘴
     ctx.strokeStyle=tileTextColor(tileValue);ctx.lineWidth=2;ctx.lineCap='round';
     ctx.beginPath();
     ctx.moveTo(cx-6,eyeY+12);
     ctx.quadraticCurveTo(cx,eyeY+18,cx+6,eyeY+12);
     ctx.stroke();
 
+    // 腮红
     ctx.fillStyle='rgba(255,200,200,.35)';
     ctx.beginPath();ctx.ellipse(cx-24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.ellipse(cx+24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
 
+    // 触角
     const antWave=Math.sin(wave*1.5)*3;
     ctx.fillStyle=tileColor(2);
     roundRect(ctx,cx-8,by-14+antWave,6,16,3);ctx.fill();
@@ -944,6 +983,7 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
     ctx.beginPath();ctx.arc(cx-5,by-16+antWave,4,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(cx+5,by-16-antWave,4,0,Math.PI*2);ctx.fill();
 
+    // 手臂
     const armWave=Math.sin(wave*1.2)*4;
     ctx.fillStyle=tileColor(4);
     roundRect(ctx,bx-16,cy+armWave,14,20,4);ctx.fill();
@@ -954,6 +994,45 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
     ctx.fillStyle='rgba(255,255,255,.12)';
     roundRect(ctx,bx+bw+4,cy-2-armWave,10,6,2);ctx.fill();
 
+    // -- 气泡 --
+    if(bubble){
+      const age=Date.now()-bubble.born;
+      const dur=1600;
+      if(age>dur){bubble=null;}
+      else{
+        const alpha=age<200?age/200:age>dur-400?(dur-age)/400:1;
+        const rise=Math.min(age/2,30);
+        const bx2=cx-30,by2=by-42-rise,bw2=60,bh2=24,br2=10;
+        ctx.save();
+        ctx.globalAlpha=alpha;
+        ctx.fillStyle='#fff';
+        roundRect(ctx,bx2,by2,bw2,bh2,br2);ctx.fill();
+        ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=1.5;
+        roundRect(ctx,bx2,by2,bw2,bh2,br2);ctx.stroke();
+        ctx.fillStyle='#fff';
+        ctx.beginPath();
+        ctx.moveTo(cx-6,by2+bh2);ctx.lineTo(cx+2,by2+bh2);ctx.lineTo(cx-2,by2+bh2+8);ctx.closePath();ctx.fill();
+        ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx-6,by2+bh2);ctx.lineTo(cx-2,by2+bh2+8);ctx.lineTo(cx+2,by2+bh2);ctx.stroke();
+        ctx.fillStyle='#333';
+        ctx.font='bold 14px Segoe UI, sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(bubble.text,cx,by2+bh2/2);
+        ctx.restore();
+      }
+    }
+
+    // -- 粒子 --
+    updateParticles();
+    for(const p of particles){
+      ctx.globalAlpha=p.life/p.max;
+      ctx.fillStyle=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+
+    // 眨眼 / 弹跳
     blinkTimer++;
     if(!isBlinking&&blinkTimer>150+Math.random()*100){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},100);}
     if(bounce>0)bounce-=.4;
@@ -972,22 +1051,73 @@ document.body.insertAdjacentHTML('beforeend','<canvas id="pet-canvas" title="方
   }
 
   function initPet(){
-    const c=document.getElementById('pet-canvas');if(!c)return;
-    c.addEventListener('contextmenu',function(e){
+    const wrap=document.getElementById('pet-canvas-wrap');
+    const c=document.getElementById('pet-canvas');
+    if(!wrap||!c)return;
+
+    // --- 拖拽 (在 wrapper 上监听) ---
+    function onDown(e){
+      // 右键不拖
+      if(e.type==='mousedown'&&e.button===2)return;
+      const pt=e.touches?e.touches[0]:e;
+      drag=true;dragMoved=false;
+      dragStartX=pt.clientX;dragStartY=pt.clientY;
+      wrapStartL=wrap.offsetLeft;wrapStartT=wrap.offsetTop;
+      wrap.classList.add('dragging');
+      e.preventDefault();
+    }
+    function onMove(e){
+      if(!drag)return;
+      const pt=e.touches?e.touches[0]:e;
+      const dx=pt.clientX-dragStartX;
+      const dy=pt.clientY-dragStartY;
+      if(Math.abs(dx)>3||Math.abs(dy)>3)dragMoved=true;
+      let nl=wrapStartL+dx, nt=wrapStartT+dy;
+      // 边界
+      const maxL=window.innerWidth-wrap.offsetWidth;
+      const maxT=window.innerHeight-wrap.offsetHeight;
+      nl=Math.max(0,Math.min(nl,maxL));
+      nt=Math.max(0,Math.min(nt,maxT));
+      wrap.style.left=nl+'px';wrap.style.top=nt+'px';
+      wrap.style.right='auto';wrap.style.bottom='auto';
+      e.preventDefault();
+    }
+    function onUp(e){
+      if(!drag)return;
+      drag=false;
+      wrap.classList.remove('dragging');
+      if(!dragMoved){
+        // 点击：气泡 + 粒子 + 弹跳
+        const greeting=PET_GREETINGS[Math.floor(Math.random()*PET_GREETINGS.length)];
+        bubble={text:greeting,born:Date.now()};
+        const S=180;
+        spawnParticles(S/2,S/2-10,12,'#FFD700');
+        bounce=8;
+        petVo();
+      } else {
+        // 拖动结束：回弹
+        bounce=5;
+        const S=180;
+        spawnParticles(S/2,S-20,6,'#aaa');
+      }
+    }
+    wrap.addEventListener('mousedown',onDown);
+    wrap.addEventListener('touchstart',onDown,{passive:false});
+    window.addEventListener('mousemove',onMove);
+    window.addEventListener('touchmove',onMove,{passive:false});
+    window.addEventListener('mouseup',onUp);
+    window.addEventListener('touchend',onUp);
+
+    // 右键切换方块等级
+    wrap.addEventListener('contextmenu',function(e){
       e.preventDefault();
       petIndex=(petIndex+1)%PET_TILES.length;
-      c.title='2048方块精灵: '+PET_NAMES[PET_TILES[petIndex]]+' (右键切换)';
+      wrap.title='2048方块精灵: '+PET_NAMES[PET_TILES[petIndex]]+' (右键切换)';
       bounce=8;
       petVo();
       SFX.merge();
     });
-    c.addEventListener('click',function(){
-      bounce=6;
-      petVo();
-    });
-    document.addEventListener('contextmenu',function(e){
-      if(e.target===c)e.preventDefault();
-    });
+
     startAutoCycle();
     drawPet();
   }
