@@ -1,14 +1,14 @@
 {
   "active": true,
-  "timestamp": "2026-08-18T10:37:20.851Z",
+  "timestamp": "2026-08-18T10:38:10.681Z",
   "totalGames": 10,
-  "completedGames": 2,
-  "wins": 2,
+  "completedGames": 3,
+  "wins": 3,
   "fails": 0,
   "winRate": 100,
-  "avgScore": 33128,
+  "avgScore": 31415,
   "bestMaxTile": 2048,
-  "totalDurationMs": 116640,
+  "totalDurationMs": 161352,
   "results": [
     {
       "game": 1,
@@ -25,6 +25,14 @@
       "maxTile": 2048,
       "steps": 1786,
       "duration": 55171
+    },
+    {
+      "game": 3,
+      "result": "win",
+      "score": 27988,
+      "maxTile": 2048,
+      "steps": 1483,
+      "duration": 44712
     }
   ]
 }
