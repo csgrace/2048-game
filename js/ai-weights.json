@@ -90435,421 +90435,421 @@
     0
   ],
   "adam_t": 2.5e-323,
-  "version": 1242,
-  "description": "2048 AI trained weights - trained 1242 games",
+  "version": 1442,
+  "description": "2048 AI trained weights - trained 1442 games",
   "history": [
     {
       "game": 1,
       "total": 200,
-      "loss": 0.00293,
+      "loss": 0.003718,
       "maxTile": 2048,
-      "score": 31760,
-      "avgScore": 31760,
+      "score": 31904,
+      "avgScore": 31904,
       "bestMax": 2048,
-      "version": 1043
+      "version": 1243
     },
     {
       "game": 6,
       "total": 200,
-      "loss": 0.002972,
-      "maxTile": 1024,
-      "score": 16536,
-      "avgScore": 31302,
+      "loss": 0.002504,
+      "maxTile": 4096,
+      "score": 56968,
+      "avgScore": 30019,
       "bestMax": 4096,
-      "version": 1048
+      "version": 1248
     },
     {
       "game": 11,
       "total": 200,
-      "loss": 0.002385,
-      "maxTile": 2048,
-      "score": 25524,
-      "avgScore": 31162,
+      "loss": 0.004052,
+      "maxTile": 1024,
+      "score": 16784,
+      "avgScore": 27232,
       "bestMax": 4096,
-      "version": 1053
+      "version": 1253
     },
     {
       "game": 16,
       "total": 200,
-      "loss": 0.002657,
+      "loss": 0.003502,
       "maxTile": 1024,
-      "score": 16004,
-      "avgScore": 29457,
+      "score": 16320,
+      "avgScore": 26797,
       "bestMax": 4096,
-      "version": 1058
+      "version": 1258
     },
     {
       "game": 21,
       "total": 200,
-      "loss": 0.002537,
+      "loss": 0.004652,
       "maxTile": 2048,
-      "score": 36392,
-      "avgScore": 28578,
+      "score": 35940,
+      "avgScore": 29020,
       "bestMax": 4096,
-      "version": 1063
+      "version": 1263
     },
     {
       "game": 26,
       "total": 200,
-      "loss": 0.005902,
-      "maxTile": 4096,
-      "score": 70948,
-      "avgScore": 31711,
+      "loss": 0.002702,
+      "maxTile": 1024,
+      "score": 16792,
+      "avgScore": 28300,
       "bestMax": 4096,
-      "version": 1068
+      "version": 1268
     },
     {
       "game": 31,
       "total": 200,
-      "loss": 0.003512,
-      "maxTile": 2048,
-      "score": 27132,
-      "avgScore": 30593,
+      "loss": 0.002796,
+      "maxTile": 1024,
+      "score": 16944,
+      "avgScore": 28939,
       "bestMax": 4096,
-      "version": 1073
+      "version": 1273
     },
     {
       "game": 36,
       "total": 200,
-      "loss": 0.004097,
+      "loss": 0.002203,
       "maxTile": 2048,
-      "score": 27984,
-      "avgScore": 31500,
+      "score": 36568,
+      "avgScore": 28763,
       "bestMax": 4096,
-      "version": 1078
+      "version": 1278
     },
     {
       "game": 41,
       "total": 200,
-      "loss": 0.00431,
-      "maxTile": 1024,
-      "score": 17036,
-      "avgScore": 31135,
+      "loss": 0.003818,
+      "maxTile": 4096,
+      "score": 71492,
+      "avgScore": 30000,
       "bestMax": 4096,
-      "version": 1083
+      "version": 1283
     },
     {
       "game": 46,
       "total": 200,
-      "loss": 0.002498,
-      "maxTile": 512,
-      "score": 7056,
-      "avgScore": 30764,
+      "loss": 0.004514,
+      "maxTile": 2048,
+      "score": 32548,
+      "avgScore": 30637,
       "bestMax": 4096,
-      "version": 1088
+      "version": 1288
     },
     {
       "game": 51,
       "total": 200,
-      "loss": 0.004053,
-      "maxTile": 2048,
-      "score": 36780,
-      "avgScore": 30581,
+      "loss": 0.002623,
+      "maxTile": 1024,
+      "score": 16928,
+      "avgScore": 30183,
       "bestMax": 4096,
-      "version": 1093
+      "version": 1293
     },
     {
       "game": 56,
       "total": 200,
-      "loss": 0.002847,
-      "maxTile": 2048,
-      "score": 27916,
-      "avgScore": 30656,
+      "loss": 0.005031,
+      "maxTile": 1024,
+      "score": 16584,
+      "avgScore": 30324,
       "bestMax": 4096,
-      "version": 1098
+      "version": 1298
     },
     {
       "game": 61,
       "total": 200,
-      "loss": 0.002952,
+      "loss": 0.001878,
       "maxTile": 2048,
-      "score": 36336,
-      "avgScore": 30420,
+      "score": 23240,
+      "avgScore": 29941,
       "bestMax": 4096,
-      "version": 1103
+      "version": 1303
     },
     {
       "game": 66,
       "total": 200,
-      "loss": 0.005718,
-      "maxTile": 2048,
-      "score": 35332,
-      "avgScore": 31037,
+      "loss": 0.002772,
+      "maxTile": 4096,
+      "score": 52128,
+      "avgScore": 29921,
       "bestMax": 4096,
-      "version": 1108
+      "version": 1308
     },
     {
       "game": 71,
       "total": 200,
-      "loss": 0.010395,
+      "loss": 0.003888,
       "maxTile": 1024,
-      "score": 12484,
-      "avgScore": 30928,
+      "score": 16408,
+      "avgScore": 30081,
       "bestMax": 4096,
-      "version": 1113
+      "version": 1313
     },
     {
       "game": 76,
       "total": 200,
-      "loss": 0.003409,
-      "maxTile": 1024,
-      "score": 16132,
-      "avgScore": 31119,
+      "loss": 0.003096,
+      "maxTile": 512,
+      "score": 7228,
+      "avgScore": 30449,
       "bestMax": 4096,
-      "version": 1118
+      "version": 1318
     },
     {
       "game": 81,
       "total": 200,
-      "loss": 0.004385,
-      "maxTile": 1024,
-      "score": 16184,
-      "avgScore": 30640,
+      "loss": 0.003439,
+      "maxTile": 4096,
+      "score": 60368,
+      "avgScore": 30765,
       "bestMax": 4096,
-      "version": 1123
+      "version": 1323
     },
     {
       "game": 86,
       "total": 200,
-      "loss": 0.00534,
+      "loss": 0.004272,
       "maxTile": 2048,
-      "score": 26320,
-      "avgScore": 30762,
+      "score": 32896,
+      "avgScore": 30727,
       "bestMax": 4096,
-      "version": 1128
+      "version": 1328
     },
     {
       "game": 91,
       "total": 200,
-      "loss": 0.00407,
-      "maxTile": 4096,
-      "score": 59700,
-      "avgScore": 30818,
+      "loss": 0.00252,
+      "maxTile": 1024,
+      "score": 16180,
+      "avgScore": 30333,
       "bestMax": 4096,
-      "version": 1133
+      "version": 1333
     },
     {
       "game": 96,
       "total": 200,
-      "loss": 0.002225,
-      "maxTile": 2048,
-      "score": 28260,
-      "avgScore": 30329,
+      "loss": 0.00428,
+      "maxTile": 1024,
+      "score": 13344,
+      "avgScore": 30524,
       "bestMax": 4096,
-      "version": 1138
+      "version": 1338
     },
     {
       "game": 101,
       "total": 200,
-      "loss": 0.00319,
+      "loss": 0.005353,
       "maxTile": 2048,
-      "score": 35304,
-      "avgScore": 30538,
+      "score": 36256,
+      "avgScore": 30512,
       "bestMax": 4096,
-      "version": 1143
+      "version": 1343
     },
     {
       "game": 106,
       "total": 200,
-      "loss": 0.0046,
+      "loss": 0.007236,
       "maxTile": 2048,
-      "score": 37112,
-      "avgScore": 30794,
+      "score": 24340,
+      "avgScore": 30305,
       "bestMax": 4096,
-      "version": 1148
+      "version": 1348
     },
     {
       "game": 111,
       "total": 200,
-      "loss": 0.006865,
+      "loss": 0.001992,
       "maxTile": 2048,
-      "score": 28068,
-      "avgScore": 31212,
+      "score": 36968,
+      "avgScore": 30011,
       "bestMax": 4096,
-      "version": 1153
+      "version": 1353
     },
     {
       "game": 116,
       "total": 200,
-      "loss": 0.00468,
-      "maxTile": 2048,
-      "score": 30724,
-      "avgScore": 30831,
+      "loss": 0.002037,
+      "maxTile": 1024,
+      "score": 16480,
+      "avgScore": 29972,
       "bestMax": 4096,
-      "version": 1158
+      "version": 1358
     },
     {
       "game": 121,
       "total": 200,
-      "loss": 0.002311,
-      "maxTile": 2048,
-      "score": 36360,
-      "avgScore": 30812,
+      "loss": 0.002836,
+      "maxTile": 1024,
+      "score": 16420,
+      "avgScore": 29651,
       "bestMax": 4096,
-      "version": 1163
+      "version": 1363
     },
     {
       "game": 126,
       "total": 200,
-      "loss": 0.002264,
-      "maxTile": 1024,
-      "score": 16188,
-      "avgScore": 30535,
+      "loss": 0.00272,
+      "maxTile": 2048,
+      "score": 27536,
+      "avgScore": 29780,
       "bestMax": 4096,
-      "version": 1168
+      "version": 1368
     },
     {
       "game": 131,
       "total": 200,
-      "loss": 0.003908,
+      "loss": 0.004325,
       "maxTile": 2048,
-      "score": 28248,
-      "avgScore": 30815,
+      "score": 37004,
+      "avgScore": 29794,
       "bestMax": 4096,
-      "version": 1173
+      "version": 1373
     },
     {
       "game": 136,
       "total": 200,
-      "loss": 0.004137,
-      "maxTile": 1024,
-      "score": 14784,
-      "avgScore": 30672,
+      "loss": 0.00271,
+      "maxTile": 2048,
+      "score": 27544,
+      "avgScore": 29862,
       "bestMax": 4096,
-      "version": 1178
+      "version": 1378
     },
     {
       "game": 141,
       "total": 200,
-      "loss": 0.004917,
+      "loss": 0.003793,
       "maxTile": 2048,
-      "score": 27112,
-      "avgScore": 31338,
+      "score": 28300,
+      "avgScore": 29920,
       "bestMax": 4096,
-      "version": 1183
+      "version": 1383
     },
     {
       "game": 146,
       "total": 200,
-      "loss": 0.005766,
-      "maxTile": 1024,
-      "score": 17032,
-      "avgScore": 31422,
+      "loss": 0.003144,
+      "maxTile": 2048,
+      "score": 35972,
+      "avgScore": 30217,
       "bestMax": 4096,
-      "version": 1188
+      "version": 1388
     },
     {
       "game": 151,
       "total": 200,
-      "loss": 0.004018,
-      "maxTile": 1024,
-      "score": 15036,
-      "avgScore": 31434,
+      "loss": 0.004812,
+      "maxTile": 2048,
+      "score": 32644,
+      "avgScore": 29997,
       "bestMax": 4096,
-      "version": 1193
+      "version": 1393
     },
     {
       "game": 156,
       "total": 200,
-      "loss": 0.00329,
-      "maxTile": 1024,
-      "score": 16992,
-      "avgScore": 31239,
+      "loss": 0.003152,
+      "maxTile": 2048,
+      "score": 27320,
+      "avgScore": 30106,
       "bestMax": 4096,
-      "version": 1198
+      "version": 1398
     },
     {
       "game": 161,
       "total": 200,
-      "loss": 0.002346,
-      "maxTile": 1024,
-      "score": 16732,
-      "avgScore": 31181,
+      "loss": 0.004256,
+      "maxTile": 4096,
+      "score": 61316,
+      "avgScore": 30268,
       "bestMax": 4096,
-      "version": 1203
+      "version": 1403
     },
     {
       "game": 166,
       "total": 200,
-      "loss": 0.003365,
-      "maxTile": 2048,
-      "score": 27004,
-      "avgScore": 31161,
+      "loss": 0.002634,
+      "maxTile": 1024,
+      "score": 17172,
+      "avgScore": 30198,
       "bestMax": 4096,
-      "version": 1208
+      "version": 1408
     },
     {
       "game": 171,
       "total": 200,
-      "loss": 0.003223,
-      "maxTile": 2048,
-      "score": 36704,
-      "avgScore": 31317,
+      "loss": 0.009733,
+      "maxTile": 1024,
+      "score": 12208,
+      "avgScore": 30715,
       "bestMax": 4096,
-      "version": 1213
+      "version": 1413
     },
     {
       "game": 176,
       "total": 200,
-      "loss": 0.004834,
-      "maxTile": 1024,
-      "score": 12916,
-      "avgScore": 31388,
+      "loss": 0.004729,
+      "maxTile": 2048,
+      "score": 32040,
+      "avgScore": 30656,
       "bestMax": 4096,
-      "version": 1218
+      "version": 1418
     },
     {
       "game": 181,
       "total": 200,
-      "loss": 0.006354,
-      "maxTile": 4096,
-      "score": 61136,
-      "avgScore": 31805,
+      "loss": 0.003739,
+      "maxTile": 1024,
+      "score": 16428,
+      "avgScore": 30582,
       "bestMax": 4096,
-      "version": 1223
+      "version": 1423
     },
     {
       "game": 186,
       "total": 200,
-      "loss": 0.007232,
+      "loss": 0.004694,
       "maxTile": 2048,
-      "score": 33296,
-      "avgScore": 31777,
+      "score": 32556,
+      "avgScore": 30650,
       "bestMax": 4096,
-      "version": 1228
+      "version": 1428
     },
     {
       "game": 191,
       "total": 200,
-      "loss": 0.002669,
-      "maxTile": 2048,
-      "score": 28092,
-      "avgScore": 31739,
+      "loss": 0.004936,
+      "maxTile": 1024,
+      "score": 16364,
+      "avgScore": 30621,
       "bestMax": 4096,
-      "version": 1233
+      "version": 1433
     },
     {
       "game": 196,
       "total": 200,
-      "loss": 0.004846,
+      "loss": 0.003203,
       "maxTile": 2048,
-      "score": 25392,
-      "avgScore": 31786,
+      "score": 36372,
+      "avgScore": 30634,
       "bestMax": 4096,
-      "version": 1238
+      "version": 1438
     },
     {
       "game": 200,
       "total": 200,
-      "loss": 0.005565,
+      "loss": 0.004023,
       "maxTile": 2048,
-      "score": 27512,
-      "avgScore": 32061,
+      "score": 27260,
+      "avgScore": 30588,
       "bestMax": 4096,
-      "version": 1242
+      "version": 1442
     }
   ],
   "bestMaxTile": 4096,
-  "avgScore": 32061,
-  "trainTime": "19201.7s"
+  "avgScore": 30588,
+  "trainTime": "54384.2s"
 }
