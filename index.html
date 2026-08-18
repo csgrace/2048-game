@@ -387,14 +387,14 @@ transition:all .25s ease;
 /* tile spirit wrapper - fixed bottom-right, draggable */
 #pet-canvas-wrap{
   position:fixed;bottom:16px;right:16px;z-index:99;
-  width:96px;height:96px;cursor:grab;user-select:none;
+  width:96px;cursor:grab;user-select:none;
   filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));
   transition:transform .12s ease;
   touch-action:none;
 }
 #pet-canvas-wrap.dragging{cursor:grabbing;transition:none}
 #pet-canvas-wrap:hover{transform:scale(1.08);opacity:1}
-#pet-canvas{display:block;width:100%;height:100%;pointer-events:none}
+#pet-canvas{display:block;width:100%;height:auto;pointer-events:none}
 
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
@@ -851,6 +851,9 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
   let bounce=0, wave=0, blinkTimer=0, isBlinking=false;
   let breathe=0;
   let autoCycleTimer=null;
+  /* --- animation states --- */
+  let spin=0;      // 0-1, >0 时正在旋转
+  let dance=0;     // 0-1, >0 时正在摇摆
   /* --- drag state --- */
   let drag=false, dragStartX=0, dragStartY=0, wrapStartL=0, wrapStartT=0;
   let dragMoved=false;
@@ -899,18 +902,30 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
   function drawPet(){
     const c=document.getElementById('pet-canvas');if(!c)return;
     const ctx=c.getContext('2d');
-    const S=180;
-    c.width=S;c.height=S;
-    ctx.clearRect(0,0,S,S);
-    const cx=S/2,cy=S/2+bounce;
+    const S=180, SH=220;
+    c.width=S;c.height=SH;
+    ctx.clearRect(0,0,S,SH);
+    const cx=S/2,cy=115+bounce;
     const tileValue=PET_TILES[petIndex];
     breathe+=.03;
     const breatheY=Math.sin(breathe)*2;
     wave+=.08;
 
+    ctx.save();
+    // 旋转动画
+    if(spin>0){
+      const angle=(1-spin)*Math.PI*2;
+      ctx.translate(cx,cy);
+      ctx.rotate(angle);
+      ctx.translate(-cx,-cy);
+    } else if(dance>0){
+      const sw=Math.sin(dance*Math.PI*6)*12*dance;
+      ctx.translate(sw,0);
+    }
+
     // 阴影
     ctx.fillStyle='rgba(0,0,0,.18)';
-    ctx.beginPath();ctx.ellipse(cx,S-14,38,8,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(cx,SH-14,38,8,0,0,Math.PI*2);ctx.fill();
 
     // 脚
     const footWave=Math.sin(wave)*3;
@@ -994,14 +1009,16 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     ctx.fillStyle='rgba(255,255,255,.12)';
     roundRect(ctx,bx+bw+4,cy-2-armWave,10,6,2);ctx.fill();
 
-    // -- 气泡 --
+    ctx.restore();
+
+    // -- 气泡 (不受旋转影响) --
     if(bubble){
       const age=Date.now()-bubble.born;
       const dur=1600;
       if(age>dur){bubble=null;}
       else{
         const alpha=age<200?age/200:age>dur-400?(dur-age)/400:1;
-        const rise=Math.min(age/2,30);
+        const rise=Math.min(age/2,25);
         const bx2=cx-30,by2=by-42-rise,bw2=60,bh2=24,br2=10;
         ctx.save();
         ctx.globalAlpha=alpha;
@@ -1023,7 +1040,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       }
     }
 
-    // -- 粒子 --
+    // -- 粒子 (不受旋转影响) --
     updateParticles();
     for(const p of particles){
       ctx.globalAlpha=p.life/p.max;
@@ -1032,10 +1049,12 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     }
     ctx.globalAlpha=1;
 
-    // 眨眼 / 弹跳
+    // 眨眼 / 弹跳 / 动画进度
     blinkTimer++;
     if(!isBlinking&&blinkTimer>150+Math.random()*100){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},100);}
     if(bounce>0)bounce-=.4;
+    if(spin>0)spin=Math.max(0,spin-.017);
+    if(dance>0)dance=Math.max(0,dance-.011);
     requestAnimationFrame(drawPet);
   }
 
@@ -1055,9 +1074,8 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     const c=document.getElementById('pet-canvas');
     if(!wrap||!c)return;
 
-    // --- 拖拽 (在 wrapper 上监听) ---
+    // --- 拖拽 ---
     function onDown(e){
-      // 右键不拖
       if(e.type==='mousedown'&&e.button===2)return;
       const pt=e.touches?e.touches[0]:e;
       drag=true;dragMoved=false;
@@ -1073,7 +1091,6 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       const dy=pt.clientY-dragStartY;
       if(Math.abs(dx)>3||Math.abs(dy)>3)dragMoved=true;
       let nl=wrapStartL+dx, nt=wrapStartT+dy;
-      // 边界
       const maxL=window.innerWidth-wrap.offsetWidth;
       const maxT=window.innerHeight-wrap.offsetHeight;
       nl=Math.max(0,Math.min(nl,maxL));
@@ -1087,18 +1104,19 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       drag=false;
       wrap.classList.remove('dragging');
       if(!dragMoved){
-        // 点击：气泡 + 粒子 + 弹跳
+        // 点击：随机动作 + 气泡 + 粒子
+        const r=Math.random();
+        if(r<0.4) spin=1;        // 40% 转圈
+        else if(r<0.7) dance=1;  // 30% 摇摆
+        // 其余 30% 不动
         const greeting=PET_GREETINGS[Math.floor(Math.random()*PET_GREETINGS.length)];
         bubble={text:greeting,born:Date.now()};
-        const S=180;
-        spawnParticles(S/2,S/2-10,12,'#FFD700');
+        spawnParticles(90,80,12,'#FFD700');
         bounce=8;
         petVo();
       } else {
-        // 拖动结束：回弹
         bounce=5;
-        const S=180;
-        spawnParticles(S/2,S-20,6,'#aaa');
+        spawnParticles(90,100,6,'#aaa');
       }
     }
     wrap.addEventListener('mousedown',onDown);
@@ -1118,9 +1136,18 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       SFX.merge();
     });
 
-    startAutoCycle();
+    // 不自动循环，固定在 2
     drawPet();
   }
+
+  // 暴露给全局：棋盘合并时桌宠庆祝
+  window.__petMergeReact=function(){
+    if(Math.random()<0.5) spin=1; else dance=1;
+    spawnParticles(90,70,10,'#FFD700');
+    bounce=6;
+    petVo();
+  };
+
   document.addEventListener('DOMContentLoaded',initPet);
 })();
 
@@ -1411,6 +1438,8 @@ function move(dir,fromAI=false){
     queueGameAction(()=>{
       finalizeRender(mergedCopy);
       addRandom();
+      // 桌宠：发生合并时庆祝
+      if(mergedCopy.length>0&&window.__petMergeReact)window.__petMergeReact();
       inputLocked=false;
 if(reachedTarget){
 won=true;SFX.win();stopAiAutoPlay();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;
