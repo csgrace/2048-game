@@ -408,7 +408,7 @@ transition:all .25s ease;
 <body>
 
 <canvas id="bg-canvas"></canvas>
-<button class="music-btn" id="music-toggle" title="音效开关">🔊</button>
+<button class="music-btn" id="music-toggle" title="Sound">🔊</button>
 <div class="app">
 
   <!-- ============ ENTRY ============ -->
@@ -495,13 +495,13 @@ transition:all .25s ease;
       <!-- Backend status mini panel (Playtest Arena) -->
       <div id="pt-backend-status" style="margin-bottom:8px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ 后台监控</span>
+          <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ Backend Monitor</span>
           <div style="display:flex;align-items:center;gap:6px">
             <span id="pt-backend-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
-            <button id="btn-refresh-pt-backend" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(20,184,166,.3);background:rgba(20,184,166,.08);color:#14b8a6;cursor:pointer;transition:all .2s" title="刷新后台状态">🔄 Refresh</button>
+            <button id="btn-refresh-pt-backend" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(20,184,166,.3);background:rgba(20,184,166,.08);color:#14b8a6;cursor:pointer;transition:all .2s" title="Refresh backend status">🔄 Refresh</button>
           </div>
         </div>
-        <div id="pt-backend-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">等待后台状态...</div>
+        <div id="pt-backend-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">Waiting for backend status...</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="pt-backend-tags">
           <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Version —</span>
           <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Round —/—</span>
@@ -530,7 +530,7 @@ transition:all .25s ease;
           <span id="pt-summary-badge" style="font-size:10.5px;padding:2px 8px;border-radius:10px;background:rgba(20,184,166,.12);color:#14b8a6;font-weight:600"></span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;min-width:0" id="pt-game-list">
-          <!-- JS 动态填充 -->
+          <!-- JS dynamic fill -->
         </div>
       </div>
 
@@ -614,13 +614,13 @@ transition:all .25s ease;
       <!-- Password modal for training -->
       <div id="token-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center">
         <div style="background:rgba(30,30,50,.95);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px 22px;max-width:400px;width:90%">
-<h3 id="token-modal-title" style="margin:0 0 8px;color:#ffd166;font-size:16px">🔑 训练授权</h3>
-<p style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.6;margin:0 0 12px">输入密码以授权触发云端工作流（训练或测试）。Token 保存在本地，下次无需重新输入。</p>
-<input type="password" id="token-input" placeholder="输入密码..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px;box-sizing:border-box">
-<p id="token-err" style="display:none;color:#ff6b6b;font-size:12px;margin-top:6px">密码错误，请重试</p>
+<h3 id="token-modal-title" style="margin:0 0 8px;color:#ffd166;font-size:16px">🔑 Training Authorization</h3>
+<p style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.6;margin:0 0 12px">Enter password to authorize triggering cloud workflows (training or testing). Token is saved locally, no need to re-enter next time.</p>
+<input type="password" id="token-input" placeholder="Enter password..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px;box-sizing:border-box">
+<p id="token-err" style="display:none;color:#ff6b6b;font-size:12px;margin-top:6px">Wrong password, please try again</p>
           <div style="display:flex;gap:8px;margin-top:12px">
-            <button class="btn sm" id="token-save" style="flex:1">确认</button>
-            <button class="btn sm" id="token-close" style="flex:1">取消</button>
+            <button class="btn sm" id="token-save" style="flex:1">Confirm</button>
+            <button class="btn sm" id="token-close" style="flex:1">Cancel</button>
           </div>
         </div>
       </div>
@@ -637,14 +637,14 @@ transition:all .25s ease;
       <!-- Backend status monitor panel -->
       <div id="backend-status-panel" style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ 后台训练状态</span>
+          <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ Training Status</span>
           <div style="display:flex;align-items:center;gap:6px">
             <span id="backend-phase-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
-            <button id="btn-refresh-backend" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(20,184,166,.3);background:rgba(20,184,166,.08);color:#14b8a6;cursor:pointer;transition:all .2s" title="刷新后台状态">🔄 Refresh</button>
+            <button id="btn-refresh-backend" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(20,184,166,.3);background:rgba(20,184,166,.08);color:#14b8a6;cursor:pointer;transition:all .2s" title="Refresh backend status">🔄 Refresh</button>
           </div>
         </div>
         <div id="backend-status-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">
-          <span style="color:rgba(255,255,255,.4)">等待后台状态...</span>
+          <span style="color:rgba(255,255,255,.4)">Waiting for backend status...</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="backend-stats-row">
           <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Version —</span>
@@ -668,7 +668,7 @@ transition:all .25s ease;
       </div>
 
       <!-- Status log -->
-      <div id="training-log" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.7);max-height:120px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;border-radius:8px;padding:8px 10px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.06)" aria-live="polite">点击 Train on GitHub 开始后台训练。</div>
+      <div id="training-log" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.7);max-height:120px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;border-radius:8px;padding:8px 10px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.06)" aria-live="polite">Click Train on GitHub to start background training.</div>
 
       <!-- Workflow runs -->
       <div style="margin-top:8px">
@@ -676,15 +676,15 @@ transition:all .25s ease;
         <div id="training-jobs"></div>
       </div>
 
-      <section class="training-details" aria-label="训练逻辑说明">
-        <h3>训练流程</h3>
-    <p>① <strong>点击 Train</strong>：前端通过 GitHub API 触发 Actions workflow，在云端服务器上运行训练。</p>
-    <p>② <strong>Expectimax 自对弈</strong>：Max 节点选最优移动，Chance 节点计算随机生成 2(90%)/4(10%) 的期望值，搜索深度根据空格数自适应（2-5 层）。</p>
-    <p>③ <strong>神经网络 TD(λ) 训练</strong>：MLP 256→96→48→16→1 价值网络，用 TD(λ=0.5, γ=0.95) 计算目标，Adam 优化器 + 经验回放。</p>
-    <p>④ <strong>渐进式融合</strong>：前 30 局纯启发式热身，之后 NN 评估权重逐渐增加到 80%。</p>
-    <p>⑤ <strong>实时进度</strong>：训练过程中每 20 局自动 commit 推送进度文件 <code>js/ai-training-progress.json</code>，前端每 10 秒轮询并刷新 Loss Curve 和 Max Tile 图表。</p>
-    <p>⑥ <strong>自动部署</strong>：训练完成后，GitHub Actions 自动 commit 更新 <code>js/ai-weights.json</code>，所有用户刷新页面即可使用最新的 AI。</p>
-    <p>⑦ <strong>增量训练</strong>：每次训练会加载上一版本的权重继续训练，AI 会持续变强。</p>
+      <section class="training-details" aria-label="Training logic explanation">
+        <h3>Training Process</h3>
+    <p>① <strong>Click Train</strong>: Frontend triggers Actions workflow via GitHub API, running training on cloud servers.</p>
+    <p>② <strong>Expectimax Self-Play</strong>: Max node selects optimal moves, Chance node calculates expected value of random tile generation (2 at 90%, 4 at 10%), search depth adapts to empty cells (2-5 levels).</p>
+    <p>③ <strong>Neural Network TD(λ) Training</strong>: MLP 256→96→48→16→1 value network, using TD(λ=0.5, γ=0.95) to compute targets, Adam optimizer + experience replay.</p>
+    <p>④ <strong>Progressive Blending</strong>: First 30 games pure heuristic warmup, then NN evaluation weight gradually increases to 80%.</p>
+    <p>⑤ <strong>Real-time Progress</strong>: Every 20 games, auto-commits progress file <code>js/ai-training-progress.json</code>, frontend polls every 10s and refreshes Loss Curve and Max Tile charts.</p>
+    <p>⑥ <strong>Auto Deploy</strong>: After training, GitHub Actions auto-commits updated <code>js/ai-weights.json</code>, all users get latest AI on page refresh.</p>
+    <p>⑦ <strong>Incremental Training</strong>: Each training loads previous version weights to continue, AI gets stronger over time.</p>
       </section>
     </div>
     <div class="sides">
@@ -800,9 +800,9 @@ async function sha256(t){
    Sound
    ==================================================================== */
 let audioCtx=null;
-let sfxEnabled=true; // 音效开关，默认开启
+let sfxEnabled=true; // Sound on by default
 function snd(freq,dur=.08,type='sine',vol=.15){
-  if(!sfxEnabled)return; // 音效关闭时不播放
+  if(!sfxEnabled)return; // Don't play when sound is off
   try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();
     o.type=type;o.frequency.value=freq;
@@ -820,7 +820,7 @@ const SFX={
 };
 
 /* ====================================================================
-   SFX Toggle (音效开关)
+   SFX Toggle (Sound)
    ==================================================================== */
 function toggleBGM(){
   sfxEnabled=!sfxEnabled;
@@ -840,20 +840,20 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 /* ====================================================================
-   2048 Block Sprite Pet (方块精灵 — 可拖拽, 点击说话, 自动循环)
+   2048 Block Sprite Pet (Draggable, Click to Speak, Auto Cycle)
    ==================================================================== */
 document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas id="pet-canvas"></canvas></div>');
 (function(){
   const PET_TILES=[2,4,8,16,32,64,128,256,512,1024,2048];
-  const PET_NAMES={2:'小2',4:'小4',8:'小8',16:'小16',32:'小32',64:'小64',128:'小128',256:'小256',512:'小512',1024:'小1024',2048:'小2048'};
-  const PET_GREETINGS=['Hi!','你好~','Hello!','嗨👋','Yo!','~'];
+  const PET_NAMES={2:'Two',4:'Four',8:'Eight',16:'Sixteen',32:'Thirty-two',64:'Sixty-four',128:'One-two-eight',256:'Two-five-six',512:'Five-one-two',1024:'Ten-twenty-four',2048:'Twenty-forty-eight'};
+  const PET_GREETINGS=['Hi!','Hello!','Yo!','Hey!','Hola!','~'];
   let petIndex=0;
   let bounce=0, wave=0, blinkTimer=0, isBlinking=false;
   let breathe=0;
   let autoCycleTimer=null;
   /* --- animation states --- */
-  let spin=0;      // 0-1, >0 时正在旋转
-  let dance=0;     // 0-1, >0 时正在摇摆
+  let spin=0;      // 0-1, >0 means spinning
+  let dance=0;     // 0-1, >0 means dancing
   /* --- drag state --- */
   let drag=false, dragStartX=0, dragStartY=0, wrapStartL=0, wrapStartT=0;
   let dragMoved=false;
@@ -876,13 +876,13 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
   }
   function tileColor(v){const c=BG[v]||[40,38,32];return`rgb(${c[0]},${c[1]},${c[2]})`}
-  // 文字颜色: ≤4 深色; 8–64 白色; ≥128 黄色背景→深色字
+  // Text color: ≤4 dark; 8–64 white; ≥128 yellow bg→dark text
   function tileTextColor(v){
     if(v<=4) return '#776e65';
     if(v>=128) return '#3a2010';
     return '#f9f6f2';
   }
-  // 粒子 (点击/拖动反馈特效)
+  // Particles (click/drag feedback effects)
   function spawnParticles(px,py,count,color){
     for(let i=0;i<count;i++){
       const a=Math.random()*Math.PI*2;
@@ -912,24 +912,24 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     wave+=.08;
 
     ctx.save();
-    // 旋转动画 — 像人一样转圈 (身体翻转感 + 弹跳)
+    // Spin animation — human-like turning (body flip + bounce)
     if(spin>0){
       const angle=(1-spin)*Math.PI*2;
-      const sy=Math.abs(Math.cos(angle)); // 1→0→1 模拟身体转向远处再回来
-      bounce=Math.max(bounce, Math.sin(spin*Math.PI*4)*6); // 转圈时弹跳
+      const sy=Math.abs(Math.cos(angle)); // 1→0→1 simulate body turning away and back
+      bounce=Math.max(bounce, Math.sin(spin*Math.PI*4)*6); // bounce while spinning
       ctx.translate(cx,cy);
-      ctx.scale(0.5+0.5*sy, 1); // 水平收缩模拟3D翻转, 朝正面时最宽
+      ctx.scale(0.5+0.5*sy, 1); // horizontal scale simulates 3D flip, widest at front
       ctx.translate(-cx,-cy);
     } else if(dance>0){
       const sw=Math.sin(dance*Math.PI*6)*12*dance;
       ctx.translate(sw,0);
     }
 
-    // 阴影
+    // Shadow
     ctx.fillStyle='rgba(0,0,0,.18)';
     ctx.beginPath();ctx.ellipse(cx,SH-14,38,8,0,0,Math.PI*2);ctx.fill();
 
-    // 脚
+    // Feet
     const footWave=Math.sin(wave)*3;
     ctx.fillStyle=tileColor(2);
     roundRect(ctx,cx-32,cy+52+footWave,22,18,5);ctx.fill();
@@ -940,7 +940,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     ctx.fillStyle='rgba(255,255,255,.15)';
     roundRect(ctx,cx+12,cy+54-footWave,18,6,3);ctx.fill();
 
-    // 主体方块
+    // Main block
     const bx=cx-42,by=cy-32+breatheY,bw=84,bh=84,br=12;
     ctx.fillStyle=tileColor(tileValue);
     roundRect(ctx,bx,by,bw,bh,br);ctx.fill();
@@ -949,7 +949,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=2;
     roundRect(ctx,bx,by,bw,bh,br);ctx.stroke();
 
-    // 数字
+    // Number
     const numStr=String(tileValue);
     ctx.fillStyle=tileTextColor(tileValue);
     ctx.fontWeight='800';
@@ -960,7 +960,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     else ctx.font='22px Segoe UI, sans-serif';
     ctx.fillText(numStr,cx,cy-5+breatheY);
 
-    // 表情
+    // Expression
     const eyeY=cy+22+breatheY;
     const eyeSpacing=14;
     if(isBlinking){
@@ -971,28 +971,28 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       ctx.fillStyle='#fff';
       ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
       ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,6,0,Math.PI*2);ctx.fill();
-      // 瞳孔 — 深色, 任何背景都可见
+      // Pupil — dark, visible on any background
       ctx.fillStyle='#1a0e05';
       ctx.beginPath();ctx.arc(cx-eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
       ctx.beginPath();ctx.arc(cx+eyeSpacing,eyeY,3,0,Math.PI*2);ctx.fill();
-      // 高光点 — 小而亮
+      // Highlight — small and bright
       ctx.fillStyle='#fff';
       ctx.beginPath();ctx.arc(cx-eyeSpacing-1.5,eyeY-1.5,1.2,0,Math.PI*2);ctx.arc(cx+eyeSpacing-1.5,eyeY-1.5,1.2,0,Math.PI*2);ctx.fill();
     }
 
-    // 嘴
+    // Mouth
     ctx.strokeStyle=tileTextColor(tileValue);ctx.lineWidth=2;ctx.lineCap='round';
     ctx.beginPath();
     ctx.moveTo(cx-6,eyeY+12);
     ctx.quadraticCurveTo(cx,eyeY+18,cx+6,eyeY+12);
     ctx.stroke();
 
-    // 腮红
+    // Blush
     ctx.fillStyle='rgba(255,200,200,.35)';
     ctx.beginPath();ctx.ellipse(cx-24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.ellipse(cx+24,eyeY+2,6,4,0,0,Math.PI*2);ctx.fill();
 
-    // 触角
+    // Antenna
     const antWave=Math.sin(wave*1.5)*3;
     ctx.fillStyle=tileColor(2);
     roundRect(ctx,cx-8,by-14+antWave,6,16,3);ctx.fill();
@@ -1002,7 +1002,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     ctx.beginPath();ctx.arc(cx-5,by-16+antWave,4,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(cx+5,by-16-antWave,4,0,Math.PI*2);ctx.fill();
 
-    // 手臂
+    // Arms
     const armWave=Math.sin(wave*1.2)*4;
     ctx.fillStyle=tileColor(4);
     roundRect(ctx,bx-16,cy+armWave,14,20,4);ctx.fill();
@@ -1015,7 +1015,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
 
     ctx.restore();
 
-    // -- 气泡 (不受旋转影响) --
+    // -- Bubble (unaffected by rotation) --
     if(bubble){
       const age=Date.now()-bubble.born;
       const dur=1600;
@@ -1044,7 +1044,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       }
     }
 
-    // -- 粒子 (不受旋转影响) --
+    // -- Particles (unaffected by rotation) --
     updateParticles();
     for(const p of particles){
       ctx.globalAlpha=p.life/p.max;
@@ -1053,7 +1053,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     }
     ctx.globalAlpha=1;
 
-    // 眨眼 / 弹跳 / 动画进度
+    // Blink / bounce / animation progress
     blinkTimer++;
     if(!isBlinking&&blinkTimer>150+Math.random()*100){isBlinking=true;blinkTimer=0;setTimeout(()=>{isBlinking=false;},100);}
     if(bounce>0)bounce-=.4;
@@ -1078,7 +1078,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     const c=document.getElementById('pet-canvas');
     if(!wrap||!c)return;
 
-    // --- 拖拽 ---
+    // --- Drag ---
     function onDown(e){
       if(e.type==='mousedown'&&e.button===2)return;
       const pt=e.touches?e.touches[0]:e;
@@ -1108,11 +1108,11 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
       drag=false;
       wrap.classList.remove('dragging');
       if(!dragMoved){
-        // 点击：随机动作 + 气泡 + 粒子
+        // Click: random action + bubble + particles
         const r=Math.random();
-        if(r<0.4) spin=1;        // 40% 转圈
-        else if(r<0.7) dance=1;  // 30% 摇摆
-        // 其余 30% 不动
+        if(r<0.4) spin=1;        // 40% spin
+        else if(r<0.7) dance=1;  // 30% dance
+        // remaining 30% idle
         const greeting=PET_GREETINGS[Math.floor(Math.random()*PET_GREETINGS.length)];
         bubble={text:greeting,born:Date.now()};
         spawnParticles(90,80,12,'#FFD700');
@@ -1130,21 +1130,21 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     window.addEventListener('mouseup',onUp);
     window.addEventListener('touchend',onUp);
 
-    // 右键切换方块等级
+    // Right-click to switch tile level
     wrap.addEventListener('contextmenu',function(e){
       e.preventDefault();
       petIndex=(petIndex+1)%PET_TILES.length;
-      wrap.title='2048方块精灵: '+PET_NAMES[PET_TILES[petIndex]]+' (右键切换)';
+      wrap.title='2048 Block Pet: '+PET_NAMES[PET_TILES[petIndex]]+' (right-click to switch)';
       bounce=8;
       petVo();
       SFX.merge();
     });
 
-    // 不自动循环，固定在 2
+    // No auto-cycle, fixed at 2
     drawPet();
   }
 
-  // 暴露给全局：棋盘合并时桌宠庆祝
+  // Expose to global: pet celebrates on merge
   window.__petMergeReact=function(){
     if(Math.random()<0.5) spin=1; else dance=1;
     spawnParticles(90,70,10,'#FFD700');
@@ -1442,7 +1442,7 @@ function move(dir,fromAI=false){
     queueGameAction(()=>{
       finalizeRender(mergedCopy);
       addRandom();
-      // 桌宠：发生合并时庆祝
+      // Pet: celebrate on merge
       if(mergedCopy.length>0&&window.__petMergeReact)window.__petMergeReact();
       inputLocked=false;
 if(reachedTarget){
@@ -1763,7 +1763,7 @@ drawMaxTileChart();
 checkTrainingProgress();
 // Start backend status polling
 startBackendStatusPolling();
-$('training-log').innerHTML='☁️ GitHub Actions 训练就绪。点击 <strong>▶ Train</strong> 在云端启动训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练在 GitHub Actions 云端运行，每 20 局自动推送进度，前端自动刷新图表。</span>';
+$('training-log').innerHTML='☁️ GitHub Actions training ready. Click <strong>▶ Train</strong> to start training in the cloud.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Training runs on GitHub Actions cloud, auto-pushes progress every 20 games, frontend auto-refreshes charts.</span>';
 }
 /* Load training history from ai-weights.json for charts & stats */
 var aiHistory=[];
@@ -1798,7 +1798,7 @@ function drawTrainingCurve(){
   _lossPoints=[];
   if(!aiHistory.length){
     ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
-    ctx.fillText('暂无训练数据',W/2,H/2);
+    ctx.fillText('No training data',W/2,H/2);
     return;
   }
   var losses=aiHistory.map(function(p){return p.loss});
@@ -1862,7 +1862,7 @@ function drawMaxTileChart(){
   ctx.clearRect(0,0,W,H);
   if(!aiHistory.length){
     ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
-    ctx.fillText('暂无数据',W/2,H/2);
+    ctx.fillText('No data',W/2,H/2);
     // Ensure tooltip handler exists even when empty
     if(!c._hoverAttached){
       c._hoverAttached=true;
@@ -1955,20 +1955,20 @@ async function checkTrainingProgress(){
       }
       var pct=data.total?Math.round(data.game/data.total*100):0;
       // training-log: only show on completion, not during training
-      jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ 训练进行中</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
+      jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
       // Start polling if not already
       if(!aiPollTimer)startPollingProgress();
     }else{
       _liveTrainingActive=false; // unlock: training done, allow weight history to show
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
-      jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ 云端空闲</span></div>';
+      jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Cloud idle</span></div>';
       stopPollingProgress();
     }
   }catch(e){
     $('ai-train').disabled=false;
     $('ai-train').textContent='▶ Train';
-    jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ 云端空闲</span></div>';
+    jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.06);border:1px solid rgba(107,203,119,.15)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Cloud idle</span></div>';
   }
 }
 /* Poll progress file every 10 seconds during training */
@@ -1987,7 +1987,7 @@ function startPollingProgress(){
         var pct=data.total?Math.round(data.game/data.total*100):0;
         // training-log: only show on completion, not during training
         var jobsEl=$('training-jobs');
-        if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ 训练进行中</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
+        if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
       }else{
         // Training done!
         _liveTrainingActive=false;
@@ -1998,9 +1998,9 @@ function startPollingProgress(){
         aiLiveHistory=data.history||[];
         aiHistory=aiLiveHistory;
         drawTrainingCurve();drawMaxTileChart();updateLiveStats();
-        $('training-log').innerHTML='✅ <strong>训练完成！</strong><br>版本 v'+data.version+' · 最高方块 '+data.bestMaxTile+' · 平均分 '+data.avgScore+' · 耗时 '+data.trainTime+'<br><span style="font-size:11px;color:#6bcb77">权重已自动提交到仓库</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">正在重新加载权重...</span>';
+        $('training-log').innerHTML='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Best tile '+data.bestMaxTile+' · Avg score '+data.avgScore+' · Time '+data.trainTime+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
         var jobsEl=$('training-jobs');
-        if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.08);border:1px solid rgba(107,203,119,.2)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ 训练完成</span></div>';
+        if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.08);border:1px solid rgba(107,203,119,.2)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Training complete</span></div>';
         setTimeout(reloadWeightsFromRepo,2000);
       }
     }catch(e){/* network error, keep polling */}
@@ -2155,7 +2155,7 @@ function updateBackendStatusUI(data){
         rateEl.textContent=rateParts.join(' · ');
         rateEl.style.color='#ffd166';
       }
-      if(statusEl)statusEl.innerHTML='🟡 <strong>训练进行中...</strong> '+tpStr+' 局已完成。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">训练结束后将自动进入 Quick Test (10局)。</span>';
+      if(statusEl)statusEl.innerHTML='🟡 <strong>Training in progress...</strong> '+tpStr+' games completed.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Auto Quick Test (10 games) will start after training.</span>';
     }
     // ---- TESTING phase: poll playtest progress ----
     if(phase==='testing'&&!playtestPollTimer){
@@ -2346,7 +2346,7 @@ function startBatchPlaytest(){
   var bs=$('pt-backend-badge');
   if(bs&&bs.textContent!=='IDLE'){
     var statusEl=$('playtest-cloud-status');
-    if(statusEl)statusEl.innerHTML='🔒 <strong>后台正在运行中</strong>（'+bs.textContent+'）— 无法同时启动云端测试。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请等待后台任务完成后再操作。</span>';
+    if(statusEl)statusEl.innerHTML='🔒 <strong>Backend running</strong> ('+bs.textContent+') — cannot start cloud test now.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Please wait for the backend task to complete.</span>';
     return;
   }
   batchCancelled=false;
@@ -2359,7 +2359,7 @@ function startBatchPlaytest(){
   tokenModalAction='playtest';
   openTokenModal();
   var statusEl=$('playtest-cloud-status');
-  if(statusEl)statusEl.innerHTML='🔑 输入密码后即可启动 '+batchPlaytestTotal+' 局云端测试。';
+  if(statusEl)statusEl.innerHTML='🔑 Enter password to start '+batchPlaytestTotal+' cloud test games.';
 }
 
 /* Dispatch GitHub Actions workflow */
@@ -2389,7 +2389,7 @@ async function dispatchPlaytestWorkflow(){
 
   var infoEl=$('playtest-batch-info');
   if(infoEl)infoEl.textContent='Dispatching...';
-  if(statusEl)statusEl.innerHTML='⏳ 正在触发 GitHub Actions 云端测试 ('+batchPlaytestTotal+' 局)...';
+  if(statusEl)statusEl.innerHTML='⏳ Triggering GitHub Actions cloud test ('+batchPlaytestTotal+' games)...';
 
   var barEl=$('playtest-batch-bar');
   if(barEl)barEl.style.width='0%';
@@ -2409,7 +2409,7 @@ async function dispatchPlaytestWorkflow(){
       body:JSON.stringify({ref:'main',inputs:{games:String(batchPlaytestTotal)}})
     });
     if(resp.status===204){
-      if(statusEl)statusEl.innerHTML='🚀 <strong>云端测试已触发！</strong> '+batchPlaytestTotal+' 局 AI test.<br><span style="font-size:11px;color:#ffd166">GitHub Actions 正在启动... 约需 30-60 秒开始推送进度。</span>';
+      if(statusEl)statusEl.innerHTML='🚀 <strong>Cloud test triggered!</strong> '+batchPlaytestTotal+' AI test games.<br><span style="font-size:11px;color:#ffd166">GitHub Actions starting... takes about 30-60s to begin pushing progress.</span>';
       if(infoEl)infoEl.textContent='Workflow running...';
       // Start polling after a delay
       setTimeout(function(){startPollingPlaytestProgress();},25000);
@@ -2419,21 +2419,21 @@ async function dispatchPlaytestWorkflow(){
       batchPlaytestMode=false;
       if(startBtn)startBtn.style.display='';
       if(stopBtn)stopBtn.style.display='none';
-      if(statusEl)statusEl.innerHTML='❌ Token 已过期，请重新输入密码授权。';
+      if(statusEl)statusEl.innerHTML='❌ Token expired, please re-enter password for authorization.';
       openTokenModal();
     }else{
       sessionStorage.removeItem(LS_PLAYTEST_TRIGGERED);
       batchPlaytestMode=false;
       if(startBtn)startBtn.style.display='';
       if(stopBtn)stopBtn.style.display='none';
-      if(statusEl)statusEl.innerHTML='❌ 启动失败 (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+PLAYTEST_WORKFLOW_ID+'" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
+      if(statusEl)statusEl.innerHTML='❌ Start failed (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+PLAYTEST_WORKFLOW_ID+'" target="_blank" style="color:#ffd166">Actions page</a> to trigger manually.</span>';
     }
   }catch(e){
     sessionStorage.removeItem(LS_PLAYTEST_TRIGGERED);
     batchPlaytestMode=false;
     if(startBtn)startBtn.style.display='';
     if(stopBtn)stopBtn.style.display='none';
-    if(statusEl)statusEl.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+PLAYTEST_WORKFLOW_ID+'" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
+    if(statusEl)statusEl.innerHTML='❌ Network error: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+PLAYTEST_WORKFLOW_ID+'" target="_blank" style="color:#ffd166">Actions page</a> to trigger manually.</span>';
   }
 }
 
@@ -2568,7 +2568,7 @@ function finishBatchPlaytest(){
   if(stopBtn){stopBtn.style.display='none';stopBtn.disabled=false;}
   if(barEl)barEl.style.width='100%';
   if(infoEl)infoEl.textContent='Done! '+batchPlaytestWins+'W '+batchPlaytestFails+'L';
-  if(statusEl)statusEl.innerHTML='✅ <strong>Playtest 完成！</strong> '+batchPlaytestWins+' wins, '+batchPlaytestFails+' losses ('+Math.round(batchPlaytestWins/batchPlaytestTotal*100)+'% win rate).<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Results saved to <code>ai-playtest-progress.json</code>.</span>';
+  if(statusEl)statusEl.innerHTML='✅ <strong>Playtest complete!</strong> '+batchPlaytestWins+' wins, '+batchPlaytestFails+' losses ('+Math.round(batchPlaytestWins/batchPlaytestTotal*100)+'% win rate).<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Results saved to <code>ai-playtest-progress.json</code>.</span>';
   sessionStorage.removeItem(LS_PLAYTEST_TRIGGERED);
   renderBatchGameResults();
 }
@@ -2578,7 +2578,7 @@ function cancelBatchPlaytest(){
   batchCancelled=true;
   batchPlaytestMode=false;
   var statusEl=$('playtest-cloud-status');
-  if(statusEl)statusEl.innerHTML='⏹ <strong>已取消。</strong> GitHub Actions 工作流将在当前局结束后停止。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">可到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions" target="_blank" style="color:#ffd166">Actions 页面</a>手动取消工作流。</span>';
+  if(statusEl)statusEl.innerHTML='⏹ <strong>Cancelled.</strong> GitHub Actions workflow will stop after current game.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions" target="_blank" style="color:#ffd166">Actions page</a> to cancel workflow manually.</span>';
   finishBatchPlaytest();
 }
 
@@ -2608,7 +2608,7 @@ var gameResults=$('pt-game-results');
 if(gameResults)gameResults.style.display='';
 var statusEl=$('playtest-cloud-status');
 if(data.active){
-if(statusEl)statusEl.innerHTML='🔄 <strong>云端测试正在进行中...</strong> 已在 '+batchPlaytestCurrent+'/'+batchPlaytestTotal+' 局。<br><span style="font-size:11px;color:#ffd166">轮询刷新中，最新结果将自动显示。</span>';
+if(statusEl)statusEl.innerHTML='🔄 <strong>Cloud test in progress...</strong> '+batchPlaytestCurrent+'/'+batchPlaytestTotal+' games completed.<br><span style="font-size:11px;color:#ffd166">Polling for updates, latest results will appear automatically.</span>';
 startPollingPlaytestProgress();
 // Keep stop button visible, show Testing... state
 var startBtn=$('playtest-batch-start');
@@ -2617,7 +2617,7 @@ if($('playtest-batch-stop')){$('playtest-batch-stop').style.display='';$('playte
 if($('playtest-batch-progress'))$('playtest-batch-progress').style.display='';
 batchPlaytestMode=true;
         }else{
-          if(statusEl)statusEl.innerHTML='📋 <strong>上次测试结果</strong> ('+batchPlaytestCurrent+' games): '+batchPlaytestWins+'W '+batchPlaytestFails+'L, best max tile '+Math.max.apply(null,data.results.map(function(g){return g.maxTile}))+'.';
+          if(statusEl)statusEl.innerHTML='📋 <strong>Last test results</strong> ('+batchPlaytestCurrent+' games): '+batchPlaytestWins+'W '+batchPlaytestFails+'L, best max tile '+Math.max.apply(null,data.results.map(function(g){return g.maxTile}))+'.';
         }
       }
       // If local trigger flag is set, keep polling
@@ -2687,7 +2687,7 @@ function openTokenModal(){
   m.style.display='flex';
   var inp=$('token-input');inp.value='';
   $('token-err').style.display='none';
-  $('token-modal-title').textContent=tokenModalAction==='playtest'?'🔑 云端测试授权':'🔑 训练授权';
+  $('token-modal-title').textContent=tokenModalAction==='playtest'?'🔑 Cloud Test Authorization':'🔑 Training Authorization';
   setTimeout(function(){inp.focus();},100);
 }
 function closeTokenModal(){$('token-modal').style.display='none';isTokenModalOpen=false;}
@@ -2719,7 +2719,7 @@ async function startTraining(){
   // Check if backend auto-train loop is running
   var bs=$('backend-phase-badge');
   if(bs&&bs.textContent!=='IDLE'){
-    $('training-log').innerHTML='🔒 <strong>后台正在运行中</strong>（'+bs.textContent+'）— 无法同时启动新的训练。<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请等待后台任务完成后再操作。</span>';
+    $('training-log').innerHTML='🔒 <strong>Backend running</strong> ('+bs.textContent+') — cannot start new training.<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Please wait for the backend task to complete.</span>';
     return;
   }
   var log=$('training-log');
@@ -2727,13 +2727,13 @@ async function startTraining(){
   if(!token){
     // No token — open password modal
     openTokenModal();
-    log.innerHTML='🔑 需要输入密码授权才能触发训练。';
+    log.innerHTML='🔑 Password required to authorize training.';
     return;
   }
   $('ai-train').disabled=true;
-  $('ai-train').textContent='⏳ 触发中...';
+  $('ai-train').textContent='⏳ Triggering...';
   sessionStorage.setItem('ai-training-triggered',Date.now());
-  log.innerHTML='⏳ 正在触发 GitHub Actions 训练...';
+  log.innerHTML='⏳ Triggering GitHub Actions training...';
   try{
     var apiUrl='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/'+GH_WORKFLOW_ID+'/dispatches';
     var resp=await fetch(apiUrl,{
@@ -2746,26 +2746,26 @@ async function startTraining(){
       body:JSON.stringify({ref:'main',inputs:{games:'200'}})
     });
     if(resp.status===204){
-      log.innerHTML='🚀 <strong>训练已触发！</strong> 200 局自对弈。<br><span style="font-size:11px;color:#ffd166">GitHub Actions 正在启动... 约需 30-60 秒开始推送进度。</span>';
+      log.innerHTML='🚀 <strong>Training triggered!</strong> 200 self-play games.<br><span style="font-size:11px;color:#ffd166">GitHub Actions starting... takes about 30-60s to begin pushing progress.</span>';
       $('ai-train').textContent='⏳ Training...';
       setTimeout(startPollingProgress,20000);
     }else if(resp.status===401||resp.status===403){
       // Token expired, clear and ask for password again
       setGHToken('');
       sessionStorage.removeItem('ai-training-triggered');
-      log.innerHTML='❌ Token 已过期，请重新输入密码授权。';
+      log.innerHTML='❌ Token expired, please re-enter password for authorization.';
       openTokenModal();
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
     }else{
       sessionStorage.removeItem('ai-training-triggered');
-      log.innerHTML='❌ 启动失败 (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
+      log.innerHTML='❌ Start failed (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions page</a> to trigger manually.</span>';
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
     }
   }catch(e){
     sessionStorage.removeItem('ai-training-triggered');
-    log.innerHTML='❌ 网络错误: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">请到 <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions 页面</a> 手动触发。</span>';
+    log.innerHTML='❌ Network error: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions page</a> to trigger manually.</span>';
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
   }
@@ -2785,7 +2785,7 @@ if(aiNet)aiNet._meta=w;
       drawTrainingCurve();
       drawMaxTileChart();
       console.log('AI weights reloaded from repo:',w.l1W.length,'weights, v'+(w.version||0));
-      $('training-log').innerHTML='✅ <strong>权重已更新！</strong><br>版本 v'+(w.version||0)+' · '+w.l1W.length+' 个参数'+(w.trainTime?' · 训练耗时 '+w.trainTime:'')+(w.bestMaxTile?' · 最高方块 '+w.bestMaxTile:'');
+      $('training-log').innerHTML='✅ <strong>Weights updated!</strong><br>Version v'+(w.version||0)+' · '+w.l1W.length+' parameters'+(w.trainTime?' · Training time '+w.trainTime:'')+(w.bestMaxTile?' · Best tile '+w.bestMaxTile:'');
     }
   }catch(e){
     // Weight file not ready yet, will load on next page refresh
@@ -2802,7 +2802,7 @@ function stopTraining(){
   show('entry-screen');
 }
 (function restoreAi(){
-  // 优先从仓库的 ai-weights.json 加载
+  // Priority: load from repo ai-weights.json
   fetch(WEIGHTS_URL+'?t='+Date.now())
     .then(r=>r.json())
     .then(w=>{
@@ -2815,7 +2815,7 @@ if(aiNet)aiNet._meta=w;
       }
     })
     .catch(()=>{
-      // Fallback 到 localStorage
+      // Fallback to localStorage
       try{
         const saved=localStorage.getItem(LS_AI_WEIGHTS);
         if(saved){const w=JSON.parse(saved);if(w&&w.l1W&&w.l1W.length>100){initAiNet(w);aiTrainGames=100;loadedWeightVersion=100;refreshAiEvalLeaf();if(aiNet)aiNet._meta=w;}}
@@ -2839,7 +2839,7 @@ function sMove(g,dir){var n=g.map(r=>r.slice()),ch=false,gn=0;for(var i=0;i<4;i+
 function sEmpty(g){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!g[r][c])e.push([r,c]);return e}
 function sHasMoves(g){for(var r=0;r<4;r++)for(var c=0;c<4;c++){if(!g[r][c])return true;if(c<3&&g[r][c]===g[r][c+1])return true;if(r<3&&g[r][c]===g[r+1][c])return true}return false}
 function sHeuristic(g){var e=sEmpty(g).length,sm=0,mg=0,mx=0,tc=0;var pw=new Set();for(var r=0;r<4;r++)for(var c=0;c<4;c++){var v=g[r][c];if(v){tc++;if(v>mx)mx=v;if(v>2)pw.add(Math.log2(v)|0);if(c<3){var o=g[r][c+1];if(o){sm-=Math.abs(Math.log2(v)-Math.log2(o));if(v===o)mg++;}}if(r<3){var o2=g[r+1][c];if(o2){sm-=Math.abs(Math.log2(v)-Math.log2(o2));if(v===o2)mg++;}}}}var sn=[[16,15,14,13],[9,10,11,12],[8,7,6,5],[1,2,3,4]];var st=0;for(var r2=0;r2<4;r2++)for(var c2=0;c2<4;c2++)st+=(g[r2][c2]?Math.log2(g[r2][c2]):0)*sn[r2][c2];var cu=mx>0&&Math.max(g[0][0],g[0][3],g[3][0],g[3][3])===mx?1:0;var fillPenalty=(tc-e)*30;return e*100+st*5+Math.log2(mx||1)*20+cu*150+sm*8+mg*120-fillPenalty;}
-// Showcase 使用快速 Expectimax 搜索（比纯启发式更强）
+// Showcase uses fast Expectimax search (stronger than pure heuristic)
 function sExpectimax(grid,depth,isChance,table){
   if(depth<=0)return sHeuristic(grid);
   var key=JSON.stringify(grid)+'_'+depth+'_'+(isChance?1:0);
@@ -2872,7 +2872,7 @@ function sExpectimax(grid,depth,isChance,table){
 }
 function sGetDepth(g){var e=sEmpty(g).length;if(e>=8)return 2;if(e>=4)return 3;return 4;}
 function sPick(g){
-  // 使用 Expectimax 搜索选择移动
+  // Use Expectimax search to select moves
   var table=new Map();
   var depth=sGetDepth(g);
   var b=-1,bv=-Infinity;
@@ -2881,7 +2881,7 @@ function sPick(g){
     if(!res.ch)continue;
     var v=res.g+sExpectimax(res.next,depth,true,table);
     if(v>bv){bv=v;b=d}}
-  // Fallback: 如果搜索失败，使用启发式
+  // Fallback: use heuristic if search fails
   if(b<0){bv=-Infinity;for(var d2=0;d2<4;d2++){var res2=sMove(g,d2);if(!res2.ch)continue;var v2=sHeuristic(res2.next)+res2.g;if(v2>bv){bv=v2;b=d2}}}
   return b;
 }
@@ -3173,10 +3173,10 @@ bind('token-save',async()=>{
 SFX.button();
 var pw=$('token-input').value;
 if(!pw)return;
-$('token-save').textContent='验证中...';
+$('token-save').textContent='Verifying...';
 $('token-save').disabled=true;
 var ok=await verifyPasswordAndLoadToken(pw);
-$('token-save').textContent='确认';
+$('token-save').textContent='Confirm';
 $('token-save').disabled=false;
 if(ok){closeTokenModal(); if(tokenModalAction==='playtest'){dispatchPlaytestWorkflow();}else{startTraining();}}
 else{$('token-err').style.display='block';$('token-input').value='';$('token-input').focus();}
