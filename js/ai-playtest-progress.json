@@ -1,94 +1,22 @@
 {
-  "active": false,
-  "timestamp": "2026-08-19T01:52:29.218Z",
+  "active": true,
+  "timestamp": "2026-08-19T07:35:16.970Z",
   "totalGames": 10,
-  "completedGames": 10,
-  "wins": 8,
-  "fails": 2,
-  "winRate": 80,
-  "avgScore": 32237,
-  "bestMaxTile": 4096,
-  "totalDurationMs": 1160600,
+  "completedGames": 1,
+  "wins": 1,
+  "fails": 0,
+  "winRate": 100,
+  "avgScore": 37296,
+  "bestMaxTile": 2048,
+  "totalDurationMs": 135738,
   "results": [
     {
       "game": 1,
-      "result": "fail",
-      "score": 16896,
-      "maxTile": 1024,
-      "steps": 1003,
-      "duration": 59648
-    },
-    {
-      "game": 2,
       "result": "win",
-      "score": 35872,
+      "score": 37296,
       "maxTile": 2048,
-      "steps": 1838,
-      "duration": 132293
-    },
-    {
-      "game": 3,
-      "result": "win",
-      "score": 32464,
-      "maxTile": 2048,
-      "steps": 1663,
-      "duration": 117690
-    },
-    {
-      "game": 4,
-      "result": "win",
-      "score": 27940,
-      "maxTile": 2048,
-      "steps": 1464,
-      "duration": 103656
-    },
-    {
-      "game": 5,
-      "result": "win",
-      "score": 34540,
-      "maxTile": 2048,
-      "steps": 1762,
-      "duration": 112686
-    },
-    {
-      "game": 6,
-      "result": "win",
-      "score": 34916,
-      "maxTile": 2048,
-      "steps": 1811,
-      "duration": 129644
-    },
-    {
-      "game": 7,
-      "result": "fail",
-      "score": 15660,
-      "maxTile": 1024,
-      "steps": 919,
-      "duration": 58028
-    },
-    {
-      "game": 8,
-      "result": "win",
-      "score": 58908,
-      "maxTile": 4096,
-      "steps": 2706,
-      "duration": 201402
-    },
-    {
-      "game": 9,
-      "result": "win",
-      "score": 36840,
-      "maxTile": 2048,
-      "steps": 1914,
-      "duration": 138946
-    },
-    {
-      "game": 10,
-      "result": "win",
-      "score": 28336,
-      "maxTile": 2048,
-      "steps": 1493,
-      "duration": 106607
+      "steps": 1941,
+      "duration": 135738
     }
   ]
 }
