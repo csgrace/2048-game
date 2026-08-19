@@ -1,13 +1,13 @@
 {
   "active": true,
-  "phase": "testing",
-  "round": 6,
+  "phase": "training",
+  "round": 7,
   "maxRounds": 50,
   "version": 2492,
-  "testProgress": "10/10",
-  "wins": 7,
-  "winRate": 70,
-  "message": "Testing game 10/10 - 7 wins (70%)",
-  "lastUpdate": "2026-08-19T07:46:26.679Z",
+  "trainGames": 350,
+  "testGames": 10,
+  "lr": 0.003,
+  "message": "Round 7/50 - TRAINING 350 games (lr=0.003, base v2492)",
+  "lastUpdate": "2026-08-19T07:46:34.681Z",
   "pid": 62876
 }
