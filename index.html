@@ -21,6 +21,9 @@
   --c-text-dark:#776e65;--c-text-light:#f9f6f2;
   --c-accent:#8f7a66;--c-accent-h:#a59178;
   --c-glow:rgba(143,122,102,.35);
+  --bg-star:255,223,150;--bg-star-secondary:202,160,255;
+  --bg-orbit-1:rgba(113,82,204,.16);--bg-orbit-2:rgba(255,193,92,.09);
+  --bg-orbit-3:rgba(245,105,147,.08);
   --radius:14px;
 }
 /* Theme variants */
@@ -30,6 +33,9 @@
   --c-text-dark:#e0e0e0;--c-text-light:#ffffff;
   --c-accent:#5a4a3a;--c-accent-h:#7a6a5a;
   --c-glow:rgba(90,74,58,.35);
+  --bg-star:216,224,255;--bg-star-secondary:119,139,180;
+  --bg-orbit-1:rgba(80,100,155,.13);--bg-orbit-2:rgba(160,180,220,.05);
+  --bg-orbit-3:rgba(70,80,115,.10);
 }
 [data-theme="ocean"]{
   --c-empty:#b8d4e3;--c-board:#7eb8d4;
@@ -37,6 +43,9 @@
   --c-text-dark:#1a3a4a;--c-text-light:#ffffff;
   --c-accent:#2a7a9a;--c-accent-h:#3a8aaa;
   --c-glow:rgba(42,122,154,.35);
+  --bg-star:159,231,255;--bg-star-secondary:86,176,222;
+  --bg-orbit-1:rgba(18,172,212,.18);--bg-orbit-2:rgba(50,218,198,.10);
+  --bg-orbit-3:rgba(65,120,255,.10);
 }
 [data-theme="forest"]{
   --c-empty:#c8d6af;--c-board:#8fb369;
@@ -44,6 +53,9 @@
   --c-text-dark:#2d4a2d;--c-text-light:#f0f5e8;
   --c-accent:#5a7a3a;--c-accent-h:#6a8a4a;
   --c-glow:rgba(90,122,58,.35);
+  --bg-star:223,255,164;--bg-star-secondary:124,204,116;
+  --bg-orbit-1:rgba(93,174,87,.18);--bg-orbit-2:rgba(206,235,105,.10);
+  --bg-orbit-3:rgba(39,118,78,.12);
 }
 [data-theme="sunset"]{
   --c-empty:#f5d0c5;--c-board:#e8a89a;
@@ -51,6 +63,9 @@
   --c-text-dark:#4a2d4a;--c-text-light:#fff5f0;
   --c-accent:#c46a5a;--c-accent-h:#d47a6a;
   --c-glow:rgba(196,106,90,.35);
+  --bg-star:255,221,148;--bg-star-secondary:255,147,128;
+  --bg-orbit-1:rgba(255,119,91,.20);--bg-orbit-2:rgba(255,202,93,.12);
+  --bg-orbit-3:rgba(207,75,150,.12);
 }
 html,body{height:100%}
 body{font-family:'Segoe UI','Helvetica Neue',sans-serif;color:var(--c-text-light);overflow-x:hidden;position:relative}
@@ -60,10 +75,10 @@ body{font-family:'Segoe UI','Helvetica Neue',sans-serif;color:var(--c-text-light
 body::before{
   content:'';position:fixed;inset:-50%;z-index:0;
   background:conic-gradient(from 0deg at 50% 50%,
-    rgba(143,122,102,.08) 0deg,rgba(237,194,46,.04) 60deg,
-    rgba(246,94,59,.04) 120deg,rgba(143,122,102,.06) 180deg,
-    rgba(237,207,114,.04) 240deg,rgba(242,177,121,.05) 300deg,
-    rgba(143,122,102,.08) 360deg);
+    var(--bg-orbit-1) 0deg,var(--bg-orbit-2) 60deg,
+    var(--bg-orbit-3) 120deg,var(--bg-orbit-1) 180deg,
+    var(--bg-orbit-2) 240deg,var(--bg-orbit-3) 300deg,
+    var(--bg-orbit-1) 360deg);
   animation:bgspin 20s linear infinite;
 }
 @keyframes bgspin{to{transform:rotate(360deg)}}
@@ -99,6 +114,23 @@ body::before{
 .pick .icon{font-size:40px;display:block;margin-bottom:8px}
 .pick small{display:block;font-weight:400;opacity:.75;font-size:13px;margin-top:6px}
 .pick:hover{background:rgba(143,122,102,.35);transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+
+.home-preferences{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:450px;margin:16px auto 0}
+.preference-card{min-height:74px;padding:11px 13px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.035));box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 8px 24px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
+.preference-heading{display:flex;align-items:center;gap:7px;margin-bottom:9px;color:rgba(255,255,255,.88);font-size:12px;font-weight:700;letter-spacing:.2px}
+.preference-heading .pref-icon{font-size:16px}
+.theme-picker{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.theme-choice{position:relative;width:100%;aspect-ratio:1;border:1px solid rgba(255,255,255,.25);border-radius:50%;cursor:pointer;transition:transform .18s,box-shadow .18s;background:var(--theme-swatch);box-shadow:inset 0 1px 2px rgba(255,255,255,.45)}
+.theme-choice:hover{transform:translateY(-2px) scale(1.08)}
+.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 4px 12px var(--c-glow);transform:scale(1.05)}
+.theme-choice::after{content:attr(aria-label);position:absolute;z-index:4;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:4px 7px;border-radius:6px;background:rgba(8,12,28,.9);color:#fff;font-size:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.theme-choice:hover::after{opacity:1}
+.volume-control{display:flex;align-items:center;gap:9px}
+.volume-control input{appearance:none;width:100%;height:6px;border-radius:99px;background:linear-gradient(90deg,#ffd166 var(--volume-progress,80%),rgba(255,255,255,.18) var(--volume-progress,80%));outline:none;cursor:pointer}
+.volume-control input::-webkit-slider-thumb{appearance:none;width:15px;height:15px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}
+.volume-control input::-moz-range-thumb{width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}
+#vol-label{min-width:32px;color:#ffd166;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+@media(max-width:440px){.home-preferences{grid-template-columns:1fr;max-width:300px}.preference-card{min-height:auto}.theme-picker{max-width:175px}}
 
 .ai-entry{
   display:flex;align-items:center;gap:14px;width:100%;max-width:450px;
@@ -464,23 +496,25 @@ transition:all .25s ease;
       </span>
       <span class="pt-arrow">→</span>
     </button>
-    <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:20px">
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5)">
-        🎨 Theme
-        <select id="sel-theme" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:12px;cursor:pointer">
-          <option value="default">Default</option>
-          <option value="dark">Dark</option>
-          <option value="ocean">Ocean</option>
-          <option value="forest">Forest</option>
-          <option value="sunset">Sunset</option>
-        </select>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5)">
-        🔊 Volume
-        <input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Sound volume" style="width:100px;accent-color:#ffd166;cursor:pointer">
-        <span id="vol-label" style="color:#ffd166;min-width:30px">80%</span>
-      </label>
-    </div>
+    <section class="home-preferences" aria-label="Appearance and sound preferences">
+      <div class="preference-card">
+        <div class="preference-heading"><span class="pref-icon">🎨</span> Theme</div>
+        <div class="theme-picker" id="theme-picker" role="radiogroup" aria-label="Color theme">
+          <button class="theme-choice active" type="button" data-theme-value="default" role="radio" aria-label="Purple Night" aria-checked="true" style="--theme-swatch:linear-gradient(135deg,#0f1428,#8c58ce)"></button>
+          <button class="theme-choice" type="button" data-theme-value="dark" role="radio" aria-label="Midnight" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#08080f,#455a7c)"></button>
+          <button class="theme-choice" type="button" data-theme-value="ocean" role="radio" aria-label="Ocean" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#082d4b,#19b8d2)"></button>
+          <button class="theme-choice" type="button" data-theme-value="forest" role="radio" aria-label="Forest" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#182f1a,#92c85d)"></button>
+          <button class="theme-choice" type="button" data-theme-value="sunset" role="radio" aria-label="Sunset" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#48204b,#ff966d)"></button>
+        </div>
+      </div>
+      <div class="preference-card">
+        <div class="preference-heading"><span class="pref-icon">🔊</span> Sound</div>
+        <div class="volume-control">
+          <input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Sound volume">
+          <span id="vol-label">80%</span>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- ============ PLAYTEST ARENA ============ -->
@@ -707,14 +741,9 @@ transition:all .25s ease;
         <canvas id="training-tiles" width="280" height="50" style="width:100%;height:50px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08)"></canvas>
       </div>
 
-      <!-- Status log -->
-      <div id="training-log" style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.7);max-height:120px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;border-radius:8px;padding:8px 10px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.06)" aria-live="polite">Click Train on GitHub to start background training.</div>
-
-      <!-- Workflow runs -->
-      <div style="margin-top:8px">
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px">☁️ GitHub Actions Runs</div>
-        <div id="training-jobs"></div>
-      </div>
+      <!-- Compatibility-only status nodes: detailed live status is shown above in Training Status. -->
+      <div id="training-log" hidden aria-live="polite"></div>
+      <div id="training-jobs" hidden></div>
 
       <section class="training-details" aria-label="Training logic explanation">
         <h3>Training Process</h3>
@@ -868,23 +897,39 @@ transition:all .25s ease;
 let bgAnimationFrameId=null;
 (function(){
   const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
-  let W,H,stars=[];
-  function resize(){const dpr=window.devicePixelRatio||1;W=c.width=innerWidth*dpr;H=c.height=innerHeight*dpr;c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';x.scale(dpr,dpr);initStars()}
-  function initStars(){stars=[];for(let i=0;i<80;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.4,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28})}
+  let W,H,stars=[],palette={top:'#0f1428',bottom:'#321e50',star:'255,223,150',starSecondary:'202,160,255'};
+  function refreshBackgroundTheme(){
+    const styles=getComputedStyle(document.documentElement);
+    palette={
+      top:styles.getPropertyValue('--c-bg-top').trim(),
+      bottom:styles.getPropertyValue('--c-bg-bot').trim(),
+      star:styles.getPropertyValue('--bg-star').trim(),
+      starSecondary:styles.getPropertyValue('--bg-star-secondary').trim()
+    };
+    initStars();
+  }
+  window.refreshBackgroundTheme=refreshBackgroundTheme;
+  function resize(){
+    const dpr=window.devicePixelRatio||1;
+    W=innerWidth;H=innerHeight;c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);
+    c.style.width=W+'px';c.style.height=H+'px';x.setTransform(dpr,0,0,dpr,0,0);initStars();
+  }
+  function initStars(){stars=[];for(let i=0;i<92;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.35,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28,t:Math.random()})}
   function frame(){
     x.clearRect(0,0,W,H);
     const g=x.createLinearGradient(0,0,W,H);
-    g.addColorStop(0,'#0f1428');g.addColorStop(1,'#321e50');
+    g.addColorStop(0,palette.top);g.addColorStop(1,palette.bottom);
     x.fillStyle=g;x.fillRect(0,0,W,H);
     for(const s of stars){
       s.ph+=s.a;
-      const alpha=.3+.7*Math.sin(s.ph)*Math.sin(s.ph);
-      x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fillStyle=`rgba(255,255,255,${alpha*.5})`;x.fill();
+      const alpha=.22+.78*Math.sin(s.ph)*Math.sin(s.ph);
+      const color=s.t>.58?palette.starSecondary:palette.star;
+      x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fillStyle=`rgba(${color},${alpha*.58})`;x.fill();
       s.y-=s.s;if(s.y<-5){s.y=H+5;s.x=Math.random()*W}
     }
     bgAnimationFrameId=requestAnimationFrame(frame)
   }
-  addEventListener('resize',resize);resize();frame()
+  addEventListener('resize',resize);refreshBackgroundTheme();resize();frame()
 })();
 function stopBgAnimation(){if(bgAnimationFrameId){cancelAnimationFrame(bgAnimationFrameId);bgAnimationFrameId=null;}}
 
@@ -958,11 +1003,15 @@ function initVolume(){
   }catch(e){}
   const slider=$('vol-slider');
   const label=$('vol-label');
-  if(slider){slider.value=Math.round(sfxVolume*100)}
-  if(label){label.textContent=Math.round(sfxVolume*100)+'%'}
+  function renderVolume(){
+    const percent=Math.round(sfxVolume*100);
+    if(slider){slider.value=percent;slider.style.setProperty('--volume-progress',percent+'%');}
+    if(label)label.textContent=percent+'%';
+  }
+  renderVolume();
   if(slider)slider.addEventListener('input',()=>{
     sfxVolume=slider.value/100;
-    if(label)label.textContent=slider.value+'%';
+    renderVolume();
     try{localStorage.setItem(VOL_KEY,String(sfxVolume))}catch(e){}
   });
 }
@@ -1949,8 +1998,7 @@ if(isTrainingTriggeredLocally()){
 window.isTokenModalOpen = isTokenModalOpen;
 // Load existing weights history for visualization
 loadTrainingStatsFromWeights();
-drawTrainingCurve();
-drawMaxTileChart();
+requestAnimationFrame(redrawTrainingCharts);
 // Check if a training run is in progress by polling progress file
 checkTrainingProgress();
 // Start backend status polling
@@ -1981,7 +2029,8 @@ function setupTrainingChartCanvas(canvas,width,height){
   const dpr=window.devicePixelRatio||1;
   canvas.width=Math.round(width*dpr);
   canvas.height=Math.round(height*dpr);
-  canvas.style.width=width+'px';
+  // CSS owns the responsive width (width:100%); only the drawing buffer is sized here.
+  canvas.style.width='100%';
   canvas.style.height=height+'px';
   const ctx=canvas.getContext('2d');
   ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -1989,9 +2038,22 @@ function setupTrainingChartCanvas(canvas,width,height){
 }
 /* Draw loss curve on canvas */
 let _lossPoints=[]; // store for hover detection
+function getTrainingChartWidth(canvas){
+  const container=canvas.parentElement;
+  return Math.max(1,Math.floor((container&&container.getBoundingClientRect().width)||canvas.getBoundingClientRect().width||280));
+}
+function redrawTrainingCharts(){
+  drawTrainingCurve();
+  drawMaxTileChart();
+}
+let trainingChartResizeTimer=null;
+window.addEventListener('resize',function(){
+  clearTimeout(trainingChartResizeTimer);
+  trainingChartResizeTimer=setTimeout(redrawTrainingCharts,100);
+});
 function drawTrainingCurve(){
   const c=$('training-curve');if(!c)return;
-  const W=Math.max(1,c.clientWidth||280);
+  const W=getTrainingChartWidth(c);
   const H=80;
   c.style.height=H+'px';
   const ctx=setupTrainingChartCanvas(c,W,H);
@@ -2066,7 +2128,7 @@ function drawTrainingCurve(){
 /* Draw max tile bar chart */
 function drawMaxTileChart(){
   const c=$('training-tiles');if(!c)return;
-  const W=Math.max(1,c.clientWidth||280);
+  const W=getTrainingChartWidth(c);
   const H=50;
   c.style.height=H+'px';
   const ctx=setupTrainingChartCanvas(c,W,H);
@@ -3625,14 +3687,26 @@ const THEME_KEY='g2048_theme_v1';
 function applyTheme(t){
   if(t==='default'){document.documentElement.removeAttribute('data-theme')}
   else{document.documentElement.setAttribute('data-theme',t)}
+  if(window.refreshBackgroundTheme)window.refreshBackgroundTheme();
   try{localStorage.setItem(THEME_KEY,t)}catch(e){}
 }
 function initTheme(){
   let t='default';
   try{t=localStorage.getItem(THEME_KEY)||'default'}catch(e){}
   applyTheme(t);
-  const sel=$('sel-theme');
-  if(sel){sel.value=t;sel.addEventListener('change',()=>{applyTheme(sel.value)})}
+  const choices=document.querySelectorAll('.theme-choice');
+  function renderThemeChoice(value){
+    choices.forEach(function(choice){
+      const active=choice.dataset.themeValue===value;
+      choice.classList.toggle('active',active);
+      choice.setAttribute('aria-checked',String(active));
+    });
+  }
+  renderThemeChoice(t);
+  choices.forEach(function(choice){choice.addEventListener('click',function(){
+    const value=choice.dataset.themeValue;
+    applyTheme(value);renderThemeChoice(value);
+  })});
 }
 
 /* keyboard */
