@@ -335,6 +335,7 @@ transition:all .25s ease;
 @keyframes appear{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
 #board .cell.merging{animation:pop .2s ease .15s both;z-index:3}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
+.merge-spark{position:absolute;z-index:6;pointer-events:none;width:8px;height:8px;background:var(--c-accent-h);box-shadow:0 0 12px var(--c-glow);animation:mergeSpark .52s cubic-bezier(.15,.7,.3,1) forwards}.merge-spark.heart{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}.merge-spark.heart::before,.merge-spark.heart::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:inherit}.merge-spark.heart::before{left:-4px}.merge-spark.heart::after{top:-4px}.merge-spark.star{clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%)}.merge-spark.paper{width:11px;height:7px;border-radius:1px;transform:skewX(-18deg)}.merge-spark.wave{width:13px;height:6px;border:2px solid var(--c-accent-h);border-top:0;background:transparent;border-radius:0 0 12px 12px}.merge-spark.glitch{width:13px;height:3px;border-radius:0}.merge-spark.leaf{width:8px;height:13px;border-radius:100% 0 100% 0;transform:rotate(35deg)}@keyframes mergeSpark{from{opacity:1;translate:0 0;scale:1;rotate:var(--spark-rotate)}to{opacity:0;translate:var(--spark-x) var(--spark-y);scale:.2;rotate:calc(var(--spark-rotate) + 120deg)}}
 
 .sides{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
 .sides .btn{min-width:72px;padding:8px 10px;font-size:13px}
@@ -931,6 +932,7 @@ let bgAnimationFrameId=null;
     x.save();x.translate(m.x,m.y);x.rotate(m.phase*.12);x.globalAlpha=alpha;
     if(theme==='fearless'||theme==='showgirl'){
       x.fillStyle='rgb('+palette.star+')';for(let i=0;i<4;i++){x.rotate(Math.PI/4);x.fillRect(-m.size/7,-m.size,m.size/3,m.size*2)}
+      if(theme==='showgirl'){x.beginPath();x.arc(0,0,m.size*.26,0,Math.PI*2);x.fill()}
     }else if(theme==='speak-now'||theme==='lover'){
       x.fillStyle='rgb('+palette.starSecondary+')';x.beginPath();x.arc(0,-m.size*.28,m.size*.42,0,Math.PI*2);x.arc(-m.size*.34,m.size*.13,m.size*.42,0,Math.PI*2);x.arc(m.size*.34,m.size*.13,m.size*.42,0,Math.PI*2);x.fill()
     }else if(theme==='red'||theme==='evermore'){
@@ -1570,10 +1572,24 @@ function finalizeRender(mergedIds){
     if(t.value!==v){
       t.value=v;applyTileStyle(t.el,v);
       t.el.classList.remove('merging');void t.el.offsetWidth;t.el.classList.add('merging');
+      playThemeMergeEffect(t.el);
     }
   }
 }
 
+function playThemeMergeEffect(tile){
+  const boardEl=$('board');if(!boardEl||!tile)return;
+  const theme=document.documentElement.dataset.theme||'taylor-swift';
+  const shapes={
+    'taylor-swift':'wave',fearless:'star','speak-now':'star',red:'paper','1989':'wave',reputation:'glitch',lover:'heart',folklore:'leaf',evermore:'leaf',midnights:'star',ttpd:'paper',showgirl:'star'
+  };
+  const left=tile.offsetLeft+tile.offsetWidth/2,top=tile.offsetTop+tile.offsetHeight/2;
+  for(let i=0;i<8;i++){
+    const spark=document.createElement('span'),angle=(Math.PI*2*i/8)+(Math.random()-.5)*.35,distance=28+Math.random()*24;
+    spark.className='merge-spark '+shapes[theme];spark.style.left=left+'px';spark.style.top=top+'px';spark.style.setProperty('--spark-x',Math.cos(angle)*distance+'px');spark.style.setProperty('--spark-y',Math.sin(angle)*distance+'px');spark.style.setProperty('--spark-rotate',Math.round(Math.random()*180)+'deg');
+    boardEl.appendChild(spark);spark.addEventListener('animationend',()=>spark.remove(),{once:true});
+  }
+}
 function updateTimer(){
   const el=$('stat-time');
   if(timerMode==='up'){
