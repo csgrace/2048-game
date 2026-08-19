@@ -894,6 +894,7 @@ let bgAnimationFrameId=null;
 (function(){
   const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
   let W,H,stars=[],motifs=[],palette={top:'#0f1428',bottom:'#321e50',star:'255,223,150',starSecondary:'202,160,255',theme:'taylor-swift'};
+  const FLOATING_ERAS=new Set(['fearless','speak-now','red','lover','evermore','showgirl']);
   function refreshBackgroundTheme(){
     const styles=getComputedStyle(document.documentElement);
     palette={
@@ -913,8 +914,9 @@ let bgAnimationFrameId=null;
   }
   function initStars(){
     stars=[];motifs=[];
-    for(let i=0;i<92;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.35,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28,t:Math.random()});
-    for(let i=0;i<18;i++)motifs.push({x:Math.random()*W,y:Math.random()*H,size:Math.random()*9+5,s:Math.random()*.16+.035,drift:(Math.random()-.5)*.14,phase:Math.random()*6.28,turn:(Math.random()-.5)*.012});
+    const floating=FLOATING_ERAS.has(palette.theme);
+    for(let i=0;i<92;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.35,a:Math.random()*.02+.005,s:floating?Math.random()*.3+.1:0,ph:Math.random()*6.28,t:Math.random()});
+    for(let i=0;i<18;i++)motifs.push({x:Math.random()*W,y:Math.random()*H,size:Math.random()*9+5,s:floating?Math.random()*.16+.035:0,drift:floating?(Math.random()-.5)*.14:0,phase:Math.random()*6.28,turn:(Math.random()-.5)*.012});
   }
   function drawMotif(m){
     const theme=palette.theme,alpha=.055+.04*Math.sin(m.phase)*Math.sin(m.phase);
@@ -948,10 +950,11 @@ let bgAnimationFrameId=null;
       const alpha=.22+.78*Math.sin(s.ph)*Math.sin(s.ph);
       const color=s.t>.58?palette.starSecondary:palette.star;
       x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fillStyle=`rgba(${color},${alpha*.58})`;x.fill();
-      // Stars remain in place and gently twinkle instead of drifting upward.
+      if(s.s){s.y-=s.s;if(s.y<-5){s.y=H+5;s.x=Math.random()*W}}
     }
     for(const m of motifs){
       m.phase+=m.turn;drawMotif(m);
+      if(m.s){m.y-=m.s;m.x+=m.drift;if(m.y<-m.size*2){m.y=H+m.size*2;m.x=Math.random()*W}}
     }
     bgAnimationFrameId=requestAnimationFrame(frame)
   }
@@ -1059,9 +1062,9 @@ const SFX={
    Home-screen settings
    ==================================================================== */
 document.addEventListener('DOMContentLoaded',function(){
+  initAtmosphere();
   initTheme();
   initVolume();
-  initAtmosphere();
 });
 
 /* ====================================================================
@@ -3716,23 +3719,33 @@ function applyTheme(t){
   const theme=ALBUM_THEMES.includes(t)?t:'taylor-swift';
   document.documentElement.setAttribute('data-theme',theme);
   if(window.refreshBackgroundTheme)window.refreshBackgroundTheme();
+  loadThemeMusic(theme);
   try{localStorage.setItem(THEME_KEY,theme)}catch(e){}
 }
 const NETEASE_KEY='g2048_netease_player_v1';
+const THEME_MUSIC_PRESETS={
+  showgirl:{id:'3315528567',type:'song',title:'Opalite · Taylor Swift'}
+};
 function extractNetEaseId(value){
   const match=String(value||'').match(/(?:[?&]id=|\b)(\d{5,})(?:\b|&|$)/);
   return match?match[1]:'';
 }
-function loadNetEasePlayer(){
+function loadNetEasePlayer(preset){
   const input=$('netease-url'),type=$('netease-type'),player=$('netease-player');
-  const id=extractNetEaseId(input&&input.value);
+  const id=preset&&preset.id?preset.id:extractNetEaseId(input&&input.value);
   if(!id||!player)return false;
-  const contentType=type&&type.value==='playlist'?'playlist':'song';
+  const contentType=preset&&preset.type==='playlist'?'playlist':(type&&type.value==='playlist'?'playlist':'song');
+  if(input)input.value=id;
+  if(type)type.value=contentType;
   // NetEase's official outchain player retains provider-side login and playback controls.
   player.src='https://music.163.com/outchain/player?type='+(contentType==='playlist'?0:2)+'&id='+encodeURIComponent(id)+'&auto=0&height=66';
   player.classList.add('visible');
   try{localStorage.setItem(NETEASE_KEY,JSON.stringify({id:id,type:contentType}))}catch(e){}
   return true;
+}
+function loadThemeMusic(theme){
+  const preset=THEME_MUSIC_PRESETS[theme];
+  if(preset)loadNetEasePlayer(preset);
 }
 function initAtmosphere(){
   const panel=$('atmosphere-panel'),trigger=$('btn-atmosphere'),input=$('netease-url'),type=$('netease-type');
@@ -3741,7 +3754,9 @@ function initAtmosphere(){
     trigger.setAttribute('aria-expanded',String(open));
   });
   const saved=(()=>{try{return JSON.parse(localStorage.getItem(NETEASE_KEY)||'null')}catch(e){return null}})();
-  if(saved&&input&&type){input.value=saved.id;type.value=saved.type==='playlist'?'playlist':'song';}
+  const activeTheme=(()=>{try{return localStorage.getItem(THEME_KEY)||'taylor-swift'}catch(e){return 'taylor-swift'}})();
+  if(THEME_MUSIC_PRESETS[activeTheme])loadThemeMusic(activeTheme);
+  else if(saved&&input&&type){input.value=saved.id;type.value=saved.type==='playlist'?'playlist':'song';}
   const load=()=>loadNetEasePlayer();
   if($('btn-load-netease'))$('btn-load-netease').addEventListener('click',load);
   if(input)input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();load();}});
