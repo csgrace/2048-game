@@ -1,10 +1,23 @@
-const CACHE_NAME = '2048-game-v1';
+const CACHE_NAME = '2048-game-v4';
 const ASSETS = [
   './',
   './index.html',
   './js/ai-brain.js',
   './js/ai-trainer-worker.js',
-  './manifest.json'
+  './manifest.json',
+  './music_bgm/Our%20Song.mp3',
+  './music_bgm/Fearless.mp3',
+  './music_bgm/Speak%20now.mp3',
+  './music_bgm/Red.mp3',
+  './music_bgm/Clean.mp3',
+  './music_bgm/Delicate.mp3',
+  './music_bgm/Lover.mp3',
+  './music_bgm/the%201.mp3',
+  './music_bgm/evermore.mp3',
+  './music_bgm/Midnight%20Rain.mp3',
+  './music_bgm/Fortnight.mp3',
+  './music_bgm/Opalite.mp3',
+  './music_bgm/StockTune-Echoes%20Of%20Silent%20Joy_1787127499.mp3'
 ];
 
 self.addEventListener('install', event => {
