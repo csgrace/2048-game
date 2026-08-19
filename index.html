@@ -97,11 +97,11 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
 .home-preferences{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;width:100%;max-width:760px;margin:18px auto 0}
 .preference-card{min-height:112px;padding:13px 15px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.035));box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 8px 24px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
 .preference-heading{display:flex;align-items:center;gap:7px;margin-bottom:10px;color:rgba(255,255,255,.9);font-size:12px;font-weight:700;letter-spacing:.25px}.preference-heading small{margin-left:auto;color:rgba(255,255,255,.48);font-size:10px;font-weight:500}.preference-heading .pref-icon{font-size:16px}
-.theme-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:42px;gap:7px;padding:2px 0}
+.theme-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,42px);gap:7px;padding:2px 0;contain:layout}
     .atmosphere-panel{font-family:'Segoe UI',Arial,sans-serif}.atmosphere-panel .preference-heading,.atmosphere-panel input,.atmosphere-panel select,.atmosphere-panel button,.atmosphere-panel .music-note{font-family:'Segoe UI',Arial,sans-serif}
-    .theme-choice{position:relative;min-width:0;height:42px;padding:5px 7px;border:1px solid rgba(255,255,255,.24);border-radius:9px;cursor:pointer;transition:transform .18s,box-shadow .18s,filter .18s;background:var(--theme-swatch);box-shadow:inset 0 1px 2px rgba(255,255,255,.4);color:rgba(255,255,255,.96);font-size:9px;font-weight:700;line-height:1.1;text-shadow:0 1px 2px rgba(0,0,0,.78);overflow-wrap:anywhere}
+    .theme-choice{position:relative;min-width:0;height:42px;padding:5px 7px;border:1px solid rgba(255,255,255,.24);border-radius:9px;cursor:pointer;transition:box-shadow .18s,filter .18s;background:var(--theme-swatch);box-shadow:inset 0 1px 2px rgba(255,255,255,.4);color:rgba(255,255,255,.96);font-size:9px;font-weight:700;line-height:1.1;text-shadow:0 1px 2px rgba(0,0,0,.78);overflow-wrap:anywhere;contain:layout paint}
     .theme-choice[data-theme-value="taylor-swift"]{font-family:'Caveat',cursive}.theme-choice[data-theme-value="fearless"],.theme-choice[data-theme-value="showgirl"]{font-family:'Cinzel',serif}.theme-choice[data-theme-value="speak-now"],.theme-choice[data-theme-value="lover"]{font-family:'DM Serif Display',Georgia,serif}.theme-choice[data-theme-value="red"]{font-family:'Special Elite',serif}.theme-choice[data-theme-value="1989"]{font-family:'Libre Franklin','Segoe UI',sans-serif}.theme-choice[data-theme-value="reputation"]{font-family:'Black Ops One',system-ui,sans-serif}.theme-choice[data-theme-value="folklore"]{font-family:'EB Garamond',Georgia,serif}.theme-choice[data-theme-value="evermore"]{font-family:'Libre Baskerville',Georgia,serif}.theme-choice[data-theme-value="midnights"]{font-family:'Unbounded',system-ui,sans-serif}.theme-choice[data-theme-value="ttpd"]{font-family:'Playfair Display',Georgia,serif}
-.theme-choice:hover{transform:translateY(-2px);filter:brightness(1.14)}.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 5px 14px var(--c-glow);transform:translateY(-1px)}
+.theme-choice:hover{filter:brightness(1.14)}.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 5px 14px var(--c-glow)}
 .theme-choice::after{content:attr(aria-label);position:absolute;z-index:4;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:4px 7px;border-radius:6px;background:rgba(8,12,28,.92);color:#fff;font-size:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}.theme-choice:hover::after{opacity:1}
 .volume-control{display:flex;align-items:center;gap:10px;height:54px}.volume-control input{appearance:none;width:100%;height:7px;border-radius:99px;background:linear-gradient(90deg,#ffd166 var(--volume-progress,80%),rgba(255,255,255,.18) var(--volume-progress,80%));outline:none;cursor:pointer}.volume-control input::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}.volume-control input::-moz-range-thumb{width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}#vol-label{min-width:32px;color:#ffd166;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
 #entry-screen .ai-entry,#entry-screen .pt-entry{max-width:680px}
@@ -109,7 +109,7 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
     .atmosphere-backdrop{display:none;position:fixed;z-index:90;inset:0;background:rgba(3,6,18,.58);backdrop-filter:blur(5px)}.atmosphere-backdrop.open{display:block}
     .atmosphere-panel{display:none;position:fixed;z-index:91;top:50%;left:50%;width:min(680px,calc(100vw - 40px));max-height:calc(100vh - 64px);overflow:auto;padding:46px 16px 16px;border:1px solid rgba(255,255,255,.2);border-radius:18px;background:rgba(13,16,34,.94);box-shadow:0 18px 48px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(20px);transform:translate(-50%,-50%)}.atmosphere-panel.open{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;animation:atmosphereIn .22s ease}.atmosphere-close{position:absolute;z-index:3;top:10px;right:12px;width:30px;height:30px;border:1px solid rgba(255,255,255,.26);border-radius:50%;background:rgba(13,16,34,.92);color:#fff;font-size:22px;line-height:26px;cursor:pointer}.atmosphere-close:hover{background:rgba(255,255,255,.18)}@keyframes atmosphereIn{from{opacity:0;transform:translate(-50%,-47%)}to{opacity:1;transform:translate(-50%,-50%)}}.atmosphere-panel .preference-card{background:rgba(255,255,255,.06)}.music-card{grid-column:1/-1;min-height:0}.music-input-row{display:flex;gap:8px}.music-input-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;outline:none}.music-input-row select{padding:7px 6px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;cursor:pointer}.music-input-row input:focus{border-color:#ffd166}.music-input-row button,.netease-open-link{padding:7px 10px;border:1px solid rgba(255,209,102,.45);border-radius:8px;background:rgba(255,209,102,.12);color:#ffd166;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}.netease-open-link{display:none;margin-top:8px;width:max-content}.netease-open-link.visible{display:inline-flex}.music-note{margin-top:8px;color:rgba(255,255,255,.52);font-size:10px;line-height:1.45}.netease-player{display:none;width:100%;height:86px;margin-top:9px;border:0;border-radius:8px;background:#fff}.netease-player.visible{display:block}
 @media(max-width:680px){#entry-screen .card-pick{max-width:460px}.pick{width:210px;min-width:0}.atmosphere-trigger{top:12px;right:12px}.atmosphere-trigger small{display:none}.atmosphere-panel{width:calc(100vw - 24px);max-height:calc(100vh - 32px)}.atmosphere-panel.open{grid-template-columns:1fr}.home-preferences{grid-template-columns:1fr;max-width:460px}.preference-card{min-height:auto}.volume-control{height:34px}}
-@media(max-width:440px){.theme-picker{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:40px;gap:6px}.theme-choice{height:40px;padding:5px;font-size:8.5px}.title-big{letter-spacing:2px}}
+@media(max-width:440px){.theme-picker{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,40px);gap:6px}.theme-choice{height:40px;padding:5px;font-size:8.5px}.title-big{letter-spacing:2px}}
 
 .ai-entry{
   display:flex;align-items:center;gap:14px;width:100%;max-width:450px;
@@ -476,48 +476,6 @@ transition:all .25s ease;
         </span>
         <span class="pt-arrow">→</span>
       </button>
-    <button class="atmosphere-trigger" id="btn-atmosphere" type="button" aria-expanded="false" aria-controls="atmosphere-panel">
-      <span style="font-size:19px">✦</span><strong>Atmosphere</strong><small>Theme · sound · music</small><span class="atmosphere-arrow">›</span>
-    </button>
-    <div class="atmosphere-backdrop" id="atmosphere-backdrop" aria-hidden="true"></div>
-    <section class="atmosphere-panel" id="atmosphere-panel" role="dialog" aria-modal="true" aria-label="Appearance and sound preferences">
-      <button class="atmosphere-close" id="btn-atmosphere-close" type="button" aria-label="Close preferences">×</button>
-      <div class="preference-card">
-        <div class="preference-heading"><span class="pref-icon">🎨</span> Album eras <small>12 palettes</small></div>
-        <div class="theme-picker" id="theme-picker" role="radiogroup" aria-label="Album-inspired color theme">
-          <button class="theme-choice" type="button" data-theme-value="taylor-swift" role="radio" aria-label="Taylor Swift" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#72b8cf,#e1cd9e)"><span>Taylor Swift</span></button>
-          <button class="theme-choice" type="button" data-theme-value="fearless" role="radio" aria-label="Fearless" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#57371b,#e5b443)"><span>Fearless</span></button>
-          <button class="theme-choice" type="button" data-theme-value="speak-now" role="radio" aria-label="Speak Now" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#301342,#b65ad0)"><span>Speak Now</span></button>
-          <button class="theme-choice" type="button" data-theme-value="red" role="radio" aria-label="Red" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#451218,#d44a41)"><span>Red</span></button>
-          <button class="theme-choice" type="button" data-theme-value="1989" role="radio" aria-label="1989" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#62b7d6,#e4eed9)"><span>1989</span></button>
-          <button class="theme-choice" type="button" data-theme-value="reputation" role="radio" aria-label="reputation" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#080808,#9b9ba3)"><span>reputation</span></button>
-          <button class="theme-choice" type="button" data-theme-value="lover" role="radio" aria-label="Lover" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#ee8ec4,#8dcdf0)"><span>Lover</span></button>
-          <button class="theme-choice" type="button" data-theme-value="folklore" role="radio" aria-label="folklore" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#575856,#cbc9c0)"><span>folklore</span></button>
-          <button class="theme-choice" type="button" data-theme-value="evermore" role="radio" aria-label="evermore" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#54291e,#c1774b)"><span>evermore</span></button>
-          <button class="theme-choice" type="button" data-theme-value="midnights" role="radio" aria-label="Midnights" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#111630,#526f9f)"><span>Midnights</span></button>
-          <button class="theme-choice" type="button" data-theme-value="ttpd" role="radio" aria-label="The Tortured Poets Department" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#353432,#c5bfb1)"><span>The Tortured Poets Department</span></button>
-          <button class="theme-choice" type="button" data-theme-value="showgirl" role="radio" aria-label="The Life of a Showgirl" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#3b1732,#ed875e)"><span>The Life of a Showgirl</span></button>
-        </div>
-      </div>
-      <div class="preference-card">
-        <div class="preference-heading"><span class="pref-icon">🔊</span> Game sound</div>
-        <div class="volume-control">
-          <input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Game sound volume">
-          <span id="vol-label">80%</span>
-        </div>
-      </div>
-      <div class="preference-card music-card">
-        <div class="preference-heading"><span class="pref-icon">🎵</span> 网易云音乐 <small>官方播放器</small></div>
-        <div class="music-input-row">
-          <select id="netease-type" aria-label="网易云内容类型"><option value="song">单曲</option><option value="playlist">歌单</option></select>
-          <input id="netease-url" type="text" inputmode="url" placeholder="粘贴网易云单曲或歌单分享链接" aria-label="网易云单曲或歌单分享链接">
-          <button id="btn-load-netease" type="button">加载</button>
-        </div>
-        <iframe id="netease-player" class="netease-player" title="NetEase Cloud Music player" loading="lazy" allow="autoplay; encrypted-media"></iframe>
-        <a id="netease-open-link" class="netease-open-link" href="https://music.163.com" target="_blank" rel="noopener noreferrer">↗ 在网易云官方页面播放</a>
-        <p class="music-note">网易云可能会限制第三方嵌入播放器的点击或会员播放。若这里无法播放，请点击上方「在网易云官方页面播放」；登录、会员验证、播放顺序与循环均由网易云处理。</p>
-      </div>
-    </section>
   </div>
 
   <!-- ============ PLAYTEST ARENA ============ -->
@@ -776,6 +734,43 @@ transition:all .25s ease;
   </div>
 
 </div>
+
+<!-- Global appearance controls -->
+<button class="atmosphere-trigger" id="btn-atmosphere" type="button" aria-expanded="false" aria-controls="atmosphere-panel">
+  <span style="font-size:19px">✦</span><strong>Atmosphere</strong><small>Theme · sound · music</small><span class="atmosphere-arrow">›</span>
+</button>
+<div class="atmosphere-backdrop" id="atmosphere-backdrop" aria-hidden="true"></div>
+<section class="atmosphere-panel" id="atmosphere-panel" role="dialog" aria-modal="true" aria-label="Appearance and sound preferences">
+  <button class="atmosphere-close" id="btn-atmosphere-close" type="button" aria-label="Close preferences">×</button>
+  <div class="preference-card">
+    <div class="preference-heading"><span class="pref-icon">🎨</span> Album eras <small>12 palettes</small></div>
+    <div class="theme-picker" id="theme-picker" role="radiogroup" aria-label="Album-inspired color theme">
+      <button class="theme-choice" type="button" data-theme-value="taylor-swift" role="radio" aria-label="Taylor Swift" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#72b8cf,#e1cd9e)"><span>Taylor Swift</span></button>
+      <button class="theme-choice" type="button" data-theme-value="fearless" role="radio" aria-label="Fearless" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#57371b,#e5b443)"><span>Fearless</span></button>
+      <button class="theme-choice" type="button" data-theme-value="speak-now" role="radio" aria-label="Speak Now" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#301342,#b65ad0)"><span>Speak Now</span></button>
+      <button class="theme-choice" type="button" data-theme-value="red" role="radio" aria-label="Red" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#451218,#d44a41)"><span>Red</span></button>
+      <button class="theme-choice" type="button" data-theme-value="1989" role="radio" aria-label="1989" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#62b7d6,#e4eed9)"><span>1989</span></button>
+      <button class="theme-choice" type="button" data-theme-value="reputation" role="radio" aria-label="reputation" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#080808,#9b9ba3)"><span>reputation</span></button>
+      <button class="theme-choice" type="button" data-theme-value="lover" role="radio" aria-label="Lover" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#ee8ec4,#8dcdf0)"><span>Lover</span></button>
+      <button class="theme-choice" type="button" data-theme-value="folklore" role="radio" aria-label="folklore" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#575856,#cbc9c0)"><span>folklore</span></button>
+      <button class="theme-choice" type="button" data-theme-value="evermore" role="radio" aria-label="evermore" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#54291e,#c1774b)"><span>evermore</span></button>
+      <button class="theme-choice" type="button" data-theme-value="midnights" role="radio" aria-label="Midnights" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#111630,#526f9f)"><span>Midnights</span></button>
+      <button class="theme-choice" type="button" data-theme-value="ttpd" role="radio" aria-label="The Tortured Poets Department" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#353432,#c5bfb1)"><span>The Tortured Poets Department</span></button>
+      <button class="theme-choice" type="button" data-theme-value="showgirl" role="radio" aria-label="The Life of a Showgirl" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#3b1732,#ed875e)"><span>The Life of a Showgirl</span></button>
+    </div>
+  </div>
+  <div class="preference-card">
+    <div class="preference-heading"><span class="pref-icon">🔊</span> Game sound</div>
+    <div class="volume-control"><input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Game sound volume"><span id="vol-label">80%</span></div>
+  </div>
+  <div class="preference-card music-card">
+    <div class="preference-heading"><span class="pref-icon">🎵</span> 网易云音乐 <small>官方播放器</small></div>
+    <div class="music-input-row"><select id="netease-type" aria-label="网易云内容类型"><option value="song">单曲</option><option value="playlist">歌单</option></select><input id="netease-url" type="text" inputmode="url" placeholder="粘贴网易云单曲或歌单分享链接" aria-label="网易云单曲或歌单分享链接"><button id="btn-load-netease" type="button">加载</button></div>
+    <iframe id="netease-player" class="netease-player" title="NetEase Cloud Music player" loading="lazy" allow="autoplay; encrypted-media"></iframe>
+    <a id="netease-open-link" class="netease-open-link" href="https://music.163.com" target="_blank" rel="noopener noreferrer">↗ 在网易云官方页面播放</a>
+    <p class="music-note">网易云可能会限制第三方嵌入播放器的点击或会员播放。若这里无法播放，请点击上方「在网易云官方页面播放」；登录、会员验证、播放顺序与循环均由网易云处理。</p>
+  </div>
+</section>
 
 <!-- leaderboard modal -->
 <div class="modal" id="lb-modal">
