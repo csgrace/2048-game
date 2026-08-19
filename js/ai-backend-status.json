@@ -1,16 +1,10 @@
 {
-  "active": true,
-  "phase": "training",
-  "round": 7,
-  "maxRounds": 50,
-  "version": 2492,
-  "trainGames": 350,
-  "trainProgress": "96/350",
-  "lr": 0.003,
-  "loss": 0.004716,
-  "bestMaxTile": 4096,
-  "avgScore": 32612,
-  "message": "Round 7/50 - TRAINING 96/350 games (lr=0.003, loss=0.004716)",
-  "lastUpdate": "2026-08-19T09:54:50.110Z",
-  "pid": 62876
+    "pid":  0,
+    "version":  2492,
+    "maxRounds":  50,
+    "lastUpdate":  "2026-08-19T09:59:30.6426282Z",
+    "round":  7,
+    "phase":  "idle",
+    "message":  "Training stopped manually. Ready for a 10-game playtest.",
+    "active":  false
 }
