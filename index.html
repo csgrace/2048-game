@@ -1334,7 +1334,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     if(resetBtn){
       resetBtn.addEventListener('click',function(e){
         e.stopPropagation();
-        wrap.style.cssText='position:fixed;bottom:16px;right:16px;z-index:99;width:60px;cursor:grab;user-select:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));transition:transform .12s ease;touch-action:none;';
+        wrap.style.cssText='position:fixed;bottom:16px;right:16px;z-index:99;width:44px;cursor:grab;user-select:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));transition:transform .12s ease;touch-action:none;';
         wrap.classList.remove('pet-moved');
         bounce=6;
         petVo();
@@ -2001,7 +2001,7 @@ function loadTrainingStatsFromWeights(){
 }
 function setStat(id,val){const el=$(id);if(el){const v=el.querySelector('.ts-value');if(v)v.textContent=val;}}
 /* Draw loss curve on canvas */
-const _lossPoints=[]; // store for hover detection
+let _lossPoints=[]; // store for hover detection
 function drawTrainingCurve(){
   const c=$('training-curve');if(!c)return;
   const W=c.clientWidth||280;
