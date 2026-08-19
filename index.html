@@ -102,11 +102,10 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
 .theme-choice:hover{transform:translateY(-2px);filter:brightness(1.14)}.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 5px 14px var(--c-glow);transform:translateY(-1px)}
 .theme-choice::after{content:attr(aria-label);position:absolute;z-index:4;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:4px 7px;border-radius:6px;background:rgba(8,12,28,.92);color:#fff;font-size:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}.theme-choice:hover::after{opacity:1}
 .volume-control{display:flex;align-items:center;gap:10px;height:54px}.volume-control input{appearance:none;width:100%;height:7px;border-radius:99px;background:linear-gradient(90deg,#ffd166 var(--volume-progress,80%),rgba(255,255,255,.18) var(--volume-progress,80%));outline:none;cursor:pointer}.volume-control input::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}.volume-control input::-moz-range-thumb{width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}#vol-label{min-width:32px;color:#ffd166;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
-#entry-screen .ai-entry{max-width:680px}
-.entry-playtest-row{display:grid;grid-template-columns:164px minmax(0,1fr);gap:12px;width:100%;max-width:680px;margin:10px auto 0}.entry-playtest-row .pt-entry{margin:0;max-width:none}
-.atmosphere-trigger{min-height:72px;padding:12px;border:1px solid rgba(255,255,255,.18);border-radius:var(--radius);background:linear-gradient(135deg,rgba(255,209,102,.19),rgba(159,122,255,.15));backdrop-filter:blur(10px);color:#fff;cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s}.atmosphere-trigger:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--c-glow)}.atmosphere-trigger strong,.atmosphere-trigger small{display:block}.atmosphere-trigger strong{font-family:var(--theme-display);font-size:15px;margin:3px 0}.atmosphere-trigger small{font-size:10px;color:rgba(255,255,255,.65);line-height:1.35}
-.atmosphere-panel{display:none;width:100%;max-width:760px;margin:12px auto 0;padding:14px;border:1px solid rgba(255,255,255,.17);border-radius:16px;background:rgba(13,16,34,.58);box-shadow:0 12px 32px rgba(0,0,0,.23),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(16px)}.atmosphere-panel.open{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;animation:fadeIn .22s ease}.atmosphere-panel .preference-card{background:rgba(255,255,255,.06)}.music-card{grid-column:1/-1;min-height:0}.music-input-row{display:flex;gap:8px}.music-input-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;outline:none}.music-input-row select{padding:7px 6px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;cursor:pointer}.music-input-row input:focus{border-color:#ffd166}.music-input-row button{padding:7px 10px;border:1px solid rgba(255,209,102,.45);border-radius:8px;background:rgba(255,209,102,.12);color:#ffd166;font-size:11px;font-weight:700;cursor:pointer}.music-note{margin-top:8px;color:rgba(255,255,255,.52);font-size:10px;line-height:1.45}.netease-player{display:none;width:100%;height:86px;margin-top:9px;border:0;border-radius:8px;background:#fff}.netease-player.visible{display:block}
-@media(max-width:680px){#entry-screen .card-pick{max-width:460px}.pick{width:210px;min-width:0}.entry-playtest-row{grid-template-columns:1fr;max-width:460px}.atmosphere-trigger{min-height:58px;text-align:center}.atmosphere-panel.open{grid-template-columns:1fr;max-width:460px}.home-preferences{grid-template-columns:1fr;max-width:460px}.preference-card{min-height:auto}.volume-control{height:34px}}
+#entry-screen .ai-entry,#entry-screen .pt-entry{max-width:680px}
+.atmosphere-trigger{display:flex;align-items:center;gap:10px;width:100%;max-width:680px;min-height:52px;margin:10px auto 0;padding:10px 14px;border:1px solid rgba(255,255,255,.18);border-radius:var(--radius);background:linear-gradient(135deg,rgba(255,209,102,.19),rgba(159,122,255,.15));backdrop-filter:blur(10px);color:#fff;cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s}.atmosphere-trigger:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--c-glow)}.atmosphere-trigger strong{font-family:var(--theme-display);font-size:15px}.atmosphere-trigger small{margin-left:auto;font-size:10px;color:rgba(255,255,255,.65);line-height:1.35}.atmosphere-trigger .atmosphere-arrow{font-size:18px;opacity:.65;transition:transform .2s}.atmosphere-trigger[aria-expanded="true"] .atmosphere-arrow{transform:rotate(90deg)}
+.atmosphere-panel{display:none;width:100%;max-width:680px;margin:12px auto 0;padding:14px;border:1px solid rgba(255,255,255,.17);border-radius:16px;background:rgba(13,16,34,.58);box-shadow:0 12px 32px rgba(0,0,0,.23),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(16px)}.atmosphere-panel.open{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;animation:fadeIn .22s ease}.atmosphere-panel .preference-card{background:rgba(255,255,255,.06)}.music-card{grid-column:1/-1;min-height:0}.music-input-row{display:flex;gap:8px}.music-input-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;outline:none}.music-input-row select{padding:7px 6px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;cursor:pointer}.music-input-row input:focus{border-color:#ffd166}.music-input-row button{padding:7px 10px;border:1px solid rgba(255,209,102,.45);border-radius:8px;background:rgba(255,209,102,.12);color:#ffd166;font-size:11px;font-weight:700;cursor:pointer}.music-note{margin-top:8px;color:rgba(255,255,255,.52);font-size:10px;line-height:1.45}.netease-player{display:none;width:100%;height:86px;margin-top:9px;border:0;border-radius:8px;background:#fff}.netease-player.visible{display:block}
+@media(max-width:680px){#entry-screen .card-pick{max-width:460px}.pick{width:210px;min-width:0}.atmosphere-trigger,.atmosphere-panel{max-width:460px}.atmosphere-trigger{min-height:52px}.atmosphere-panel.open{grid-template-columns:1fr}.home-preferences{grid-template-columns:1fr;max-width:460px}.preference-card{min-height:auto}.volume-control{height:34px}}
 @media(max-width:440px){.theme-picker{grid-template-columns:repeat(4,1fr)}.title-big{letter-spacing:2px}}
 
 .ai-entry{
@@ -465,11 +464,7 @@ transition:all .25s ease;
       </span>
       <span class="ai-arrow">→</span>
     </button>
-    <div class="entry-playtest-row">
-      <button class="atmosphere-trigger" id="btn-atmosphere" type="button" aria-expanded="false" aria-controls="atmosphere-panel">
-        <span style="font-size:19px">✦</span><strong>Atmosphere</strong><small>Theme · sound · music</small>
-      </button>
-      <button class="pt-entry" id="btn-playtest">
+    <button class="pt-entry" id="btn-playtest">
         <span class="pt-icon">🏆</span>
         <span class="pt-text">
           <strong>AI Playtest Arena</strong>
@@ -477,7 +472,9 @@ transition:all .25s ease;
         </span>
         <span class="pt-arrow">→</span>
       </button>
-    </div>
+    <button class="atmosphere-trigger" id="btn-atmosphere" type="button" aria-expanded="false" aria-controls="atmosphere-panel">
+      <span style="font-size:19px">✦</span><strong>Atmosphere</strong><small>Theme · sound · music</small><span class="atmosphere-arrow">›</span>
+    </button>
     <section class="atmosphere-panel" id="atmosphere-panel" aria-label="Appearance and sound preferences">
       <div class="preference-card">
         <div class="preference-heading"><span class="pref-icon">🎨</span> Album eras <small>12 palettes</small></div>
@@ -896,14 +893,15 @@ transition:all .25s ease;
 let bgAnimationFrameId=null;
 (function(){
   const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
-  let W,H,stars=[],palette={top:'#0f1428',bottom:'#321e50',star:'255,223,150',starSecondary:'202,160,255'};
+  let W,H,stars=[],motifs=[],palette={top:'#0f1428',bottom:'#321e50',star:'255,223,150',starSecondary:'202,160,255',theme:'taylor-swift'};
   function refreshBackgroundTheme(){
     const styles=getComputedStyle(document.documentElement);
     palette={
       top:styles.getPropertyValue('--c-bg-top').trim(),
       bottom:styles.getPropertyValue('--c-bg-bot').trim(),
       star:styles.getPropertyValue('--bg-star').trim(),
-      starSecondary:styles.getPropertyValue('--bg-star-secondary').trim()
+      starSecondary:styles.getPropertyValue('--bg-star-secondary').trim(),
+      theme:document.documentElement.dataset.theme||'taylor-swift'
     };
     initStars();
   }
@@ -913,7 +911,33 @@ let bgAnimationFrameId=null;
     W=innerWidth;H=innerHeight;c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);
     c.style.width=W+'px';c.style.height=H+'px';x.setTransform(dpr,0,0,dpr,0,0);initStars();
   }
-  function initStars(){stars=[];for(let i=0;i<92;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.35,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28,t:Math.random()})}
+  function initStars(){
+    stars=[];motifs=[];
+    for(let i=0;i<92;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.8+.35,a:Math.random()*.02+.005,s:Math.random()*.3+.1,ph:Math.random()*6.28,t:Math.random()});
+    for(let i=0;i<18;i++)motifs.push({x:Math.random()*W,y:Math.random()*H,size:Math.random()*9+5,s:Math.random()*.16+.035,drift:(Math.random()-.5)*.14,phase:Math.random()*6.28,turn:(Math.random()-.5)*.012});
+  }
+  function drawMotif(m){
+    const theme=palette.theme,alpha=.055+.04*Math.sin(m.phase)*Math.sin(m.phase);
+    x.save();x.translate(m.x,m.y);x.rotate(m.phase*.12);x.globalAlpha=alpha;
+    if(theme==='fearless'||theme==='showgirl'){
+      x.fillStyle='rgb('+palette.star+')';for(let i=0;i<4;i++){x.rotate(Math.PI/4);x.fillRect(-m.size/7,-m.size,m.size/3,m.size*2)}
+    }else if(theme==='speak-now'||theme==='lover'){
+      x.fillStyle='rgb('+palette.starSecondary+')';x.beginPath();x.arc(0,-m.size*.28,m.size*.42,0,Math.PI*2);x.arc(-m.size*.34,m.size*.13,m.size*.42,0,Math.PI*2);x.arc(m.size*.34,m.size*.13,m.size*.42,0,Math.PI*2);x.fill()
+    }else if(theme==='red'||theme==='evermore'){
+      x.strokeStyle='rgb('+palette.star+')';x.lineWidth=1.3;x.beginPath();x.moveTo(0,-m.size);x.quadraticCurveTo(m.size*.9,-m.size*.2,m.size*.45,m.size*.8);x.quadraticCurveTo(0,m.size*.35,-m.size*.45,m.size*.8);x.quadraticCurveTo(-m.size*.9,-m.size*.2,0,-m.size);x.stroke()
+    }else if(theme==='1989'||theme==='taylor-swift'){
+      x.strokeStyle='rgb('+palette.star+')';x.lineWidth=1;x.beginPath();x.arc(0,0,m.size*.62,0,Math.PI*2);x.stroke();x.beginPath();x.moveTo(-m.size,0);x.quadraticCurveTo(0,-m.size*.5,m.size,0);x.stroke()
+    }else if(theme==='reputation'){
+      x.strokeStyle='rgb('+palette.starSecondary+')';x.lineWidth=1.2;for(let i=-1;i<=1;i++){x.beginPath();x.moveTo(-m.size,m.size*i*.42);x.lineTo(m.size,m.size*i*.42);x.stroke()}
+    }else if(theme==='folklore'||theme==='ttpd'){
+      x.strokeStyle='rgb('+palette.star+')';x.lineWidth=1;x.strokeRect(-m.size*.58,-m.size*.72,m.size*1.16,m.size*1.44);x.beginPath();x.moveTo(0,-m.size*.72);x.lineTo(0,m.size*.72);x.stroke()
+    }else if(theme==='midnights'){
+      x.strokeStyle='rgb('+palette.starSecondary+')';x.lineWidth=1.2;x.beginPath();x.arc(0,0,m.size*.66,0,Math.PI*2);x.moveTo(0,-m.size*.92);x.lineTo(0,m.size*.92);x.stroke()
+    }else{
+      x.fillStyle='rgb('+palette.star+')';x.fillRect(-m.size*.25,-m.size*.25,m.size*.5,m.size*.5)
+    }
+    x.restore();
+  }
   function frame(){
     x.clearRect(0,0,W,H);
     const g=x.createLinearGradient(0,0,W,H);
@@ -925,6 +949,10 @@ let bgAnimationFrameId=null;
       const color=s.t>.58?palette.starSecondary:palette.star;
       x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fillStyle=`rgba(${color},${alpha*.58})`;x.fill();
       s.y-=s.s;if(s.y<-5){s.y=H+5;s.x=Math.random()*W}
+    }
+    for(const m of motifs){
+      m.phase+=m.turn;drawMotif(m);m.y-=m.s;m.x+=m.drift;
+      if(m.y<-m.size*2){m.y=H+m.size*2;m.x=Math.random()*W}
     }
     bgAnimationFrameId=requestAnimationFrame(frame)
   }
