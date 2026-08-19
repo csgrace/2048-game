@@ -97,17 +97,17 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
 .home-preferences{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;width:100%;max-width:760px;margin:18px auto 0}
 .preference-card{min-height:112px;padding:13px 15px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.035));box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 8px 24px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
 .preference-heading{display:flex;align-items:center;gap:7px;margin-bottom:10px;color:rgba(255,255,255,.9);font-size:12px;font-weight:700;letter-spacing:.25px}.preference-heading small{margin-left:auto;color:rgba(255,255,255,.48);font-size:10px;font-weight:500}.preference-heading .pref-icon{font-size:16px}
-.theme-picker{display:flex;gap:7px;overflow-x:auto;padding:2px 2px 7px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.36) transparent;scroll-snap-type:x proximity}.theme-picker::-webkit-scrollbar{height:5px}.theme-picker::-webkit-scrollbar-thumb{border-radius:99px;background:rgba(255,255,255,.36)}
-    .theme-choice{position:relative;flex:0 0 auto;min-width:max-content;min-height:30px;padding:5px 9px;border:1px solid rgba(255,255,255,.24);border-radius:99px;cursor:pointer;scroll-snap-align:start;transition:transform .18s,box-shadow .18s,filter .18s;background:var(--theme-swatch);box-shadow:inset 0 1px 2px rgba(255,255,255,.4);color:rgba(255,255,255,.96);font-family:var(--theme-ui);font-size:10px;font-weight:700;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.78);white-space:nowrap}
+.theme-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:2px 0}
+    .theme-choice{position:relative;min-width:0;min-height:34px;padding:5px 7px;border:1px solid rgba(255,255,255,.24);border-radius:9px;cursor:pointer;transition:transform .18s,box-shadow .18s,filter .18s;background:var(--theme-swatch);box-shadow:inset 0 1px 2px rgba(255,255,255,.4);color:rgba(255,255,255,.96);font-family:var(--theme-ui);font-size:9px;font-weight:700;line-height:1.1;text-shadow:0 1px 2px rgba(0,0,0,.78);overflow-wrap:anywhere}
 .theme-choice:hover{transform:translateY(-2px);filter:brightness(1.14)}.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 5px 14px var(--c-glow);transform:translateY(-1px)}
 .theme-choice::after{content:attr(aria-label);position:absolute;z-index:4;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:4px 7px;border-radius:6px;background:rgba(8,12,28,.92);color:#fff;font-size:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}.theme-choice:hover::after{opacity:1}
 .volume-control{display:flex;align-items:center;gap:10px;height:54px}.volume-control input{appearance:none;width:100%;height:7px;border-radius:99px;background:linear-gradient(90deg,#ffd166 var(--volume-progress,80%),rgba(255,255,255,.18) var(--volume-progress,80%));outline:none;cursor:pointer}.volume-control input::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}.volume-control input::-moz-range-thumb{width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}#vol-label{min-width:32px;color:#ffd166;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
 #entry-screen .ai-entry,#entry-screen .pt-entry{max-width:680px}
 .atmosphere-trigger{position:fixed;z-index:90;top:18px;right:20px;display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 12px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(13,16,34,.62);backdrop-filter:blur(14px);box-shadow:0 7px 20px rgba(0,0,0,.2);color:#fff;cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s}.atmosphere-trigger:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--c-glow)}.atmosphere-trigger strong{font-family:var(--theme-display);font-size:14px}.atmosphere-trigger small{font-size:10px;color:rgba(255,255,255,.65);line-height:1.35}.atmosphere-trigger .atmosphere-arrow{font-size:18px;opacity:.65;transition:transform .2s}.atmosphere-trigger[aria-expanded="true"] .atmosphere-arrow{transform:rotate(90deg)}
     .atmosphere-backdrop{display:none;position:fixed;z-index:90;inset:0;background:rgba(3,6,18,.58);backdrop-filter:blur(5px)}.atmosphere-backdrop.open{display:block}
-    .atmosphere-panel{display:none;position:fixed;z-index:91;top:50%;left:50%;width:min(680px,calc(100vw - 40px));max-height:calc(100vh - 64px);overflow:auto;padding:16px;border:1px solid rgba(255,255,255,.2);border-radius:18px;background:rgba(13,16,34,.94);box-shadow:0 18px 48px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(20px);transform:translate(-50%,-50%)}.atmosphere-panel.open{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;animation:atmosphereIn .22s ease}.atmosphere-close{position:absolute;top:9px;right:10px;width:28px;height:28px;border:1px solid rgba(255,255,255,.18);border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font-size:20px;line-height:24px;cursor:pointer}.atmosphere-close:hover{background:rgba(255,255,255,.18)}@keyframes atmosphereIn{from{opacity:0;transform:translate(-50%,-47%)}to{opacity:1;transform:translate(-50%,-50%)}}.atmosphere-panel .preference-card{background:rgba(255,255,255,.06)}.music-card{grid-column:1/-1;min-height:0}.music-input-row{display:flex;gap:8px}.music-input-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;outline:none}.music-input-row select{padding:7px 6px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;cursor:pointer}.music-input-row input:focus{border-color:#ffd166}.music-input-row button,.netease-open-link{padding:7px 10px;border:1px solid rgba(255,209,102,.45);border-radius:8px;background:rgba(255,209,102,.12);color:#ffd166;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}.netease-open-link{display:none;margin-top:8px;width:max-content}.netease-open-link.visible{display:inline-flex}.music-note{margin-top:8px;color:rgba(255,255,255,.52);font-size:10px;line-height:1.45}.netease-player{display:none;width:100%;height:86px;margin-top:9px;border:0;border-radius:8px;background:#fff}.netease-player.visible{display:block}
+    .atmosphere-panel{display:none;position:fixed;z-index:91;top:50%;left:50%;width:min(680px,calc(100vw - 40px));max-height:calc(100vh - 64px);overflow:auto;padding:46px 16px 16px;border:1px solid rgba(255,255,255,.2);border-radius:18px;background:rgba(13,16,34,.94);box-shadow:0 18px 48px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(20px);transform:translate(-50%,-50%)}.atmosphere-panel.open{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;animation:atmosphereIn .22s ease}.atmosphere-close{position:absolute;z-index:3;top:10px;right:12px;width:30px;height:30px;border:1px solid rgba(255,255,255,.26);border-radius:50%;background:rgba(13,16,34,.92);color:#fff;font-size:22px;line-height:26px;cursor:pointer}.atmosphere-close:hover{background:rgba(255,255,255,.18)}@keyframes atmosphereIn{from{opacity:0;transform:translate(-50%,-47%)}to{opacity:1;transform:translate(-50%,-50%)}}.atmosphere-panel .preference-card{background:rgba(255,255,255,.06)}.music-card{grid-column:1/-1;min-height:0}.music-input-row{display:flex;gap:8px}.music-input-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;outline:none}.music-input-row select{padding:7px 6px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(0,0,0,.28);color:#fff;font-size:11px;cursor:pointer}.music-input-row input:focus{border-color:#ffd166}.music-input-row button,.netease-open-link{padding:7px 10px;border:1px solid rgba(255,209,102,.45);border-radius:8px;background:rgba(255,209,102,.12);color:#ffd166;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}.netease-open-link{display:none;margin-top:8px;width:max-content}.netease-open-link.visible{display:inline-flex}.music-note{margin-top:8px;color:rgba(255,255,255,.52);font-size:10px;line-height:1.45}.netease-player{display:none;width:100%;height:86px;margin-top:9px;border:0;border-radius:8px;background:#fff}.netease-player.visible{display:block}
 @media(max-width:680px){#entry-screen .card-pick{max-width:460px}.pick{width:210px;min-width:0}.atmosphere-trigger{top:12px;right:12px}.atmosphere-trigger small{display:none}.atmosphere-panel{width:calc(100vw - 24px);max-height:calc(100vh - 32px)}.atmosphere-panel.open{grid-template-columns:1fr}.home-preferences{grid-template-columns:1fr;max-width:460px}.preference-card{min-height:auto}.volume-control{height:34px}}
-@media(max-width:440px){.theme-picker{gap:6px}.theme-choice{min-height:29px;padding:5px 8px;font-size:9.5px}.title-big{letter-spacing:2px}}
+@media(max-width:440px){.theme-picker{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.theme-choice{min-height:32px;padding:5px;font-size:8.5px}.title-big{letter-spacing:2px}}
 
 .ai-entry{
   display:flex;align-items:center;gap:14px;width:100%;max-width:450px;
@@ -502,6 +502,10 @@ transition:all .25s ease;
           <input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Game sound volume">
           <span id="vol-label">80%</span>
         </div>
+      </div>
+      <div class="preference-card music-card">
+        <div class="preference-heading"><span class="pref-icon">🎶</span> 持续氛围音 <small>需手动开启</small></div>
+        <button id="btn-ambient" type="button" aria-pressed="false">开启与主题联动的氛围音</button>
       </div>
       <div class="preference-card music-card">
         <div class="preference-heading"><span class="pref-icon">🎵</span> 网易云音乐 <small>官方播放器</small></div>
@@ -1017,7 +1021,27 @@ async function sha256(t){
 let audioCtx=null;
 let sfxEnabled=true; // Sound on by default
 let sfxVolume=0.8; // Master volume (0-1)
+let ambientEnabled=false,ambientOscillators=[],ambientGain=null;
 const VOL_KEY='g2048_volume_v1';
+const AMBIENT_KEY='g2048_ambient_v1';
+const AMBIENT_NOTES={
+  'taylor-swift':[220,329.63],fearless:[196,293.66],'speak-now':[174.61,261.63],red:[146.83,220],'1989':[246.94,369.99],reputation:[110,164.81],lover:[261.63,392],folklore:[174.61,220],evermore:[146.83,196],midnights:[155.56,233.08],ttpd:[130.81,196],showgirl:[207.65,311.13]
+};
+function stopAmbient(){ambientOscillators.forEach(o=>{try{o.stop()}catch(e){}});ambientOscillators=[];ambientGain=null;}
+function startAmbient(theme){
+  try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();stopAmbient();
+    ambientGain=audioCtx.createGain();ambientGain.gain.value=Math.max(.001,sfxVolume*.035);ambientGain.connect(audioCtx.destination);
+    (AMBIENT_NOTES[theme]||AMBIENT_NOTES['taylor-swift']).forEach((freq,index)=>{const osc=audioCtx.createOscillator();osc.type=index?'sine':'triangle';osc.frequency.value=freq;osc.detune.value=index?7:-7;osc.connect(ambientGain);osc.start();ambientOscillators.push(osc);});
+  }catch(e){ambientEnabled=false;}
+}
+function updateAmbientTheme(theme){if(ambientEnabled)startAmbient(theme);}
+function initAmbient(){
+  const button=$('btn-ambient');
+  // Browsers prohibit restoring audio automatically, so every new page load starts muted.
+  ambientEnabled=false;
+  const render=()=>{if(button){button.textContent=ambientEnabled?'关闭持续氛围音':'开启与主题联动的氛围音';button.setAttribute('aria-pressed',String(ambientEnabled));}};render();
+  if(button)button.addEventListener('click',()=>{ambientEnabled=!ambientEnabled;if(ambientEnabled){const theme=document.documentElement.dataset.theme||'taylor-swift';startAmbient(theme)}else stopAmbient();try{localStorage.setItem(AMBIENT_KEY,String(ambientEnabled))}catch(e){}render();});
+}
 function snd(freq,dur=.08,type='sine',vol=.15){
   if(!sfxEnabled)return; // Don't play when sound is off
   try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
@@ -1044,6 +1068,7 @@ function initVolume(){
   renderVolume();
   if(slider)slider.addEventListener('input',()=>{
     sfxVolume=slider.value/100;
+    if(ambientGain&&audioCtx)ambientGain.gain.setTargetAtTime(Math.max(.001,sfxVolume*.035),audioCtx.currentTime,.05);
     renderVolume();
     try{localStorage.setItem(VOL_KEY,String(sfxVolume))}catch(e){}
   });
@@ -1069,6 +1094,7 @@ document.addEventListener('DOMContentLoaded',function(){
   initAtmosphere();
   initTheme();
   initVolume();
+  initAmbient();
 });
 
 /* ====================================================================
@@ -3723,6 +3749,7 @@ function applyTheme(t){
   const theme=ALBUM_THEMES.includes(t)?t:'taylor-swift';
   document.documentElement.setAttribute('data-theme',theme);
   if(window.refreshBackgroundTheme)window.refreshBackgroundTheme();
+  updateAmbientTheme(theme);
   loadThemeMusic(theme);
   try{localStorage.setItem(THEME_KEY,theme)}catch(e){}
 }
