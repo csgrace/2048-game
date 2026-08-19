@@ -1,6 +1,9 @@
 name: AI Training v1
 
 on:
+  # A commit explicitly tagged [train-v1] can bootstrap a run without exposing an API token.
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       games:
@@ -23,6 +26,7 @@ concurrency:
 
 jobs:
   train:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[train-v1]')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -39,7 +43,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Train v1 and retain fixed-seed best checkpoint
-        run: python scripts/train_policy_value.py --games ${{ inputs.games }} --epochs ${{ inputs.epochs }} --seed 2048 --validation-games 50
+        run: python scripts/train_policy_value.py --games ${{ inputs.games || '250' }} --epochs ${{ inputs.epochs || '8' }} --seed 2048 --validation-games 50
 
       - name: Commit v1 weights and validation record
         run: |
