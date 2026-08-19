@@ -45,7 +45,7 @@
 [data-theme="ttpd"]{--theme-display:'Playfair Display',Georgia,serif;--theme-ui:'Libre Baskerville',Georgia,serif;--c-empty:#e2ded4;--c-board:#aaa49a;--c-bg-top:#302f2d;--c-bg-bot:#b6b0a3;--c-accent:#81796e;--c-accent-h:#aaa195;--c-glow:rgba(232,225,211,.3);--bg-star:250,247,236;--bg-star-secondary:191,187,178;--bg-orbit-1:rgba(236,230,218,.16);--bg-orbit-2:rgba(130,123,112,.15);--bg-orbit-3:rgba(54,52,49,.20)}
 [data-theme="showgirl"]{--theme-display:'Cinzel',serif;--theme-ui:'Libre Franklin','Segoe UI',sans-serif;--c-empty:#f1c8b5;--c-board:#d47456;--c-bg-top:#32142c;--c-bg-bot:#e2815c;--c-accent:#de765d;--c-accent-h:#f0ab80;--c-glow:rgba(244,117,89,.52);--bg-star:255,221,158;--bg-star-secondary:255,132,167;--bg-orbit-1:rgba(255,106,145,.28);--bg-orbit-2:rgba(255,187,90,.20);--bg-orbit-3:rgba(158,39,107,.20)}
 html,body{height:100%}
-body{font-family:var(--theme-ui);color:var(--c-text-light);overflow-x:hidden;position:relative;transition:font-family .18s ease,color .25s ease}
+body{font-family:var(--theme-ui);color:var(--c-text-light);overflow-x:hidden;position:relative;transition:font-family .18s ease,color .25s ease,background-color .45s ease}
 
 /* ================================================================== animated background */
 #bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
@@ -323,14 +323,14 @@ transition:all .25s ease;
 @keyframes pulse{to{background:rgba(246,94,59,.3)}}
 
 .board-wrap{position:relative}
-#board{position:relative;background:var(--c-board);border-radius:12px}
+#board{position:relative;background:var(--c-board);border-radius:12px;transition:background .45s ease,box-shadow .45s ease;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 24px var(--c-glow)}
 #board .bg-cell{
-  position:absolute;background:rgba(238,228,218,.35);border-radius:8px;z-index:1;
+  position:absolute;background:rgba(238,228,218,.35);border-radius:8px;z-index:1;transition:background .45s ease;
 }
 #board .cell{
   position:absolute;display:flex;align-items:center;justify-content:center;
   font-weight:800;border-radius:8px;z-index:2;
-  transition:left .15s cubic-bezier(.2,.6,.3,1),top .15s cubic-bezier(.2,.6,.3,1);
+  transition:left .15s cubic-bezier(.2,.6,.3,1),top .15s cubic-bezier(.2,.6,.3,1),background .45s ease,color .45s ease;
   will-change:left,top;
 }
 #board .cell.new{animation:appear .2s ease}
@@ -721,6 +721,7 @@ transition:all .25s ease;
       <button class="btn" id="b-save">💾 Save</button>
       <button class="btn" id="b-load">📂 Load</button>
       <button class="btn" id="b-undo">↩ Undo</button>
+      <button class="btn" id="b-replay" title="Replay this game">▶ Replay</button>
       <button class="btn tool-trigger" id="b-tools" aria-label="Open practice tools" title="Practice tools">⋯</button>
       <button class="btn" id="b-restart">↺ Restart</button>
       <button class="btn" id="b-leaderboard">🏆 Boards</button>
@@ -1480,6 +1481,7 @@ function pos(r,c){
 let nextTileId=1;
 let tileMap={};   // id → {el,value,row,col}
 let tileId=[];    // tileId[r][c] = id or 0
+let replayFrames=[],replayTimer=null,isReplaying=false;
 
 function buildBoardDOM(){
   const b=$('board');b.innerHTML='';
@@ -1645,10 +1647,28 @@ function init(size){
     tileMap[id]={el:makeTile(v,r,c,true,id),value:v,row:r,col:c};
   }
   render();
+  replayFrames=[];captureReplayFrame();
   hideOverlay();startTimer();
 }
 
 function snapshot(){return{board:board.map(r=>[...r]),tileId:tileId.map(r=>[...r]),score,steps,elapsedMs,cheated}}
+function captureReplayFrame(){
+  if(isReplaying)return;
+  replayFrames.push({board:board.map(row=>[...row]),score,steps});
+  if(replayFrames.length>600)replayFrames.shift();
+}
+function renderReplayFrame(frame){
+  board=frame.board.map(row=>[...row]);score=frame.score;steps=frame.steps;buildBoardDOM();
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(board[r][c]){const id=nextTileId++;tileId[r][c]=id;tileMap[id]={el:makeTile(board[r][c],r,c,false,id),value:board[r][c],row:r,col:c};}
+  render();
+}
+function replayGame(){
+  if(isReplaying||replayFrames.length<2)return;
+  isReplaying=true;stopTimer();clearPendingGameTimers();let index=0;
+  const button=$('b-replay');if(button){button.disabled=true;button.textContent='↻ Replaying';}
+  renderReplayFrame(replayFrames[index]);
+  replayTimer=setInterval(()=>{index++;if(index>=replayFrames.length){clearInterval(replayTimer);replayTimer=null;isReplaying=false;if(button){button.disabled=false;button.textContent='▶ Replay';}startTimer(elapsedMs);return;}renderReplayFrame(replayFrames[index]);},420);
+}
 
 /* slide a single row-left, tracking tile IDs + merges. returns {line,ids,merged} */
 function slideLine(line,ids){
@@ -1692,7 +1712,7 @@ function colSet(c,res){for(let r=0;r<SIZE;r++){board[r][c]=res.line[r];tileId[r]
 
 function move(dir,fromAI=false){
   if(aiAutoPlay&&!fromAI)stopAiAutoPlay();
-  if(over||inputLocked)return;
+  if(over||inputLocked||isReplaying)return;
   const before=JSON.stringify(board);
   undoStack.push(snapshot());
   if(undoStack.length>MAX_UNDO_STACK)undoStack.shift();
@@ -1724,6 +1744,7 @@ function move(dir,fromAI=false){
     queueGameAction(()=>{
       finalizeRender(mergedCopy);
       addRandom();
+      captureReplayFrame();
       // Pet: celebrate on merge
       if(mergedCopy.length>0&&window.__petMergeReact)window.__petMergeReact();
       inputLocked=false;
@@ -3641,6 +3662,7 @@ bind('b-down',()=>{SFX.button();move('down')});
 bind('b-left',()=>{SFX.button();move('left')});
 bind('b-right',()=>{SFX.button();move('right')});
 bind('b-undo',()=>{SFX.button();undo()});
+bind('b-replay',()=>{SFX.button();replayGame()});
 bind('b-tools',()=>{SFX.button();openTools()});
 bind('ai-train',()=>{SFX.button();tokenModalAction='train';openTokenModal()});
 bind('ai-stop-training',()=>{SFX.button();checkTrainingProgress()});
@@ -3735,6 +3757,8 @@ const ALBUM_THEMES=['taylor-swift','fearless','speak-now','red','1989','reputati
 function applyTheme(t){
   const theme=ALBUM_THEMES.includes(t)?t:'taylor-swift';
   document.documentElement.setAttribute('data-theme',theme);
+  document.documentElement.classList.add('theme-transitioning');
+  setTimeout(()=>document.documentElement.classList.remove('theme-transitioning'),480);
   if(window.refreshBackgroundTheme)window.refreshBackgroundTheme();
   loadThemeMusic(theme);
   try{localStorage.setItem(THEME_KEY,theme)}catch(e){}
