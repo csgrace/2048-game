@@ -334,7 +334,11 @@ transition:all .25s ease;
   will-change:left,top;
 }
 #board .cell.new{animation:appear .2s ease}
+#board.replaying .cell{animation:replayTile .36s cubic-bezier(.2,.8,.25,1) both}
+#board.replaying{animation:replayBoard .36s ease both}
 @keyframes appear{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes replayTile{from{opacity:0;transform:scale(.68) translateY(12px);filter:brightness(1.35)}to{opacity:1;transform:scale(1);filter:brightness(1)}}
+@keyframes replayBoard{0%{filter:brightness(1.22);box-shadow:0 0 34px var(--c-glow)}100%{filter:none;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 24px var(--c-glow)}}
 #board .cell.merging{animation:pop .2s ease .15s both;z-index:3}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
 .merge-spark{position:absolute;z-index:6;pointer-events:none;width:11px;height:11px;background:var(--c-accent-h);box-shadow:0 0 12px var(--c-glow);animation:mergeSpark .9s cubic-bezier(.15,.7,.3,1) forwards}.merge-spark.heart{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}.merge-spark.heart::before,.merge-spark.heart::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:inherit}.merge-spark.heart::before{left:-4px}.merge-spark.heart::after{top:-4px}.merge-spark.star{clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%)}.merge-spark.paper{width:11px;height:7px;border-radius:1px;transform:skewX(-18deg)}.merge-spark.wave{width:13px;height:6px;border:2px solid var(--c-accent-h);border-top:0;background:transparent;border-radius:0 0 12px 12px}.merge-spark.glitch{width:13px;height:3px;border-radius:0}.merge-spark.leaf{width:8px;height:13px;border-radius:100% 0 100% 0;transform:rotate(35deg)}@keyframes mergeSpark{from{opacity:1;translate:0 0;scale:1;rotate:var(--spark-rotate)}to{opacity:0;translate:var(--spark-x) var(--spark-y);scale:.2;rotate:calc(var(--spark-rotate) + 120deg)}}
@@ -1659,6 +1663,7 @@ function captureReplayFrame(){
 }
 function renderReplayFrame(frame){
   board=frame.board.map(row=>[...row]);score=frame.score;steps=frame.steps;buildBoardDOM();
+  const boardEl=$('board');if(boardEl){boardEl.classList.remove('replaying');void boardEl.offsetWidth;boardEl.classList.add('replaying');}
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(board[r][c]){const id=nextTileId++;tileId[r][c]=id;tileMap[id]={el:makeTile(board[r][c],r,c,false,id),value:board[r][c],row:r,col:c};}
   render();
 }
