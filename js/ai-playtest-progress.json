@@ -1,94 +1,22 @@
 {
-  "active": false,
-  "timestamp": "2026-08-18T17:50:57.768Z",
+  "active": true,
+  "timestamp": "2026-08-19T01:33:23.897Z",
   "totalGames": 10,
-  "completedGames": 10,
-  "wins": 8,
-  "fails": 2,
-  "winRate": 80,
-  "avgScore": 33664,
-  "bestMaxTile": 4096,
-  "totalDurationMs": 1235947,
+  "completedGames": 1,
+  "wins": 0,
+  "fails": 1,
+  "winRate": 0,
+  "avgScore": 16896,
+  "bestMaxTile": 1024,
+  "totalDurationMs": 59648,
   "results": [
     {
       "game": 1,
-      "result": "win",
-      "score": 36840,
-      "maxTile": 2048,
-      "steps": 1918,
-      "duration": 141420
-    },
-    {
-      "game": 2,
-      "result": "win",
-      "score": 79364,
-      "maxTile": 4096,
-      "steps": 3652,
-      "duration": 278683
-    },
-    {
-      "game": 3,
-      "result": "win",
-      "score": 32912,
-      "maxTile": 2048,
-      "steps": 1699,
-      "duration": 131585
-    },
-    {
-      "game": 4,
-      "result": "win",
-      "score": 32304,
-      "maxTile": 2048,
-      "steps": 1650,
-      "duration": 124992
-    },
-    {
-      "game": 5,
       "result": "fail",
-      "score": 16772,
+      "score": 16896,
       "maxTile": 1024,
-      "steps": 992,
-      "duration": 66546
-    },
-    {
-      "game": 6,
-      "result": "fail",
-      "score": 15516,
-      "maxTile": 1024,
-      "steps": 909,
-      "duration": 54374
-    },
-    {
-      "game": 7,
-      "result": "win",
-      "score": 27304,
-      "maxTile": 2048,
-      "steps": 1430,
-      "duration": 91599
-    },
-    {
-      "game": 8,
-      "result": "win",
-      "score": 33940,
-      "maxTile": 2048,
-      "steps": 1760,
-      "duration": 124361
-    },
-    {
-      "game": 9,
-      "result": "win",
-      "score": 35476,
-      "maxTile": 2048,
-      "steps": 1819,
-      "duration": 135074
-    },
-    {
-      "game": 10,
-      "result": "win",
-      "score": 26212,
-      "maxTile": 2048,
-      "steps": 1364,
-      "duration": 87313
+      "steps": 1003,
+      "duration": 59648
     }
   ]
 }
