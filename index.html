@@ -103,7 +103,7 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
     .theme-choice[data-theme-value="taylor-swift"]{font-family:'Caveat',cursive}.theme-choice[data-theme-value="fearless"],.theme-choice[data-theme-value="showgirl"]{font-family:'Cinzel',serif}.theme-choice[data-theme-value="speak-now"],.theme-choice[data-theme-value="lover"]{font-family:'DM Serif Display',Georgia,serif}.theme-choice[data-theme-value="red"]{font-family:'Special Elite',serif}.theme-choice[data-theme-value="1989"]{font-family:'Libre Franklin','Segoe UI',sans-serif}.theme-choice[data-theme-value="reputation"]{font-family:'Black Ops One',system-ui,sans-serif}.theme-choice[data-theme-value="folklore"]{font-family:'EB Garamond',Georgia,serif}.theme-choice[data-theme-value="evermore"]{font-family:'Libre Baskerville',Georgia,serif}.theme-choice[data-theme-value="midnights"]{font-family:'Unbounded',system-ui,sans-serif}.theme-choice[data-theme-value="ttpd"]{font-family:'Playfair Display',Georgia,serif}
 .theme-choice:hover{filter:brightness(1.14)}.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 5px 14px var(--c-glow)}
 .theme-choice::after{content:attr(aria-label);position:absolute;z-index:4;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:4px 7px;border-radius:6px;background:rgba(8,12,28,.92);color:#fff;font-size:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}.theme-choice:hover::after{opacity:1}
-.volume-control{display:flex;align-items:center;gap:10px;height:54px}.volume-control input{appearance:none;width:100%;height:7px;border-radius:99px;background:linear-gradient(90deg,#ffd166 var(--volume-progress,80%),rgba(255,255,255,.18) var(--volume-progress,80%));outline:none;cursor:pointer}.volume-control input::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}.volume-control input::-moz-range-thumb{width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}#vol-label{min-width:32px;color:#ffd166;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.volume-control{display:flex;align-items:center;gap:10px;height:54px}.volume-control input{appearance:none;width:100%;height:7px;border-radius:99px;background:linear-gradient(90deg,#ffd166 var(--volume-progress,20%),rgba(255,255,255,.18) var(--volume-progress,20%));outline:none;cursor:pointer}.volume-control input::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}.volume-control input::-moz-range-thumb{width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}#vol-label{min-width:32px;color:#ffd166;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
 #entry-screen .ai-entry,#entry-screen .pt-entry{max-width:680px}
 .atmosphere-trigger{position:fixed;z-index:90;top:18px;right:20px;display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 12px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(13,16,34,.62);backdrop-filter:blur(14px);box-shadow:0 7px 20px rgba(0,0,0,.2);color:#fff;cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s}.atmosphere-trigger:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--c-glow)}.atmosphere-trigger strong{font-family:var(--theme-display);font-size:14px}.atmosphere-trigger small{font-size:10px;color:rgba(255,255,255,.65);line-height:1.35}.atmosphere-trigger .atmosphere-arrow{font-size:18px;opacity:.65;transition:transform .2s}.atmosphere-trigger[aria-expanded="true"] .atmosphere-arrow{transform:rotate(90deg)}
     .atmosphere-backdrop{display:none;position:fixed;z-index:90;inset:0;background:rgba(3,6,18,.58);backdrop-filter:blur(5px)}.atmosphere-backdrop.open{display:block}
@@ -428,7 +428,7 @@ transition:all .25s ease;
 /* tile spirit wrapper - fixed bottom-right, draggable */
 #pet-canvas-wrap{
   position:fixed;bottom:16px;right:16px;z-index:99;
-  width:44px;cursor:grab;user-select:none;
+  width:56px;cursor:grab;user-select:none;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));
   transition:transform .12s ease;
   touch-action:none;
@@ -768,7 +768,7 @@ transition:all .25s ease;
   </div>
   <div class="preference-card">
     <div class="preference-heading"><span class="pref-icon">🔊</span> Sound &amp; music <small>local background track</small></div>
-    <div class="volume-control"><input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Sound and music volume"><span id="vol-label">80%</span></div>
+    <div class="volume-control"><input type="range" id="vol-slider" min="0" max="100" value="20" aria-label="Sound and music volume"><span id="vol-label">20%</span></div>
   </div>
   <div class="preference-card music-card">
     <div class="preference-heading"><span class="pref-icon">🎵</span> Music <small>album-matched local tracks</small></div>
@@ -1035,8 +1035,8 @@ async function sha256(t){
    ==================================================================== */
 let audioCtx=null;
 let sfxEnabled=true; // Sound on by default
-let sfxVolume=0.8; // Master volume (0-1)
-const VOL_KEY='g2048_volume_v1';
+let sfxVolume=0.2; // Master volume (0-1)
+const VOL_KEY='g2048_volume_v2';
 function snd(freq,dur=.08,type='sine',vol=.15){
   if(!sfxEnabled)return; // Don't play when sound is off
   try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
@@ -3788,6 +3788,7 @@ function showHelpModal(){SFX.button();$('help-modal').classList.add('show')}
 
 /* ------------------------------------------------------------------ theme switching */
 const THEME_KEY='g2048_theme_v1';
+const DEFAULT_BGM={src:'music_bgm/StockTune-Echoes%20Of%20Silent%20Joy_1787127499.mp3',title:'Echoes Of Silent Joy · StockTune'};
 const ALBUM_THEMES=['taylor-swift','fearless','speak-now','red','1989','reputation','lover','folklore','evermore','midnights','ttpd','showgirl'];
 const THEME_BGM={
   'taylor-swift':{src:'music_bgm/Our%20Song.mp3',title:'Our Song · Taylor Swift'},
@@ -3803,9 +3804,8 @@ const THEME_BGM={
   ttpd:{src:'music_bgm/Fortnight.mp3',title:'Fortnight · Taylor Swift feat. Post Malone'},
   showgirl:{src:'music_bgm/Opalite.mp3',title:'Opalite · Taylor Swift'}
 };
-function setThemeMusic(theme){
+function setMusicTrack(track){
   const music=$('bg-music');
-  const track=THEME_BGM[theme]||THEME_BGM['taylor-swift'];
   const trackName=$('music-track-name');
   if(trackName)trackName.textContent=track.title;
   if(!music||music.getAttribute('src')===track.src)return;
@@ -3814,6 +3814,7 @@ function setThemeMusic(theme){
   music.load();
   startBackgroundMusic();
 }
+function setThemeMusic(theme){setMusicTrack(THEME_BGM[theme]||THEME_BGM['taylor-swift']);}
 function applyTheme(t){
   const theme=ALBUM_THEMES.includes(t)?t:'taylor-swift';
   document.documentElement.setAttribute('data-theme',theme);
@@ -3835,10 +3836,11 @@ function initAtmosphere(){
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&panel&&panel.classList.contains('open'))closePanel();});
 }
 function initTheme(){
-  let t='taylor-swift';
-  try{t=localStorage.getItem(THEME_KEY)||'taylor-swift'}catch(e){}
+  let t='taylor-swift',hasSavedTheme=false;
+  try{const saved=localStorage.getItem(THEME_KEY);hasSavedTheme=ALBUM_THEMES.includes(saved);if(hasSavedTheme)t=saved}catch(e){}
   if(!ALBUM_THEMES.includes(t))t='taylor-swift';
-  applyTheme(t);
+  if(hasSavedTheme)applyTheme(t);
+  else{document.documentElement.setAttribute('data-theme',t);if(window.refreshBackgroundTheme)window.refreshBackgroundTheme();setMusicTrack(DEFAULT_BGM);}
   const choices=document.querySelectorAll('.theme-choice');
   function renderThemeChoice(value){
     choices.forEach(function(choice){
