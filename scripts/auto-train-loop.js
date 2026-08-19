@@ -4,15 +4,15 @@
    Strategy:
    1. Train N games (improve weights)
    2. Test with 10 games (quick check)
-   3. If win rate = 100%, run confirmation test with 20 more games
-   4. If confirmation also 100%, stop (target reached)
-   5. If quick test or confirmation fails, go back to step 1
+   3. If win rate ≥ 80%, run a final confirmation test with 50 games
+   4. Stop after that 50-game test, regardless of its result
+   5. If the quick test fails, go back to step 1
    6. Push progress to git each cycle
    
    File lock: checks ai-backend-status.json for active=true on startup.
    Only one train/test action can run at a time.
    
-   Usage: node scripts/auto-train-loop.js [--target=100] [--maxRounds=50]
+   Usage: node scripts/auto-train-loop.js [--target=80] [--confirmGames=50] [--maxRounds=50]
    ==================================================================== */
 
 'use strict';
@@ -29,11 +29,11 @@ process.argv.slice(2).forEach(function (a) {
   if (m) args[m[1]] = m[2] === undefined ? true : m[2];
 });
 
-var TARGET_WIN_RATE = parseInt(args.target || '100', 10);
+var TARGET_WIN_RATE = parseInt(args.target || '80', 10);
 var MAX_ROUNDS = parseInt(args.maxRounds || '50', 10);
 var TRAIN_GAMES = parseInt(args.trainGames || '200', 10);
 var TEST_GAMES = parseInt(args.testGames || '10', 10);       // quick test: 10 games
-var CONFIRM_GAMES = parseInt(args.confirmGames || '20', 10); // confirmation test: 20 games
+var CONFIRM_GAMES = parseInt(args.confirmGames || '50', 10); // final confirmation test: 50 games
 
 var repoRoot = path.join(__dirname, '..');
 var weightsPath = path.join(repoRoot, 'js', 'ai-weights.json');
@@ -688,10 +688,10 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
     continue; // go to next round (train more)
   }
   
-  // ---- Step 4: CONFIRMATION TEST (20 games) ----
-  // Quick test passed (100%), now confirm with more games
+  // ---- Step 4: FINAL CONFIRMATION TEST (50 games) ----
+  // The quick test reached the target. This is the final action in the loop.
   console.log('\n✅ Quick test passed! ' + testResult.winRate + '% win rate (' + testResult.wins + '/' + testResult.total + ')');
-  console.log('Step 4: Running confirmation test with ' + CONFIRM_GAMES + ' games...');
+  console.log('Step 4: Running final confirmation test with ' + CONFIRM_GAMES + ' games...');
   
   writeBackendStatus({
     active: true,
@@ -724,34 +724,10 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
   saveLoopLog();
   gitPush('auto-train: round ' + round + ' CONFIRM TEST v' + weights.version + ' winRate=' + confirmResult.winRate + '% (' + confirmResult.wins + '/' + confirmResult.total + ')');
   
-  // ---- Step 5: CHECK CONFIRMATION RESULT ----
-  if (confirmResult.winRate >= TARGET_WIN_RATE) {
-    // 🎉 TARGET REACHED!
-    console.log('\n🎉🎉 TARGET REACHED! Confirmation test ' + confirmResult.winRate + '% >= ' + TARGET_WIN_RATE + '%');
-    console.log('Quick test: ' + testResult.winRate + '% (' + testResult.wins + '/' + testResult.total + ')');
-    console.log('Confirm test: ' + confirmResult.winRate + '% (' + confirmResult.wins + '/' + confirmResult.total + ')');
-    console.log('Total rounds: ' + round);
-    console.log('Final version: v' + weights.version);
-    writeBackendStatus({
-      active: false,
-      phase: 'idle',
-      round: round,
-      maxRounds: MAX_ROUNDS,
-      version: weights.version,
-      winRate: confirmResult.winRate,
-      wins: confirmResult.wins,
-      testTotal: confirmResult.total,
-      avgScore: confirmResult.avgScore,
-      bestMax: confirmResult.bestMax,
-      message: '🎯 TARGET REACHED! v' + weights.version + ' - Quick: ' + testResult.winRate + '%, Confirm: ' + confirmResult.winRate + '% (' + confirmResult.wins + '/' + confirmResult.total + ' reached 2048)'
-    });
-    break;
-  }
-  
-  // Confirmation test failed, continue training
-  console.log('\n❌ Confirmation test failed: ' + confirmResult.winRate + '% < target ' + TARGET_WIN_RATE + '%');
-  console.log('Quick test was ' + testResult.winRate + '% but confirmation only ' + confirmResult.winRate + '% - need more training...');
-  
+  // ---- Step 5: STOP AFTER THE FINAL CONFIRMATION TEST ----
+  console.log('\n🏁 Final confirmation test complete: ' + confirmResult.winRate + '% (' + confirmResult.wins + '/' + confirmResult.total + ')');
+  console.log('Quick test: ' + testResult.winRate + '% (' + testResult.wins + '/' + testResult.total + ')');
+  console.log('Final version: v' + weights.version + '. No further training will run.');
   writeBackendStatus({
     active: false,
     phase: 'idle',
@@ -759,8 +735,14 @@ for (var round = 1; round <= MAX_ROUNDS; round++) {
     maxRounds: MAX_ROUNDS,
     version: weights.version,
     winRate: confirmResult.winRate,
-    message: 'Round ' + round + ': Quick test passed but confirm failed (' + confirmResult.winRate + '%), will train more...'
+    wins: confirmResult.wins,
+    testTotal: confirmResult.total,
+    avgScore: confirmResult.avgScore,
+    bestMax: confirmResult.bestMax,
+    message: '🏁 FINAL TEST COMPLETE! v' + weights.version + ' - Quick: ' + testResult.winRate + '%, Final 50-game test: ' + confirmResult.winRate + '% (' + confirmResult.wins + '/' + confirmResult.total + ' reached 2048). No further training.'
   });
+  gitPush('auto-train: final 50-game test complete v' + weights.version + ' winRate=' + confirmResult.winRate + '%');
+  break;
 }
 
 console.log('\n========================================================');
