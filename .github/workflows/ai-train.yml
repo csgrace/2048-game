@@ -1,50 +1,51 @@
-name: AI Training
+name: AI Training v1
 
 on:
-  # 手动触发（在 GitHub 仓库 Actions 页面点 "Run workflow"）
   workflow_dispatch:
     inputs:
       games:
-        description: 'Number of games to train'
+        description: 'Teacher games for the reproducible v1 run'
         required: false
-        default: '200'
+        default: '250'
+        type: string
+      epochs:
+        description: 'Training epochs'
+        required: false
+        default: '8'
         type: string
 
 permissions:
-  contents: write  # 需要 push 权限来更新 ai-weights.json 和 ai-training-progress.json
+  contents: write
 
-# Train and playtest share this group: GitHub will queue one while the other runs.
 concurrency:
-  group: ai-operation
-  cancel-in-progress: false
+  group: ai-training-v1
+  cancel-in-progress: true
 
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # 6 hours max
-
+    timeout-minutes: 90
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 22
+          python-version: '3.11'
+          cache: pip
 
-      - name: Configure Git
+      - name: Install trainer dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train v1 and retain fixed-seed best checkpoint
+        run: python scripts/train_policy_value.py --games ${{ inputs.games }} --epochs ${{ inputs.epochs }} --seed 2048 --validation-games 50
+
+      - name: Commit v1 weights and validation record
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Run AI training
-        run: node scripts/train-ai.js --games ${{ github.event.inputs.games || '200' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Commit updated weights (fallback if script didn't)
-        run: |
-          git add js/ai-weights.json js/ai-training-progress.json 2>/dev/null || true
+          git add js/ai-weights.json js/ai-best-checkpoint.json js/ai-training-progress.json
           git diff --staged --quiet && echo "No changes to commit" && exit 0
-          git commit -m "chore(ai): update trained weights via GitHub Actions [skip ci]"
+          git commit -m "chore(ai): publish reproducible v1 checkpoint [skip ci]"
           git push

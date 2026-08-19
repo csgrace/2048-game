@@ -1,10 +1,11 @@
 {
   "name": "2048-ai-trainer",
   "version": "1.0.0",
-  "description": "2048 AI training via GitHub Actions with progress polling",
-  "main": "scripts/train-ai.js",
+  "description": "2048 AI v1 policy-value training with fixed-seed validation",
+  "main": "scripts/train_policy_value.py",
   "scripts": {
-    "train": "node scripts/train-ai.js --games 100"
+    "train": "python scripts/train_policy_value.py --games 250 --epochs 8",
+    "validate-ai": "python scripts/validate_policy_value.py --games 50 --seed 10000"
   },
   "engines": {
     "node": ">=18"

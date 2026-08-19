@@ -1,47 +1,46 @@
-name: AI Playtest
+name: AI Validation v1
 
 on:
   workflow_dispatch:
     inputs:
       games:
-        description: 'Number of playtest games'
+        description: 'Fixed-seed validation games (default is the v1 comparison set)'
         required: false
-        default: '20'
+        default: '50'
         type: string
 
 permissions:
   contents: write
 
-# Train and playtest share this group: GitHub will queue one while the other runs.
 concurrency:
-  group: ai-operation
-  cancel-in-progress: false
+  group: ai-training-v1
+  cancel-in-progress: true
 
 jobs:
-  playtest:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # 6 hours max
-
+    timeout-minutes: 45
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 22
+          python-version: '3.11'
+          cache: pip
 
-      - name: Configure Git
+      - name: Install validation dependencies
+        run: pip install -r requirements.txt
+
+      - name: Evaluate the published v1 checkpoint
+        run: python scripts/validate_policy_value.py --games ${{ inputs.games }} --seed 10000
+
+      - name: Commit validation progress
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Run AI playtest (${{ github.event.inputs.games || '20' }} games)
-        run: node scripts/playtest-ai.js --games=${{ github.event.inputs.games || '20' }}
-
-      - name: Commit playtest progress
-        run: |
-          git add js/ai-playtest-progress.json 2>/dev/null || true
+          git add js/ai-playtest-progress.json
           git diff --staged --quiet && echo "No changes to commit" && exit 0
-          git commit -m "chore(ai): playtest progress update via GitHub Actions [skip ci]"
+          git commit -m "chore(ai): record fixed-seed v1 validation [skip ci]"
           git push

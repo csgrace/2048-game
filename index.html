@@ -716,13 +716,13 @@ transition:all .25s ease;
 
       <section class="training-details" aria-label="Training logic explanation">
         <h3>Training Process</h3>
-    <p>① <strong>Click Train</strong>: Frontend triggers Actions workflow via GitHub API, running training on cloud servers.</p>
-    <p>② <strong>Expectimax Self-Play</strong>: Max node selects optimal moves, Chance node calculates expected value of random tile generation (2 at 90%, 4 at 10%), search depth adapts to empty cells (2-5 levels).</p>
-    <p>③ <strong>Neural Network TD(λ) Training</strong>: MLP 256→96→48→16→1 value network, using TD(λ=0.5, γ=0.95) to compute targets, Adam optimizer + experience replay.</p>
-    <p>④ <strong>Progressive Blending</strong>: First 30 games pure heuristic warmup, then NN evaluation weight gradually increases to 80%.</p>
-    <p>⑤ <strong>Real-time Progress</strong>: Every 20 games, auto-commits progress file <code>js/ai-training-progress.json</code>, frontend polls every 10s and refreshes Loss Curve and Max Tile charts.</p>
-    <p>⑥ <strong>Auto Deploy</strong>: After training, GitHub Actions auto-commits updated <code>js/ai-weights.json</code>, all users get latest AI on page refresh.</p>
-    <p>⑦ <strong>Incremental Training</strong>: Each training loads previous version weights to continue, AI gets stronger over time.</p>
+<p>① <strong>Click Train</strong>: Frontend triggers the reproducible v1 Actions workflow on cloud runners.</p>
+<p>② <strong>Teacher Search</strong>: Deterministic Expectimax labels legal moves while chance nodes model 2 (90%) and 4 (10%) tiles.</p>
+<p>③ <strong>Policy-Value Training</strong>: A Python/PyTorch model learns four move logits and a normalized value target, using Huber loss, gradient clipping, and a decaying learning rate.</p>
+<p>④ <strong>Unified Scale</strong>: The value target is <code>tanh(heuristic / 800)</code>; the webpage uses the same bounded interpretation, without arbitrary output multipliers.</p>
+<p>⑤ <strong>Fixed-seed Checkpoint</strong>: Every epoch is measured against the same 50 seeds; only the best validation checkpoint becomes <code>js/ai-weights.json</code>.</p>
+<p>⑥ <strong>Auto Deploy</strong>: Actions commits the published v1 weights and progress after validation so page refreshes load the selected checkpoint.</p>
+<p>⑦ <strong>Versioned Runs</strong>: v1 starts from a fixed seed and does not inherit unstable legacy weights.</p>
       </section>
     </div>
     <nav class="sides" aria-label="Game controls">
@@ -1906,7 +1906,7 @@ function aiExpectimax(grid,depth,isChance,table){
     value=-Infinity;
     for(const direction of AI_DIRECTIONS){
       const result=aiMoveBoard(grid,direction);
-      if(result.changed)value=Math.max(value,result.gained+aiExpectimax(result.board,depth-1,true,table));
+      if(result.changed)value=Math.max(value,result.gained+aiPolicyBonus(grid,direction)+aiExpectimax(result.board,depth-1,true,table));
     }
     if(value===-Infinity)value=-100000;
   }else{
@@ -1952,7 +1952,7 @@ function aiBestMove(){
     let localBest=null,localScore=-Infinity,completed=true;
     for(const direction of AI_DIRECTIONS){
       const result=aiMoveBoard(board,direction);if(!result.changed)continue;
-      const value=result.gained+aiExpectimax(result.board,targetDepth,true,table);
+      const value=result.gained+aiPolicyBonus(board,direction)+aiExpectimax(result.board,targetDepth,true,table);
       if(value>localScore){localScore=value;localBest=direction;}
     }
     if(performance.now()-start>AI_BUDGET_MS){completed=false;}
@@ -1963,7 +1963,7 @@ function aiBestMove(){
   const candidates=[];
   for(const direction of AI_DIRECTIONS){
     const result=aiMoveBoard(board,direction);if(!result.changed)continue;
-    candidates.push({direction,expectimax:result.gained+aiExpectimax(result.board,2,true,new Map())});
+    candidates.push({direction,expectimax:result.gained+aiPolicyBonus(board,direction)+aiExpectimax(result.board,2,true,new Map())});
   }
   candidates.sort((a,b)=>b.expectimax-a.expectimax);
   if(candidates.length){
@@ -2040,14 +2040,19 @@ function initAiNet(weights){
   if(!window.AIBrain)return;
   aiNet=new window.AIBrain.ValueNet();
   if(weights){aiNet.importWeights(weights);if(aiNet)aiNet._meta=weights;}
-  aiUseNN=!!weights&&aiTrainGames>30; // match training threshold (WARMUP=30)
+  aiUseNN=!!weights&&weights.format==='policy-value-v1';
 }
 function aiNeuralEvaluate(grid){
   if(!aiUseNN||!aiNet)return aiEvaluate(grid);
   const input=window.AIBrain.encodeBoard(grid);
-  const raw=aiNet.forward(input);
-  const nnWeight=Math.min(0.8,aiTrainGames/300);
-  return aiEvaluate(grid)*(1-nnWeight)+raw*5000*nnWeight;
+  // v1 is trained against tanh(heuristic / 800): retain a bounded, compatible leaf contribution.
+  return aiEvaluate(grid)+aiNet.forward(input)*120;
+}
+function aiPolicyBonus(grid,direction){
+  if(!aiUseNN||!aiNet||!aiNet.forwardPolicy)return 0;
+  const logits=aiNet.forwardPolicy(window.AIBrain.encodeBoard(grid));
+  const index=AI_DIRECTIONS.indexOf(direction);
+  return index<0?0:logits[index]*12;
 }
 function refreshAiEvalLeaf(){
   aiExpectimax=function(grid,depth,isChance,table){
@@ -2060,7 +2065,7 @@ function refreshAiEvalLeaf(){
       value=-Infinity;
       for(const direction of AI_DIRECTIONS){
         const result=aiMoveBoard(grid,direction);
-        if(result.changed)value=Math.max(value,result.gained+aiExpectimax(result.board,depth-1,true,table));
+        if(result.changed)value=Math.max(value,result.gained+aiPolicyBonus(grid,direction)+aiExpectimax(result.board,depth-1,true,table));
       }
       if(value===-Infinity)value=-100000;
     }else{
@@ -2383,8 +2388,8 @@ if(aiPollTimer){clearInterval(aiPollTimer);aiPollTimer=null;}
 }
 
 /* ====================================================================
-   Backend Status Monitor — polls ai-backend-status.json for live
-   training/testing progress from the auto-train-loop
+Backend Status Monitor — polls ai-backend-status.json for live
+training and validation phase information
    ==================================================================== */
 function startBackendStatusPolling(){
   stopBackendStatusPolling();

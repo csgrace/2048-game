@@ -1,0 +1,3 @@
+numpy>=1.26,<3
+# CPU wheels are sufficient for GitHub-hosted runners; the trainer uses CUDA automatically when available.
+torch>=2.2,<3

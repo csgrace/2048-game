@@ -44,9 +44,10 @@
   }
 
   /* ---------- Layer ---------- */
-  function Linear(inF, outF, initType) {
+  function Linear(inF, outF, initType, activation) {
     this.inF = inF;
     this.outF = outF;
+    this.activation = activation !== false;
     this.W = mat(outF, inF, initType || 'he');
     this.b = new Float32Array(outF);
     // Adam state
@@ -65,7 +66,7 @@
       var sum = this.b[o];
       var off = o * this.inF;
       for (i = 0; i < this.inF; i++) sum += this.W[off + i] * input[i];
-      output[o] = sum > 0 ? sum : 0; // ReLU
+      output[o] = this.activation ? (sum > 0 ? sum : sum * 0.05) : sum;
       this.outC[o] = output[o];
     }
     return output;
@@ -78,7 +79,7 @@
     var i, o;
     // gradW and gradB — ACCUMULATE (+=) so batch samples are summed
     for (o = 0; o < this.outF; o++) {
-      var go = gradOutput[o] * (this.outC[o] > 0 ? 1 : 0); // ReLU derivative
+      var go = gradOutput[o] * (this.activation ? (this.outC[o] > 0 ? 1 : 0.05) : 1);
       this.gB[o] += go;
       var off = o * this.inF;
       for (i = 0; i < this.inF; i++) this.gW[off + i] += go * this.inC[i];
@@ -87,7 +88,7 @@
     var gradInput = new Float32Array(this.inF);
     for (i = 0; i < this.inF; i++) {
       var sum = 0;
-      for (o = 0; o < this.outF; o++) sum += this.W[o * this.inF + i] * gradOutput[o] * (this.outC[o] > 0 ? 1 : 0);
+      for (o = 0; o < this.outF; o++) sum += this.W[o * this.inF + i] * gradOutput[o] * (this.activation ? (this.outC[o] > 0 ? 1 : 0.05) : 1);
       gradInput[i] = sum;
     }
     return gradInput;
@@ -121,7 +122,9 @@
     this.l1 = new Linear(INPUT_SIZE, 96, 'he');
     this.l2 = new Linear(96, 48, 'he');
     this.l3 = new Linear(48, 16, 'he');
-    this.l4 = new Linear(16, 1, 'xavier');
+    this.l4 = new Linear(16, 1, 'xavier', false);
+    this.policy = new Linear(16, 4, 'xavier', false);
+    this.policyBuf = new Float32Array(4);
     this.buf1 = new Float32Array(96);
     this.buf2 = new Float32Array(48);
     this.buf3 = new Float32Array(16);
@@ -131,10 +134,17 @@
     this.l2.forward(this.buf1, this.buf2);
     this.l3.forward(this.buf2, this.buf3);
     this.l4.forward(this.buf3, this.buf4 || (this.buf4 = new Float32Array(1)));
-    // tanh output → squash to [-1, 1]
+    // tanh output → normalized value in [-1, 1]
     var x = this.buf4[0];
     this.buf4[0] = x > 20 ? 1 : x < -20 ? -1 : (Math.exp(2 * x) - 1) / (Math.exp(2 * x) + 1);
     return this.buf4[0];
+  };
+  ValueNet.prototype.forwardPolicy = function (input) {
+    this.l1.forward(input, this.buf1);
+    this.l2.forward(this.buf1, this.buf2);
+    this.l3.forward(this.buf2, this.buf3);
+    this.policy.forward(this.buf3, this.policyBuf);
+    return this.policyBuf;
   };
   ValueNet.prototype.trainStep = function (batch, lr) {
     // batch: [{input, target, weight}]
@@ -175,6 +185,7 @@
       l2W: Array.from(this.l2.W), l2b: Array.from(this.l2.b),
       l3W: Array.from(this.l3.W), l3b: Array.from(this.l3.b),
       l4W: Array.from(this.l4.W), l4b: Array.from(this.l4.b),
+      policyW: Array.from(this.policy.W), policyB: Array.from(this.policy.b),
       // Persist Adam optimiser state so training continuity is preserved
       l1mW: Array.from(this.l1.mW), l1vW: Array.from(this.l1.vW), l1mB: Array.from(this.l1.mB), l1vB: Array.from(this.l1.vB),
       l2mW: Array.from(this.l2.mW), l2vW: Array.from(this.l2.vW), l2mB: Array.from(this.l2.mB), l2vB: Array.from(this.l2.vB),
@@ -189,6 +200,7 @@
     this.l2.W.set(data.l2W); this.l2.b.set(data.l2b);
     this.l3.W.set(data.l3W); this.l3.b.set(data.l3b);
     this.l4.W.set(data.l4W); this.l4.b.set(data.l4b);
+    if (data.policyW && data.policyB) { this.policy.W.set(data.policyW); this.policy.b.set(data.policyB); }
     // Restore Adam optimiser state if available (for training continuity)
     if (data.l1mW) {
       this.l1.mW.set(data.l1mW); this.l1.vW.set(data.l1vW); this.l1.mB.set(data.l1mB); this.l1.vB.set(data.l1vB);
@@ -210,8 +222,8 @@
   Trajectory.prototype.computeTargets = function (gamma, lambda, netOut) {
     var T = this.rewards.length;
     var targets = new Float32Array(T);
-    // rewards are already normalized in the worker (gained/200 + heuristic_delta/5000)
-    // so we use them directly here without further scaling
+    // Legacy TD targets are bounded before this method consumes them.
+    // The published v1 trainer uses its own normalized policy-value objective.
     for (var t = 0; t < T; t++) {
       if (t === T - 1) targets[t] = this.rewards[t]; // terminal: only immediate reward
       else {

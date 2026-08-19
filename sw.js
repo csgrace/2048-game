@@ -1,10 +1,10 @@
-const CACHE_NAME = '2048-game-v6';
+const CACHE_NAME = '2048-game-v7';
 // Keep installation light on mobile; album tracks load only when a user plays them.
 const ASSETS = [
   './',
   './index.html',
   './js/ai-brain.js',
-  './js/ai-trainer-worker.js',
+  './js/ai-weights.json',
   './manifest.json'
 ];
 
