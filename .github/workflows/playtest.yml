@@ -12,6 +12,11 @@ on:
 permissions:
   contents: write
 
+# Train and playtest share this group: GitHub will queue one while the other runs.
+concurrency:
+  group: ai-operation
+  cancel-in-progress: false
+
 jobs:
   playtest:
     runs-on: ubuntu-latest

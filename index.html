@@ -403,19 +403,7 @@ transition:all .25s ease;
   background:rgba(143,122,102,.25);color:rgba(255,255,255,.8);margin-left:8px;
 }
 
-/* music toggle button */
-.music-btn{
-  position:fixed;top:16px;right:16px;z-index:99;
-  width:44px;height:44px;border-radius:50%;
-  background:rgba(255,255,255,.08);backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.15);
-  color:rgba(255,255,255,.7);font-size:20px;
-  cursor:pointer;transition:all .25s;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 16px rgba(0,0,0,.2);
-}
-.music-btn:hover{background:rgba(255,255,255,.15);color:#fff;transform:scale(1.08)}
-.music-btn.off{color:rgba(255,255,255,.35)}
+/* Sound volume is controlled from the home screen. */
 
 /* tile spirit wrapper - fixed bottom-right, draggable */
 #pet-canvas-wrap{
@@ -444,7 +432,6 @@ transition:all .25s ease;
 <body>
 
 <canvas id="bg-canvas"></canvas>
-<button class="music-btn" id="music-toggle" title="Sound">🔊</button>
 <div class="app">
 
   <!-- ============ ENTRY ============ -->
@@ -477,6 +464,23 @@ transition:all .25s ease;
       </span>
       <span class="pt-arrow">→</span>
     </button>
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:20px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5)">
+        🎨 Theme
+        <select id="sel-theme" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:12px;cursor:pointer">
+          <option value="default">Default</option>
+          <option value="dark">Dark</option>
+          <option value="ocean">Ocean</option>
+          <option value="forest">Forest</option>
+          <option value="sunset">Sunset</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5)">
+        🔊 Volume
+        <input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Sound volume" style="width:100px;accent-color:#ffd166;cursor:pointer">
+        <span id="vol-label" style="color:#ffd166;min-width:30px">80%</span>
+      </label>
+    </div>
   </div>
 
   <!-- ============ PLAYTEST ARENA ============ -->
@@ -616,20 +620,6 @@ transition:all .25s ease;
             <option value="down-120">⏳ Count Down 2 min</option>
             <option value="down-300">⏳ Count Down 5 min</option>
           </select>
-        </div>
-        <div class="setting-group">
-          <label>Theme</label>
-          <select id="sel-theme">
-            <option value="default">🎨 Default (Purple Night)</option>
-            <option value="dark">🌑 Dark (Midnight)</option>
-            <option value="ocean">🌊 Ocean (Blue Sea)</option>
-            <option value="forest">🌲 Forest (Nature)</option>
-            <option value="sunset">🌅 Sunset (Warm)</option>
-          </select>
-        </div>
-        <div class="setting-group" style="grid-column:1/-1">
-          <label>Sound Volume: <span id="vol-label" style="color:#ffd166">80%</span></label>
-          <input type="range" id="vol-slider" min="0" max="100" value="80" style="width:100%;accent-color:#ffd166;cursor:pointer">
         </div>
       </div>
       <div class="btn-row" style="margin-top:24px">
@@ -991,23 +981,9 @@ const SFX={
 };
 
 /* ====================================================================
-   SFX Toggle (Sound)
+   Home-screen settings
    ==================================================================== */
-function toggleBGM(){
-  sfxEnabled=!sfxEnabled;
-  const btn=$('music-toggle');
-  if(sfxEnabled){
-    btn.textContent='🔊';
-    btn.classList.remove('off');
-    btn.style.borderColor='rgba(20,184,166,.5)';
-  }else{
-    btn.textContent='🔇';
-    btn.classList.add('off');
-    btn.style.borderColor='rgba(255,255,255,.15)';
-  }
-}
 document.addEventListener('DOMContentLoaded',function(){
-  $('music-toggle').addEventListener('click',toggleBGM);
   initTheme();
   initVolume();
 });
@@ -2000,14 +1976,25 @@ function loadTrainingStatsFromWeights(){
   }
 }
 function setStat(id,val){const el=$(id);if(el){const v=el.querySelector('.ts-value');if(v)v.textContent=val;}}
+/* Chart canvas helper must be global: the pet canvas helper is scoped to its own IIFE. */
+function setupTrainingChartCanvas(canvas,width,height){
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(width*dpr);
+  canvas.height=Math.round(height*dpr);
+  canvas.style.width=width+'px';
+  canvas.style.height=height+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
 /* Draw loss curve on canvas */
 let _lossPoints=[]; // store for hover detection
 function drawTrainingCurve(){
   const c=$('training-curve');if(!c)return;
-  const W=c.clientWidth||280;
+  const W=Math.max(1,c.clientWidth||280);
   const H=80;
   c.style.height=H+'px';
-  const ctx=setupHiDPICanvas(c,W,H);
+  const ctx=setupTrainingChartCanvas(c,W,H);
   ctx.clearRect(0,0,W,H);
   // Background grid
   ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
@@ -2018,7 +2005,13 @@ function drawTrainingCurve(){
     ctx.fillText('No training data',W/2,H/2);
     return;
   }
-  const losses=aiHistory.map(function(p){return p.loss});
+  const points=aiHistory.filter(function(p){return p&&Number.isFinite(Number(p.loss));});
+  if(!points.length){
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText('Waiting for valid loss data',W/2,H/2);
+    return;
+  }
+  const losses=points.map(function(p){return Number(p.loss)});
   const maxL=Math.max.apply(null,losses);const minL=Math.min.apply(null,losses);
   const range=(maxL-minL)||0.001;
   // Draw loss curve with gradient
@@ -2027,25 +2020,25 @@ function drawTrainingCurve(){
   grad.addColorStop(1,'rgba(255,209,102,0)');
   ctx.beginPath();
   ctx.moveTo(0,H);
-  aiHistory.forEach(function(p,i){
-    const x=i/(aiHistory.length-1)*W;
-    const y=H-2-(p.loss-minL)/range*(H-6);
-    _lossPoints.push({x:x,y:y,loss:p.loss,game:p.game});
+  points.forEach(function(p,i){
+    const x=points.length===1?W/2:i/(points.length-1)*W;
+    const y=H-2-(Number(p.loss)-minL)/range*(H-6);
+    _lossPoints.push({x:x,y:y,loss:Number(p.loss),game:p.game});
     ctx.lineTo(x,y);
   });
   ctx.lineTo(W,H);ctx.closePath();
   ctx.fillStyle=grad;ctx.fill();
   // Line
   ctx.strokeStyle='#ffd166';ctx.lineWidth=2;ctx.beginPath();
-  aiHistory.forEach(function(p,i){
-    const x=i/(aiHistory.length-1)*W;
-    const y=H-2-(p.loss-minL)/range*(H-6);
+  points.forEach(function(p,i){
+    const x=points.length===1?W/2:i/(points.length-1)*W;
+    const y=H-2-(Number(p.loss)-minL)/range*(H-6);
     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
   });
   ctx.stroke();
   // Last point dot
-  const lastP=aiHistory[aiHistory.length-1];
-  const lx=W;const ly=H-2-(lastP.loss-minL)/range*(H-6);
+  const lastP=points[points.length-1];
+  const lx=points.length===1?W/2:W;const ly=H-2-(Number(lastP.loss)-minL)/range*(H-6);
   ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(lx-2,ly,3,0,6.28);ctx.fill();
   // Attach hover handler (only once)
   if(!c._hoverAttached){
@@ -2073,10 +2066,10 @@ function drawTrainingCurve(){
 /* Draw max tile bar chart */
 function drawMaxTileChart(){
   const c=$('training-tiles');if(!c)return;
-  const W=c.clientWidth||280;
+  const W=Math.max(1,c.clientWidth||280);
   const H=50;
   c.style.height=H+'px';
-  const ctx=setupHiDPICanvas(c,W,H);
+  const ctx=setupTrainingChartCanvas(c,W,H);
   ctx.clearRect(0,0,W,H);
   if(!aiHistory.length){
     ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
@@ -2089,18 +2082,24 @@ function drawMaxTileChart(){
     }
     return;
   }
-  const tiles=aiHistory.map(function(p){return p.maxTile});
+  const points=aiHistory.filter(function(p){return p&&Number.isFinite(Number(p.maxTile))&&Number(p.maxTile)>0;});
+  if(!points.length){
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText('Waiting for valid tile data',W/2,H/2);
+    return;
+  }
+  const tiles=points.map(function(p){return Number(p.maxTile)});
   const maxT=Math.max.apply(null,tiles);
   const n=tiles.length;
   const barW=Math.max(2,W/n-1);
   _tilePoints=[]; // store for tooltip hit-testing
   tiles.forEach(function(t,i){
     const x=i*(W/n);
-    const h=(t/maxT)*(H-4);
+    const h=Math.max(2,(t/maxT)*(H-4));
     const y=H-h;
     // Unified rule: below 2048 = blue, 2048+ = purple
     const color=t>=2048?'#9b59b6':'#3498db';
-    _tilePoints.push({x:x,w:barW,h:h,y:y,color:color});
+    _tilePoints.push({x:x,w:barW,h:h,y:y,color:color,data:points[i]});
     ctx.fillStyle=color;
     ctx.fillRect(x,y,barW,h);
   });
@@ -2126,7 +2125,7 @@ function tileChartHover(e){
   }
   if(bestIdx>=0){
     const pt=_tilePoints[bestIdx];
-    const dataPt=aiHistory[bestIdx];
+    const dataPt=pt.data;
     const col=pt.color;
     const tip=$('chart-tooltip');
     tip.style.display='block';
@@ -2240,10 +2239,16 @@ async function fetchBackendStatus(){
     const resp=await fetch(BACKEND_STATUS_URL+'?t='+Date.now());
     if(!resp.ok)return;
     const data=await resp.json();
-    updateBackendStatusUI(data);
+    // Also fetch training progress for history/charts
+    let progressData=null;
+    try{
+      const progResp=await fetch(PROGRESS_URL+'?t='+Date.now());
+      if(progResp.ok) progressData=await progResp.json();
+    }catch(e){/* progress file may not exist */}
+    updateBackendStatusUI(data,progressData);
   }catch(e){/* network error, keep polling */}
 }
-function updateBackendStatusUI(data){
+function updateBackendStatusUI(data,progressData){
   if(!data)return;
   const phase=data.phase||'idle';
   const phaseLabels={training:'TRAINING',testing:'TESTING',idle:'IDLE'};
@@ -2279,6 +2284,7 @@ function updateBackendStatusUI(data){
   if(tags){
     let tagHtml='';
     tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.7)">v'+(data.version||'—')+'</span>';
+    if(data.round&&data.maxRounds)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.6)">Round '+data.round+'/'+data.maxRounds+'</span>';
     if(data.trainProgress&&phase==='training')tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(255,209,102,.15);color:#ffd166">⏳ '+data.trainProgress+'</span>';
     if(data.loss&&phase==='training')tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">loss '+data.loss.toFixed(4)+'</span>';
     if(phase==='training'&&data.bestMaxTile)tagHtml+='<span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:#ffd166">Best '+data.bestMaxTile+'</span>';
@@ -2408,6 +2414,31 @@ function updateBackendStatusUI(data){
       const barEl2=$('playtest-batch-bar');
       if(barEl2)barEl2.style.background='linear-gradient(90deg,#14b8a6,#6bcb77)';
     }
+  }
+  // ---- Update main stat boxes (Version/Games/Best/Avg/Loss) ----
+  if(data.version) setStat('ts-version','v'+data.version);
+  if(data.trainProgress){
+    setStat('ts-games',data.trainProgress);
+    // Update training log with current progress
+    const logEl=$('training-log');
+    if(logEl&&data.phase==='training'){
+      logEl.innerHTML='🖥️ <strong>Backend active</strong> — Round '+(data.round||'?')+'/'+(data.maxRounds||'?')+'<br>Training game '+data.trainProgress+' (lr='+(data.lr||'?')+', loss='+(data.loss?data.loss.toFixed(6):'?')+')<br><span style="font-size:10px;color:rgba(255,255,255,.3)">Best: '+(data.bestMaxTile||'?')+' · Avg: '+(data.avgScore||'?')+'</span>';
+    }
+  }else if(phase==='idle'){
+    // When idle, still show version from backend if available
+    if(data.version) setStat('ts-version','v'+data.version);
+  }
+  if(data.bestMaxTile) setStat('ts-best',data.bestMaxTile);
+  if(data.avgScore) setStat('ts-avg',data.avgScore);
+  if(data.loss!==undefined&&phase==='training') setStat('ts-loss',data.loss.toFixed(6));
+
+  // ---- Update charts from the live training-progress history ----
+  if(progressData&&Array.isArray(progressData.history)){
+    _liveTrainingActive=Boolean(progressData.active);
+    aiLiveHistory=progressData.history;
+    aiHistory=aiLiveHistory;
+    drawTrainingCurve();
+    drawMaxTileChart();
   }
   // Update weight info bar in Playtest Arena
   updateWeightInfoBar();
@@ -2591,6 +2622,13 @@ async function dispatchPlaytestWorkflow(){
 
   if(startBtn)startBtn.style.display='none';
   if(stopBtn)stopBtn.style.display='';
+  // A locally dispatched test reserves the shared AI operation slot immediately.
+  const trainBtn=$('ai-train');
+  if(trainBtn){
+    trainBtn.disabled=true;
+    trainBtn.textContent='⏳ Test starting...';
+    trainBtn.style.pointerEvents='none';
+  }
   if(progDiv)progDiv.style.display='';
   if(logEl)logEl.style.display='';
   if(logEl)logEl.innerHTML='';
@@ -2779,6 +2817,12 @@ function finishBatchPlaytest(){
   const barEl=$('playtest-batch-bar');
   if(startBtn){startBtn.style.display='';startBtn.textContent='▶ Start Cloud Test';startBtn.disabled=false;startBtn.classList.remove('testing');startBtn.style.pointerEvents='auto';}
   if(stopBtn){stopBtn.style.display='none';stopBtn.disabled=false;}
+  const trainBtn=$('ai-train');
+  if(trainBtn&&$('backend-phase-badge')&&$('backend-phase-badge').textContent==='IDLE'){
+    trainBtn.disabled=false;
+    trainBtn.textContent='▶ Train';
+    trainBtn.style.pointerEvents='auto';
+  }
   if(barEl)barEl.style.width='100%';
   if(infoEl)infoEl.textContent='Done! '+batchPlaytestWins+'W '+batchPlaytestFails+'L';
   if(statusEl)statusEl.innerHTML='✅ <strong>Playtest complete!</strong> '+batchPlaytestWins+' wins, '+batchPlaytestFails+' losses ('+Math.round(batchPlaytestWins/batchPlaytestTotal*100)+'% win rate).<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Results saved to <code>ai-playtest-progress.json</code>.</span>';
@@ -3043,6 +3087,12 @@ async function startTraining(){
   }
   $('ai-train').disabled=true;
   $('ai-train').textContent='⏳ Triggering...';
+  const cloudTestBtn=$('playtest-batch-start');
+  if(cloudTestBtn){
+    cloudTestBtn.disabled=true;
+    cloudTestBtn.textContent='⏳ Training starting...';
+    cloudTestBtn.style.pointerEvents='none';
+  }
   sessionStorage.setItem('ai-training-triggered',Date.now());
   log.innerHTML='⏳ Triggering GitHub Actions training...';
   try{
@@ -3068,17 +3118,20 @@ async function startTraining(){
       openTokenModal();
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
+      if(cloudTestBtn){cloudTestBtn.disabled=false;cloudTestBtn.textContent='▶ Start Cloud Test';cloudTestBtn.style.pointerEvents='auto';}
     }else{
       sessionStorage.removeItem('ai-training-triggered');
       log.innerHTML='❌ Start failed (HTTP '+resp.status+')<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions page</a> to trigger manually.</span>';
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
+      if(cloudTestBtn){cloudTestBtn.disabled=false;cloudTestBtn.textContent='▶ Start Cloud Test';cloudTestBtn.style.pointerEvents='auto';}
     }
   }catch(e){
     sessionStorage.removeItem('ai-training-triggered');
     log.innerHTML='❌ Network error: '+e.message+'<br><span style="font-size:11px;color:rgba(255,255,255,.4)">Go to <a href="https://github.com/'+GH_OWNER+'/'+GH_REPO+'/actions/workflows/ai-train.yml" target="_blank" style="color:#ffd166">Actions page</a> to trigger manually.</span>';
       $('ai-train').disabled=false;
       $('ai-train').textContent='▶ Train';
+      if(cloudTestBtn){cloudTestBtn.disabled=false;cloudTestBtn.textContent='▶ Start Cloud Test';cloudTestBtn.style.pointerEvents='auto';}
   }
 }
 async function reloadWeightsFromRepo(){

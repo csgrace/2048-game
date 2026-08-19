@@ -13,6 +13,11 @@ on:
 permissions:
   contents: write  # 需要 push 权限来更新 ai-weights.json 和 ai-training-progress.json
 
+# Train and playtest share this group: GitHub will queue one while the other runs.
+concurrency:
+  group: ai-operation
+  cancel-in-progress: false
+
 jobs:
   train:
     runs-on: ubuntu-latest

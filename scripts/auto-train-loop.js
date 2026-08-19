@@ -439,7 +439,9 @@ function runPlaytest(numGames, roundNum) {
 /* ---------- Git push ---------- */
 function gitPush(msg) {
   try {
-    execSync('git add -A', { cwd: repoRoot, stdio: 'pipe' });
+    // Never stage the whole worktree: local UI/code changes must not be swept
+    // into autonomous training commits.
+    execSync('git add js/ai-weights.json js/ai-training-progress.json js/ai-backend-status.json js/ai-playtest-progress.json js/auto-train-log.json', { cwd: repoRoot, stdio: 'pipe' });
     execSync('git commit -m "' + msg + ' [skip ci]"', { cwd: repoRoot, stdio: 'pipe' });
     execSync('git push', { cwd: repoRoot, stdio: 'pipe' });
     console.log('[Pushed: ' + msg + ']');
