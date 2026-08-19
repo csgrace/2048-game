@@ -5,12 +5,12 @@
   "maxRounds": 50,
   "version": 2192,
   "trainGames": 300,
-  "trainProgress": "176/300",
+  "trainProgress": "181/300",
   "lr": 0.003,
-  "loss": 0.00261,
+  "loss": 0.00363,
   "bestMaxTile": 4096,
-  "avgScore": 31971,
-  "message": "Round 6/50 - TRAINING 176/300 games (lr=0.003, loss=0.002610)",
-  "lastUpdate": "2026-08-19T05:20:22.312Z",
+  "avgScore": 32130,
+  "message": "Round 6/50 - TRAINING 181/300 games (lr=0.003, loss=0.003630)",
+  "lastUpdate": "2026-08-19T05:25:10.894Z",
   "pid": 62876
 }
