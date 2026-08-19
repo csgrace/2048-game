@@ -343,20 +343,24 @@ transition:all .25s ease;
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
 .merge-spark{position:absolute;z-index:6;pointer-events:none;width:11px;height:11px;background:var(--c-accent-h);box-shadow:0 0 12px var(--c-glow);animation:mergeSpark .9s cubic-bezier(.15,.7,.3,1) forwards}.merge-spark.heart{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}.merge-spark.heart::before,.merge-spark.heart::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:inherit}.merge-spark.heart::before{left:-4px}.merge-spark.heart::after{top:-4px}.merge-spark.star{clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%)}.merge-spark.paper{width:11px;height:7px;border-radius:1px;transform:skewX(-18deg)}.merge-spark.wave{width:13px;height:6px;border:2px solid var(--c-accent-h);border-top:0;background:transparent;border-radius:0 0 12px 12px}.merge-spark.glitch{width:13px;height:3px;border-radius:0}.merge-spark.leaf{width:8px;height:13px;border-radius:100% 0 100% 0;transform:rotate(35deg)}@keyframes mergeSpark{from{opacity:1;translate:0 0;scale:1;rotate:var(--spark-rotate)}to{opacity:0;translate:var(--spark-x) var(--spark-y);scale:.2;rotate:calc(var(--spark-rotate) + 120deg)}}
 
-.sides{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-.sides .btn{min-width:72px;padding:8px 10px;font-size:13px}
-.sides .tool-trigger{min-width:38px;width:38px;padding:8px;font-size:18px}
+.sides{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.sides .btn{min-width:76px;padding:8px 11px;font-size:13px}
+.sides .utility-trigger{min-width:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.13)}
+.sides .utility-trigger:hover{background:rgba(255,255,255,.22)}
 
-/* Practice tools stay behind one compact menu so the game controls do not crowd the screen. */
-.tool-box{background:linear-gradient(135deg,#252b4a,#171b31);color:#f9f6f2;min-width:min(360px,92vw);padding:26px 28px;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.45)}
-.tool-box h2{margin-bottom:8px;text-align:center;font-size:22px}
-.tool-box p{color:rgba(255,255,255,.72);font-size:13px;line-height:1.5;text-align:center}
-.tool-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0 12px}
-.tool-actions .btn{padding:12px;font-size:14px}
+/* Secondary actions live in concise menus, leaving the main game controls easy to scan. */
+.tool-box,.game-menu-box{width:min(320px,calc(100vw - 32px));min-width:0;background:linear-gradient(135deg,#252b4a,#171b31);color:#f9f6f2;padding:22px;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.45)}
+.tool-box h2,.game-menu-box h2{margin-bottom:6px;text-align:center;font-size:20px}
+.tool-box p,.game-menu-box p{color:rgba(255,255,255,.72);font-size:12px;line-height:1.5;text-align:center}
+.tool-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 10px}
+.tool-actions .btn{padding:10px 8px;font-size:13px}
 .tool-actions .btn.wide{grid-column:1/-1}
-.tool-divider{border:0;border-top:1px solid rgba(255,255,255,.16);margin:18px 0 0}
-.ai-note{margin-top:8px!important;font-size:12px!important;color:rgba(255,255,255,.55)!important}
-.tool-status{min-height:20px;color:#ffd985;font-size:13px;text-align:center}
+.tool-divider{border:0;border-top:1px solid rgba(255,255,255,.16);margin:15px 0 0}
+.ai-note{margin-top:7px!important;font-size:11px!important;color:rgba(255,255,255,.55)!important}
+.tool-status{min-height:18px;color:#ffd985;font-size:12px;text-align:center}
+.game-menu-actions{display:grid;gap:8px;margin:16px 0 10px}
+.game-menu-actions .btn{padding:11px 12px;text-align:left}
+.game-menu-actions .btn span{display:block;margin-top:2px;font-size:10px;font-weight:500;color:rgba(255,255,255,.62)}
 #board.tool-selecting .cell{cursor:pointer;box-shadow:0 0 0 2px rgba(255,255,255,.42)}
 #board.tool-selecting .cell:hover{filter:brightness(1.15);transform:scale(1.04)}
 #board .cell.tool-selected{box-shadow:0 0 0 4px #ffd166,0 0 18px rgba(255,209,102,.9);z-index:4}
@@ -721,15 +725,13 @@ transition:all .25s ease;
     <p>⑦ <strong>Incremental Training</strong>: Each training loads previous version weights to continue, AI gets stronger over time.</p>
       </section>
     </div>
-    <div class="sides">
-      <button class="btn" id="b-save">💾 Save</button>
-      <button class="btn" id="b-load">📂 Load</button>
+    <nav class="sides" aria-label="Game controls">
       <button class="btn" id="b-undo">↩ Undo</button>
       <button class="btn" id="b-replay" title="Replay this game">▶ Replay</button>
-      <button class="btn tool-trigger" id="b-tools" aria-label="Open practice tools" title="Practice tools">⋯</button>
       <button class="btn" id="b-restart">↺ Restart</button>
-      <button class="btn" id="b-leaderboard">🏆 Boards</button>
-    </div>
+      <button class="btn utility-trigger" id="b-tools" aria-label="Open practice tools">✦ Practice</button>
+      <button class="btn utility-trigger" id="b-game-menu" aria-label="Open save, load, and leaderboard options">☰ More</button>
+    </nav>
     <div class="arrows">
       <button class="btn" id="b-up">↑</button>
       <button class="btn" id="b-left">←</button>
@@ -871,11 +873,25 @@ transition:all .25s ease;
   </div>
 </div>
 
-<!-- compact practice-tools menu; scores after using a tool are not submitted to the public board -->
+<!-- Secondary game actions stay available without competing with movement controls. -->
+<div class="modal" id="game-menu-modal" role="dialog" aria-modal="true" aria-labelledby="game-menu-title">
+  <div class="game-menu-box">
+    <h2 id="game-menu-title">Game Menu</h2>
+    <p>Progress, records, and account actions.</p>
+    <div class="game-menu-actions">
+      <button class="btn" id="b-save">💾 Save <span>Store this game to your account</span></button>
+      <button class="btn" id="b-load">📂 Load <span>Resume your saved game</span></button>
+      <button class="btn" id="b-leaderboard">🏆 Leaderboards <span>View high scores and history</span></button>
+    </div>
+    <button class="modal-close" id="game-menu-close">Close</button>
+  </div>
+</div>
+
+<!-- Compact practice-tools menu; scores after using a tool are not submitted to the public board. -->
 <div class="modal" id="tools-modal" role="dialog" aria-modal="true" aria-labelledby="tools-title">
   <div class="tool-box">
     <h2 id="tools-title">Practice Tools</h2>
-    <p>Choose an action, then click tiles on the board. Using a tool makes this game practice-only, so it will not be added to the public leaderboard.</p>
+    <p>Choose an action, then select tiles on the board. Practice games are kept off the public leaderboard.</p>
     <div class="tool-actions">
       <button class="btn" id="tool-swap">⇄ Swap two tiles</button>
       <button class="btn" id="tool-delete">⌫ Delete a tile</button>
@@ -3560,9 +3576,10 @@ function exitGame(){
   stopShowcase();
   cancelToolSelection();
   hideOverlay();
-  $('lb-modal').classList.remove('show');
-  $('tools-modal').classList.remove('show');
-  closeTokenModal();
+$('lb-modal').classList.remove('show');
+$('tools-modal').classList.remove('show');
+$('game-menu-modal').classList.remove('show');
+closeTokenModal();
   $('game-screen').classList.remove('ai-training-mode');
   show(gameReturnScreen);
 }
@@ -3669,6 +3686,7 @@ bind('b-right',()=>{SFX.button();move('right')});
 bind('b-undo',()=>{SFX.button();undo()});
 bind('b-replay',()=>{SFX.button();replayGame()});
 bind('b-tools',()=>{SFX.button();openTools()});
+bind('b-game-menu',()=>{SFX.button();$('game-menu-modal').classList.add('show')});
 bind('ai-train',()=>{SFX.button();tokenModalAction='train';openTokenModal()});
 bind('ai-stop-training',()=>{SFX.button();checkTrainingProgress()});
 
@@ -3694,6 +3712,9 @@ bind('ai-suggest',()=>{SFX.button();aiSuggest()});
 bind('ai-auto',()=>{SFX.button();startAiAutoPlay()});
 bind('ai-stop',()=>{SFX.button();stopAiAutoPlay();const ts=$('tool-status');if(ts)ts.textContent='AI Auto Play stopped.';});
 bind('tools-close',()=>{SFX.button();cancelToolSelection();$('tools-modal').classList.remove('show')});
+bind('game-menu-close',()=>{SFX.button();$('game-menu-modal').classList.remove('show')});
+bind('tools-modal',(e)=>{if(e.target.id==='tools-modal'){cancelToolSelection();$('tools-modal').classList.remove('show')}});
+bind('game-menu-modal',(e)=>{if(e.target.id==='game-menu-modal')$('game-menu-modal').classList.remove('show')});
 
 bind('playtest-batch-start',()=>{SFX.button();startBatchPlaytest()});
 bind('playtest-batch-stop',()=>{SFX.button();cancelBatchPlaytest()});
