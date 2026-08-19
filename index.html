@@ -420,14 +420,14 @@ transition:all .25s ease;
 /* tile spirit wrapper - fixed bottom-right, draggable */
 #pet-canvas-wrap{
   position:fixed;bottom:16px;right:16px;z-index:99;
-  width:96px;cursor:grab;user-select:none;
-  filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));
+  width:44px;cursor:grab;user-select:none;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));
   transition:transform .12s ease;
   touch-action:none;
 }
 #pet-canvas-wrap.dragging{cursor:grabbing;transition:none}
 #pet-canvas-wrap:hover{transform:scale(1.08);opacity:1}
-#pet-canvas{display:block;width:100%;height:auto;pointer-events:none}
+#pet-canvas{display:block;width:100%!important;height:auto!important;pointer-events:none}
 #pet-reset-btn{display:none;position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.15);box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer;font-size:12px;line-height:22px;text-align:center;color:#555;padding:0;z-index:2;transition:transform .15s,background .15s}
 #pet-reset-btn:hover{background:#fff;transform:scale(1.15)}
 #pet-canvas-wrap:hover #pet-reset-btn, #pet-canvas-wrap.pet-moved #pet-reset-btn{display:block}
@@ -1334,7 +1334,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
     if(resetBtn){
       resetBtn.addEventListener('click',function(e){
         e.stopPropagation();
-        wrap.style.cssText='position:fixed;bottom:16px;right:16px;z-index:99;width:96px;cursor:grab;user-select:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));transition:transform .12s ease;touch-action:none;';
+        wrap.style.cssText='position:fixed;bottom:16px;right:16px;z-index:99;width:60px;cursor:grab;user-select:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));transition:transform .12s ease;touch-action:none;';
         wrap.classList.remove('pet-moved');
         bounce=6;
         petVo();
@@ -1362,6 +1362,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="pet-canvas-wrap"><canvas 
 
   document.addEventListener('DOMContentLoaded',initPet);
   window.__stopPetAnimation=stopPetAnimation;
+  window.stopAutoCycle=stopAutoCycle;
 })();
 
 /* ====================================================================
@@ -1983,7 +1984,7 @@ $('training-log').innerHTML='☁️ GitHub Actions training ready. Click <strong
 /* Load training history from ai-weights.json for charts & stats */
 let aiHistory=[];
 let _liveTrainingActive=false; // prevents weight history from overwriting live training data
-const _tilePoints=[]; // stores bar positions for tooltip hit-testing
+let _tilePoints=[]; // stores bar positions for tooltip hit-testing
 function loadTrainingStatsFromWeights(){
   if(aiNet&&aiNet._meta){
     const m=aiNet._meta;
@@ -2732,7 +2733,7 @@ function renderBatchGameResults(){
   }
   // Header row for each column (one per grid column)
   if(batchGameResults.length){
-    const headerHtml='<div style="display:flex;gap:4px;padding:4px 6px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px;min-width:0;overflow:hidden">';
+    let headerHtml='<div style="display:flex;gap:4px;padding:4px 6px;font-size:10px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:2px;min-width:0;overflow:hidden">';
     headerHtml+='<span style="width:24px;flex-shrink:0">#</span>';
     headerHtml+='<span style="width:58px;flex-shrink:0">Result</span>';
     headerHtml+='<span style="flex:1;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis">Score</span>';
