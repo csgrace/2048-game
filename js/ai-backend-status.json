@@ -1,16 +1,16 @@
 {
-  "active": true,
-  "phase": "training",
+  "active": false,
+  "phase": "idle",
   "round": 5,
   "maxRounds": 50,
-  "version": 1942,
+  "version": 2192,
   "trainGames": 250,
-  "trainProgress": "250/250",
+  "trainTime": "27670.0s",
   "lr": 0.002,
   "loss": 0.00448,
   "bestMaxTile": 4096,
   "avgScore": 31324,
-  "message": "Round 5/50 - TRAINING 250/250 games (lr=0.002, loss=0.004480)",
-  "lastUpdate": "2026-08-19T01:32:12.774Z",
+  "message": "Round 5 trained v2192 in 27670.0s - starting quick test...",
+  "lastUpdate": "2026-08-19T01:32:16.569Z",
   "pid": 62876
 }
