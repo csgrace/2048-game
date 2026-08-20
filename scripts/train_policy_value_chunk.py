@@ -58,14 +58,14 @@ def load_model(payload: dict, device: torch.device) -> PolicyValueNet:
     return model
 
 
-def candidate_payload(model: PolicyValueNet, completed: int, history: list[dict], validation: dict | None) -> dict:
+def candidate_payload(model: PolicyValueNet, version: int, completed: int, history: list[dict], validation: dict | None) -> dict:
     metadata = validation or {"games": 0, "wins": 0, "winRate": 0, "avgScore": 0, "bestMaxTile": 0, "seed": 10000}
-    payload = js_weights(model, 1, metadata, history)
+    payload = js_weights(model, version, metadata, history)
     payload.update({
         "status": "candidate",
         "trainingGames": completed,
         "chunkSize": 10,
-        "description": "Resumable v1 candidate; persisted every 10 teacher games before the next chunk.",
+        "description": f"Resumable v{version} candidate; persisted every 10 teacher games before the next chunk.",
     })
     return payload
 
@@ -78,6 +78,9 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=2048)
     parser.add_argument("--full-validation-every", type=int, default=50)
     parser.add_argument("--validation-games", type=int, default=50)
+    parser.add_argument("--version", type=int, default=1)
+    parser.add_argument("--initialize-from-published", action="store_true", help="Start this version from the published checkpoint instead of an older candidate.")
+    parser.add_argument("--initialize-only", action="store_true", help="Persist an initialized candidate and queued status without training a chunk.")
     args = parser.parse_args()
     if args.games != 10:
         raise ValueError("This checkpoint workflow is intentionally fixed at 10 games per chunk.")
@@ -85,15 +88,24 @@ def main() -> None:
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     prior = read_json(CANDIDATE_PATH, {})
-    completed = int(prior.get("trainingGames", 0))
-    history: list[dict] = list(prior.get("history", []))
+    starting_from_published = args.initialize_from_published and int(prior.get("version", 0)) != args.version
+    if starting_from_published:
+        prior = read_json(WEIGHTS_PATH, {})
+    completed = 0 if starting_from_published else int(prior.get("trainingGames", 0))
+    history: list[dict] = [] if starting_from_published else list(prior.get("history", []))
+    model = load_model(prior, device)
+    if args.initialize_only:
+        write_json(CANDIDATE_PATH, candidate_payload(model, args.version, 0, [], None))
+        write_json(PROGRESS_PATH, {"active": True, "phase": "queued", "version": args.version, "completedGames": 0, "targetGames": args.target_games, "chunkSize": 10, "history": [], "validation": None, "message": f"v{args.version} queued from the published v{prior.get('version', 'unknown')} checkpoint."})
+        write_json(BACKEND_STATUS_PATH, {"pid": 0, "version": args.version, "active": True, "phase": "queued", "trainProgress": f"0/{args.target_games}", "message": f"v{args.version} will continue from the published checkpoint."})
+        print(f"Initialized v{args.version} from published checkpoint.")
+        return
     if completed >= args.target_games:
-        write_json(PROGRESS_PATH, {"active": False, "phase": "complete", "version": 1, "completedGames": completed, "targetGames": args.target_games, "history": history, "message": "All v1 chunks have already completed."})
+        write_json(PROGRESS_PATH, {"active": False, "phase": "complete", "version": args.version, "completedGames": completed, "targetGames": args.target_games, "history": history, "message": f"All v{args.version} chunks have already completed."})
         print("No training needed; target already reached.")
         return
 
     games = min(args.games, args.target_games - completed)
-    model = load_model(prior, device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
     chunk_started = time.time()
     states, policies, values, game_metrics = sample_teacher_data(games, args.seed + completed)
@@ -134,22 +146,22 @@ def main() -> None:
         "validation": validation, "fullValidation": full_validation,
     }
     history.append(point)
-    candidate = candidate_payload(model, completed, history, validation)
+    candidate = candidate_payload(model, args.version, completed, history, validation)
     write_json(CANDIDATE_PATH, candidate)
     progress = {
-        "active": completed < args.target_games, "phase": "checkpoint", "version": 1,
+        "active": completed < args.target_games, "phase": "checkpoint", "version": args.version,
         "completedGames": completed, "targetGames": args.target_games, "chunkSize": 10,
         "history": history, "validation": validation,
         "message": f"Checkpoint saved after {completed}/{args.target_games} teacher games."
     }
     write_json(PROGRESS_PATH, progress)
     write_json(BACKEND_STATUS_PATH, {
-        "pid": 0, "version": 1, "active": completed < args.target_games,
+        "pid": 0, "version": args.version, "active": completed < args.target_games,
         "phase": "training" if completed < args.target_games else "complete",
         "trainProgress": f"{completed}/{args.target_games}", "loss": point["loss"],
         "bestMaxTile": point["maxTile"], "avgScore": point["avgScore"],
         "lastUpdate": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "message": f"v1 checkpoint {completed}/{args.target_games}; each checkpoint contains 10 teacher games."
+        "message": f"v{args.version} checkpoint {completed}/{args.target_games}; each checkpoint contains 10 teacher games."
     })
 
     # The visible model changes only after a full fixed-seed validation beats the published score.
@@ -159,9 +171,9 @@ def main() -> None:
         candidate_score = (validation["winRate"], validation["avgScore"], validation["bestMaxTile"])
         previous_score = (previous.get("winRate", -1), previous.get("avgScore", -1), previous.get("bestMaxTile", -1))
         if candidate_score > previous_score:
-            published_weights = candidate_payload(model, completed, history, validation)
+            published_weights = candidate_payload(model, args.version, completed, history, validation)
             published_weights["status"] = "published"
-            published_weights["description"] = "Best v1 checkpoint selected by full fixed-seed validation."
+            published_weights["description"] = f"Best v{args.version} checkpoint selected by full fixed-seed validation."
             write_json(WEIGHTS_PATH, published_weights)
             write_json(CHECKPOINT_PATH, published_weights)
             print(f"Published improved fixed-seed checkpoint at {completed} games.")

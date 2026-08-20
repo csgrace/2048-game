@@ -1,7 +1,7 @@
-name: AI Training v1
+name: AI Training Continuation
 
 on:
-  # A commit explicitly tagged [train-v1] starts/resumes the chunk loop.
+  # A commit explicitly tagged [train-v2] starts/resumes the v2 continuation loop.
   push:
     branches: [main]
   workflow_dispatch:
@@ -11,12 +11,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: ai-training-v1
+  group: ai-training-v2
   cancel-in-progress: false
 
 jobs:
   train-chunks:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[train-v1]')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[train-v2]')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -42,13 +42,13 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed 2048 --full-validation-every 50 --validation-games 50
+          python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed 2048 --full-validation-every 50 --validation-games 50 --version 2
           git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-weights.json js/ai-best-checkpoint.json
           if git diff --staged --quiet; then
             echo "No checkpoint changes; training target has already been reached."
             exit 0
           fi
-          git commit -m "chore(ai): checkpoint v1 training [skip ci]"
+          git commit -m "chore(ai): checkpoint v2 continuation [skip ci]"
           git push
           if python -c "import json; raise SystemExit(0 if json.load(open('js/ai-training-progress.json'))['active'] else 1)"; then
             echo "Checkpoint complete; dispatching the next independent 10-game run."
