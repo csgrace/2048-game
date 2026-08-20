@@ -30,6 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -51,6 +52,21 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           version=$(python -c "import json; print(int(json.load(open('js/ai-weights.json')).get('version', 0)) + 1)")
 
+          # Other commits (for example, frontend fixes) can arrive while this
+          # long-running job is training. Rebase each checkpoint before push.
+          sync_and_push() {
+            # A human commit or another completed workflow may land between
+            # checkpoints. Retry the fetch/rebase/push sequence before failing.
+            for attempt in 1 2 3; do
+              if git fetch origin main && git rebase origin/main && git push origin HEAD:main; then
+                return 0
+              fi
+              git rebase --abort 2>/dev/null || true
+              sleep "$attempt"
+            done
+            return 1
+          }
+
           for round in $(seq 1 "$MAX_ROUNDS"); do
             if [ "$round" -eq 1 ]; then
               python scripts/train_policy_value_chunk.py --initialize-only --initialize-from-published --version "$version" --target-games 250
@@ -59,13 +75,13 @@ jobs:
             fi
             git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json
             git commit -m "chore(ai): start training round $round [skip ci]" || true
-            git push
+            sync_and_push
 
             for checkpoint in $(seq 1 25); do
               python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed $((2048 + round * 1000)) --full-validation-every 50 --validation-games 50 --version "$version"
               git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-weights.json js/ai-best-checkpoint.json
               git commit -m "chore(ai): round $round checkpoint $checkpoint/25 [skip ci]" || true
-              git push
+              sync_and_push
             done
 
             python scripts/validate_policy_value.py --games 10 --seed 10000 --weights-path js/ai-training-candidate.json
@@ -77,14 +93,14 @@ jobs:
               cp js/ai-training-candidate.json js/ai-best-checkpoint.json
               git add js/ai-playtest-progress.json js/auto-train-log.json js/ai-weights.json js/ai-best-checkpoint.json
               git commit -m "chore(ai): reach ${win_rate}% target win rate [skip ci]"
-              git push
+              sync_and_push
               echo "Target reached: ${win_rate}% >= ${TARGET_WIN_RATE}%"
               exit 0
             fi
 
             git add js/ai-playtest-progress.json js/auto-train-log.json
             git commit -m "chore(ai): record round $round 10-game test [skip ci]"
-            git push
+            sync_and_push
             echo "Round $round reached ${win_rate}%; continuing toward ${TARGET_WIN_RATE}%."
           done
 

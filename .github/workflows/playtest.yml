@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -43,4 +45,8 @@ jobs:
           git add js/ai-playtest-progress.json
           git diff --staged --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore(ai): record fixed-seed v1 validation [skip ci]"
-          git push
+          # Training checkpoints can be pushed while validation is running.
+          # Rebase the small result commit onto the latest main before publishing.
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
