@@ -1,0 +1,9 @@
+{
+  "format": "policy-value-v1",
+  "version": 1,
+  "status": "untrained",
+  "trainingGames": 0,
+  "chunkSize": 10,
+  "history": [],
+  "message": "No resumable candidate exists yet. The first 10-game v1 chunk will create one."
+}

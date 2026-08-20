@@ -1,37 +1,28 @@
 name: AI Training v1
 
 on:
-  # A commit explicitly tagged [train-v1] can bootstrap a run without exposing an API token.
+  # A commit explicitly tagged [train-v1] bootstraps the first 10-game chunk.
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      games:
-        description: 'Teacher games for the reproducible v1 run'
-        required: false
-        default: '250'
-        type: string
-      epochs:
-        description: 'Training epochs'
-        required: false
-        default: '8'
-        type: string
 
 permissions:
   contents: write
 
 concurrency:
   group: ai-training-v1
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  train:
+  train-chunk:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[train-v1]')
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -42,14 +33,14 @@ jobs:
       - name: Install trainer dependencies
         run: pip install -r requirements.txt
 
-      - name: Train v1 and retain fixed-seed best checkpoint
-        run: python scripts/train_policy_value.py --games ${{ inputs.games || '250' }} --epochs ${{ inputs.epochs || '8' }} --seed 2048 --validation-games 50
+      - name: Train exactly one 10-game resumable chunk
+        run: python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed 2048 --full-validation-every 50 --validation-games 50
 
-      - name: Commit v1 weights and validation record
+      - name: Commit and push this checkpoint
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add js/ai-weights.json js/ai-best-checkpoint.json js/ai-training-progress.json
-          git diff --staged --quiet && echo "No changes to commit" && exit 0
-          git commit -m "chore(ai): publish reproducible v1 checkpoint [skip ci]"
+          git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-weights.json js/ai-best-checkpoint.json
+          git diff --staged --quiet && echo "No checkpoint changes" && exit 0
+          git commit -m "chore(ai): checkpoint v1 training chunk [skip ci]"
           git push
