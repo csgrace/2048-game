@@ -222,14 +222,15 @@ def model_search(model: PolicyValueNet, board: np.ndarray, depth: int, chance: b
     return total / len(cells)
 
 
-def play_game(model: PolicyValueNet, seed: int, device: torch.device) -> dict:
+def play_game(model: PolicyValueNet, seed: int, device: torch.device, search_depth: int = 1, max_steps: int = 1500) -> dict:
+    """Play one deterministic validation game with bounded inference cost."""
     rng = seeded_rng(seed)
     board = initial_board(rng)
     score = steps = 0
     model.eval()
-    while has_moves(board) and steps < 5000:
+    while has_moves(board) and steps < max_steps:
         _, logits = model_outputs(model, board, device)
-        legal = [(gained + logits[direction] * 12 + model_search(model, next_board, 3, True, device), direction, next_board, gained)
+        legal = [(gained + logits[direction] * 12 + model_search(model, next_board, search_depth, True, device), direction, next_board, gained)
                  for direction in range(4) for next_board, changed, gained in [move(board, direction)] if changed]
         if not legal:
             break
@@ -242,7 +243,9 @@ def play_game(model: PolicyValueNet, seed: int, device: torch.device) -> dict:
 
 
 def validate(model: PolicyValueNet, seeds: list[int], device: torch.device) -> dict:
-    results = [play_game(model, seed, device) for seed in seeds]
+    # A fixed, shallow search keeps all 50 seeded games horizontally comparable
+    # without allowing a validation checkpoint to exhaust a GitHub Actions run.
+    results = [play_game(model, seed, device, search_depth=1, max_steps=1500) for seed in seeds]
     return {
         "games": len(results), "wins": sum(result["win"] for result in results),
         "winRate": round(sum(result["win"] for result in results) / len(results) * 100, 2),

@@ -1,7 +1,12 @@
 {
   "pid": 0,
   "version": 1,
-  "phase": "idle",
-  "message": "Legacy training cancelled. v1 is ready for its first reproducible fixed-seed training run.",
-  "active": false
+  "active": true,
+  "phase": "training",
+  "trainProgress": "50/250",
+  "loss": 1.088026,
+  "bestMaxTile": 512,
+  "avgScore": 4159,
+  "lastUpdate": "2026-08-20T06:14:20Z",
+  "message": "v1 checkpoint 50/250; each checkpoint contains 10 teacher games."
 }
