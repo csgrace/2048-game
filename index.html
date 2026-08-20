@@ -66,8 +66,8 @@ body::before{
 /* ================================================================== screens */
 .screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:620px;animation:fadeIn .4s ease}
 #entry-screen{max-width:900px}
-/* Keep both AI workspaces on the same wide canvas after entering from home. */
-#playtest-screen,#game-screen.ai-training-mode{max-width:1140px}
+/* Keep AI workspaces comfortably sized and visually consistent. */
+#playtest-screen,#game-screen.ai-training-mode{max-width:820px}
 .screen.active{display:flex}
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
@@ -244,7 +244,7 @@ transition:all .25s ease;
 .ai-training-mode .arrows,
 .ai-training-mode #b-tools{display:none}
 .ai-training-mode .board-wrap{display:none}
-.ai-training-mode #training-panel{grid-column:1/-1;width:100%;max-width:1100px;margin:0 auto;padding:18px 20px}
+.ai-training-mode #training-panel{grid-column:1/-1;width:100%;max-width:780px;margin:0 auto;padding:18px 20px}
 .ai-training-mode .training-head{font-size:16px}
 .ai-training-mode .btn.sm{padding:8px 18px;font-size:14px}
 .training-details{margin-top:14px;padding:14px 16px;border:1px solid rgba(147,112,219,.22);border-radius:12px;background:rgba(0,0,0,.16)}
@@ -413,12 +413,11 @@ transition:all .25s ease;
 
 /* back button */
 .back-btn{
-position:fixed;z-index:20;top:24px;left:24px;margin:0;padding:6px 14px;
-background:rgba(15,20,40,.72);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.16);
-border-radius:8px;color:rgba(255,255,255,.8);cursor:pointer;font-size:13px;transition:all .2s;
+align-self:flex-start;margin-bottom:12px;padding:6px 14px;
+background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;transition:all .2s;
 }
-.back-btn:hover{background:rgba(255,255,255,.18);color:#fff}
-@media(max-width:680px){.back-btn{top:12px;left:12px}}
+.back-btn:hover{background:rgba(255,255,255,.15);color:#fff}
 
 /* mode badge */
 .mode-badge{
