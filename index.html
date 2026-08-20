@@ -2113,19 +2113,25 @@ $('training-log').innerHTML='☁️ GitHub Actions training ready. Click <strong
 let aiHistory=[];
 let _liveTrainingActive=false; // prevents weight history from overwriting live training data
 let _tilePoints=[]; // stores bar positions for tooltip hit-testing
+let _latestProgressVersion=0; // tracks the highest version seen from progress files
 function loadTrainingStatsFromWeights(){
   if(aiNet&&aiNet._meta){
     const m=aiNet._meta;
-    if(m.history&&!_liveTrainingActive){aiHistory=m.history;}
-if(m.version){setStat('ts-version','v'+m.version);}
-if(m.history&&m.history.length){
-const last=m.history[m.history.length-1];
-setStat('ts-games',last.game||'—');
-setStat('ts-policy-loss',Number.isFinite(Number(last.policyLoss))?Number(last.policyLoss).toFixed(6):'—');
-setStat('ts-value-loss',Number.isFinite(Number(last.valueLoss))?Number(last.valueLoss).toFixed(6):'—');
-}
-const validation=m.validation;
-if(validation&&validation.games){setStat('ts-validation',validation.winRate+'% win · '+validation.avgScore+' avg');}
+    // Don't let older weight files overwrite progress data from a newer training round
+    const weightVersion=Number(m.version)||0;
+    const skipOverwrite=_liveTrainingActive||(_latestProgressVersion>0&&weightVersion<_latestProgressVersion);
+    if(m.history&&!skipOverwrite){aiHistory=m.history;}
+    if(!skipOverwrite){
+      if(m.version){setStat('ts-version','v'+m.version);}
+      if(m.history&&m.history.length){
+        const last=m.history[m.history.length-1];
+        setStat('ts-games',last.game||'—');
+        setStat('ts-policy-loss',Number.isFinite(Number(last.policyLoss))?Number(last.policyLoss).toFixed(6):'—');
+        setStat('ts-value-loss',Number.isFinite(Number(last.valueLoss))?Number(last.valueLoss).toFixed(6):'—');
+      }
+      const validation=m.validation;
+      if(validation&&validation.games){setStat('ts-validation',validation.winRate+'% win · '+validation.avgScore+' avg');}
+    }
   }
 }
 function setStat(id,val){const el=$(id);if(el){const v=el.querySelector('.ts-value');if(v)v.textContent=val;}}
@@ -2287,6 +2293,9 @@ function renderTrainingProgressUI(data){
   const progressLabel=target>0?completed+'/'+target:String(completed);
   const latest=(data.history&&data.history[data.history.length-1])||{};
   const validation=data.validation||latest.validation;
+  // Track the latest version from progress to prevent weight-file overwrites
+  const progVersion=Number(data.version)||0;
+  if(progVersion>0)_latestProgressVersion=Math.max(_latestProgressVersion,progVersion);
   if(completed>0){
     setStat('ts-version','v'+(data.version||1));
     setStat('ts-games',progressLabel);
@@ -2565,6 +2574,9 @@ function updateBackendStatusUI(data,progressData){
     }
   }
   // ---- Update main stat boxes (Version/Games/Best/Avg/Loss) ----
+  // Track the latest version from backend status to prevent stale weight-file overwrites
+  const beVersion=Number(data.version)||0;
+  if(beVersion>0)_latestProgressVersion=Math.max(_latestProgressVersion,beVersion);
   if(data.version) setStat('ts-version','v'+data.version);
   if(data.trainProgress){
     setStat('ts-games',data.trainProgress);
