@@ -2298,18 +2298,18 @@ setStat('ts-validation','Next fixed test @ 50');
     $('ai-train').textContent='⏳ Training...';
     _liveTrainingActive=true;
     aiLiveHistory=data.history||[];
-aiHistory=aiLiveHistory;
-redrawTrainingCharts();
-if(jobsEl)
+    aiHistory=aiLiveHistory;
+    redrawTrainingCharts();
+    if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Progress '+progressLabel+' · checkpoint every 10</span></div>';
     return true;
   }else{
     _liveTrainingActive=false;
     $('ai-train').disabled=false;
     $('ai-train').textContent='▶ Train';
     aiLiveHistory=data.history||[];
-aiHistory=aiLiveHistory;
-redrawTrainingCharts();
-const completeMsg=
+    aiHistory=aiLiveHistory;
+    redrawTrainingCharts();
+    const completeMsg='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Validation '+(validation?.winRate!==undefined?validation.winRate+'% win · '+validation.avgScore+' avg':'not available')+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
     const jobsEl2=$('training-jobs');
     if(jobsEl2)jobsEl2.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.08);border:1px solid rgba(107,203,119,.2)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Training complete</span></div>';
     return false;
@@ -3290,7 +3290,7 @@ if(aiNet)aiNet._meta=w;
       // Update stats and charts
 loadTrainingStatsFromWeights();
 redrawTrainingCharts();
-console.log('AI weights reloaded
+console.log('AI weights reloaded from repo:',w.l1W.length,'weights, v'+(w.version||0));
       $('training-log').innerHTML='✅ <strong>Weights updated!</strong><br>Version v'+(w.version||0)+' · '+w.l1W.length+' parameters'+(w.trainTime?' · Training time '+w.trainTime:'')+(w.bestMaxTile?' · Best tile '+w.bestMaxTile:'');
     }
   }catch(e){
