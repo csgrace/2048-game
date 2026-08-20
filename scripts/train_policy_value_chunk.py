@@ -103,22 +103,28 @@ def main() -> None:
     y_value = torch.from_numpy(values).to(device)
     optimization_started = time.time()
     model.train()
-    losses: list[float] = []
+    policy_losses: list[float] = []
+    value_losses: list[float] = []
     for _ in range(args.epochs):
         permutation = torch.randperm(len(x), device=device)
         for start in range(0, len(x), 128):
             indexes = permutation[start:start + 128]
             predicted_value, logits = model(x[indexes])
-            loss = F.huber_loss(predicted_value, y_value[indexes]) + F.cross_entropy(logits, y_policy[indexes])
+            value_loss = F.huber_loss(predicted_value, y_value[indexes])
+            policy_loss = F.cross_entropy(logits, y_policy[indexes])
+            loss = value_loss + policy_loss
             optimizer.zero_grad(); loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
-            losses.append(float(loss.item()))
+            value_losses.append(float(value_loss.item()))
+            policy_losses.append(float(policy_loss.item()))
 
     completed += games
     full_validation = completed % args.full_validation_every == 0 or completed == args.target_games
     validation = validate(model, list(range(10_000, 10_000 + args.validation_games)), device) if full_validation else None
     point = {
         "chunk": len(history) + 1, "game": completed, "chunkGames": games,
-        "loss": round(float(np.mean(losses)), 6),
+        "loss": round(float(np.mean(value_losses) + np.mean(policy_losses)), 6),
+        "policyLoss": round(float(np.mean(policy_losses)), 6),
+        "valueLoss": round(float(np.mean(value_losses)), 6),
         "maxTile": max(metric["maxTile"] for metric in game_metrics),
         "avgScore": round(float(np.mean([metric["score"] for metric in game_metrics]))),
         "avgSteps": round(float(np.mean([metric["steps"] for metric in game_metrics]))),

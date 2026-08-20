@@ -669,13 +669,13 @@ transition:all .25s ease;
       </div>
 
       <!-- Stats row -->
-      <div id="training-stats" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-        <div class="train-stat" id="ts-version"><span class="ts-label">Version</span><span class="ts-value">—</span></div>
-        <div class="train-stat" id="ts-games"><span class="ts-label">Games</span><span class="ts-value">—</span></div>
-        <div class="train-stat" id="ts-best"><span class="ts-label">Best Tile</span><span class="ts-value">—</span></div>
-        <div class="train-stat" id="ts-avg"><span class="ts-label">Avg Score</span><span class="ts-value">—</span></div>
-        <div class="train-stat" id="ts-loss"><span class="ts-label">Loss</span><span class="ts-value">—</span></div>
-      </div>
+<div id="training-stats" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+<div class="train-stat" id="ts-version"><span class="ts-label">Version</span><span class="ts-value">—</span></div>
+<div class="train-stat" id="ts-games"><span class="ts-label">Progress</span><span class="ts-value">—</span></div>
+<div class="train-stat" id="ts-policy-loss"><span class="ts-label">Policy Loss</span><span class="ts-value">—</span></div>
+<div class="train-stat" id="ts-value-loss"><span class="ts-label">Value Loss</span><span class="ts-value">—</span></div>
+<div class="train-stat" id="ts-validation"><span class="ts-label">Validation</span><span class="ts-value">Awaiting 50 games</span></div>
+</div>
 
       <!-- Backend status monitor panel -->
       <div id="backend-status-panel" style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
@@ -700,15 +700,10 @@ transition:all .25s ease;
 
       <!-- Loss curve chart -->
       <div style="margin-top:8px">
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px">📈 Training Loss Curve</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px">📈 Combined Objective Loss</div>
         <canvas id="training-curve" width="280" height="80" style="width:100%;height:80px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08)"></canvas>
       </div>
 
-      <!-- Max tile bar chart -->
-      <div style="margin-top:6px">
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px">🎯 Max Tile per Game</div>
-        <canvas id="training-tiles" width="280" height="50" style="width:100%;height:50px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08)"></canvas>
-      </div>
 
       <!-- Compatibility-only status nodes: detailed live status is shown above in Training Status. -->
       <div id="training-log" hidden aria-live="polite"></div>
@@ -2116,14 +2111,15 @@ function loadTrainingStatsFromWeights(){
   if(aiNet&&aiNet._meta){
     const m=aiNet._meta;
     if(m.history&&!_liveTrainingActive){aiHistory=m.history;}
-    if(m.version){setStat('ts-version','v'+m.version);}
-    if(m.bestMaxTile){setStat('ts-best',m.bestMaxTile);}
-    if(m.avgScore){setStat('ts-avg',m.avgScore);}
-    if(m.history&&m.history.length){
-      setStat('ts-games',m.history[m.history.length-1].game);
-      const last=m.history[m.history.length-1];
-      setStat('ts-loss',last.loss.toFixed(6));
-    }
+if(m.version){setStat('ts-version','v'+m.version);}
+if(m.history&&m.history.length){
+const last=m.history[m.history.length-1];
+setStat('ts-games',last.game||'—');
+setStat('ts-policy-loss',Number.isFinite(Number(last.policyLoss))?Number(last.policyLoss).toFixed(6):'—');
+setStat('ts-value-loss',Number.isFinite(Number(last.valueLoss))?Number(last.valueLoss).toFixed(6):'—');
+}
+const validation=m.validation;
+if(validation&&validation.games){setStat('ts-validation',validation.winRate+'% win · '+validation.avgScore+' avg');}
   }
 }
 function setStat(id,val){const el=$(id);if(el){const v=el.querySelector('.ts-value');if(v)v.textContent=val;}}
@@ -2146,8 +2142,7 @@ function getTrainingChartWidth(canvas){
   return Math.max(1,Math.floor((container&&container.getBoundingClientRect().width)||canvas.getBoundingClientRect().width||280));
 }
 function redrawTrainingCharts(){
-  drawTrainingCurve();
-  drawMaxTileChart();
+drawTrainingCurve();
 }
 let trainingChartResizeTimer=null;
 window.addEventListener('resize',function(){
@@ -2322,14 +2317,13 @@ function renderTrainingProgressUI(data){
   if(completed>0){
     setStat('ts-version','v'+(data.version||1));
     setStat('ts-games',progressLabel);
-    setStat('ts-loss',Number.isFinite(Number(latest.loss))?Number(latest.loss).toFixed(6):'—');
-    if(validation){
-      setStat('ts-best',validation.bestMaxTile??'—');
-      setStat('ts-avg',validation.avgScore??'—');
-    }else{
-      setStat('ts-best','Pending @ 50');
-      setStat('ts-avg','Pending @ 50');
-    }
+setStat('ts-policy-loss',Number.isFinite(Number(latest.policyLoss))?Number(latest.policyLoss).toFixed(6):'—');
+setStat('ts-value-loss',Number.isFinite(Number(latest.valueLoss))?Number(latest.valueLoss).toFixed(6):'—');
+if(validation&&validation.games){
+setStat('ts-validation',validation.winRate+'% win · '+validation.avgScore+' avg');
+}else{
+setStat('ts-validation','Next fixed test @ 50');
+}
   }
   if(data.active){
     $('ai-train').disabled=true;
@@ -2337,8 +2331,8 @@ function renderTrainingProgressUI(data){
     _liveTrainingActive=true;
     aiLiveHistory=data.history||[];
     aiHistory=aiLiveHistory;
-    drawTrainingCurve();drawMaxTileChart();
-    if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Games '+progressLabel+' · checkpoint every 10</span></div>';
+    drawTrainingCurve();
+    if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Progress '+progressLabel+' · checkpoint every 10</span></div>';
     return true;
   }else{
     _liveTrainingActive=false;
@@ -2346,8 +2340,8 @@ function renderTrainingProgressUI(data){
     $('ai-train').textContent='▶ Train';
     aiLiveHistory=data.history||[];
     aiHistory=aiLiveHistory;
-    drawTrainingCurve();drawMaxTileChart();
-    const completeMsg='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Best tile '+(validation?.bestMaxTile??'—')+' · Avg score '+(validation?.avgScore??'—')+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
+    drawTrainingCurve();
+    const completeMsg='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Validation '+(validation?.winRate!==undefined?validation.winRate+'% win · '+validation.avgScore+' avg':'not available')+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
     const jobsEl2=$('training-jobs');
     if(jobsEl2)jobsEl2.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.08);border:1px solid rgba(107,203,119,.2)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Training complete</span></div>';
     return false;
@@ -2610,17 +2604,19 @@ function updateBackendStatusUI(data,progressData){
     // When idle, still show version from backend if available
     if(data.version) setStat('ts-version','v'+data.version);
   }
-  if(data.bestMaxTile) setStat('ts-best',data.bestMaxTile);
-  if(data.avgScore) setStat('ts-avg',data.avgScore);
-  if(data.loss!==undefined&&phase==='training') setStat('ts-loss',data.loss.toFixed(6));
+if(data.loss!==undefined&&phase==='training'){
+  const lastProgress=progressData&&progressData.history&&progressData.history[progressData.history.length-1];
+  setStat('ts-policy-loss',Number.isFinite(Number(lastProgress?.policyLoss))?Number(lastProgress.policyLoss).toFixed(6):'—');
+  setStat('ts-value-loss',Number.isFinite(Number(lastProgress?.valueLoss))?Number(lastProgress.valueLoss).toFixed(6):'—');
+}
+if(progressData?.validation?.games){setStat('ts-validation',progressData.validation.winRate+'% win · '+progressData.validation.avgScore+' avg');}
 
   // ---- Update charts from the live training-progress history ----
   if(progressData&&Array.isArray(progressData.history)){
     _liveTrainingActive=Boolean(progressData.active);
     aiLiveHistory=progressData.history;
-    aiHistory=aiLiveHistory;
-    drawTrainingCurve();
-    drawMaxTileChart();
+aiHistory=aiLiveHistory;
+drawTrainingCurve();
   }
   // Update weight info bar in Playtest Arena
   updateWeightInfoBar();
@@ -3084,9 +3080,8 @@ if(!aiLiveHistory.length)return;
 const last=d||aiLiveHistory[aiLiveHistory.length-1];
 setStat('ts-version','v'+(last.version||1));
 setStat('ts-games',(last.game??'—')+(last.total?'/'+last.total:''));
-setStat('ts-best',last.maxTile??last.bestMax??'Pending @ 50');
-setStat('ts-avg',last.avgScore??'Pending @ 50');
-setStat('ts-loss',Number.isFinite(Number(last.loss))?Number(last.loss).toFixed(6):'—');
+setStat('ts-policy-loss',Number.isFinite(Number(last.policyLoss))?Number(last.policyLoss).toFixed(6):'—');
+setStat('ts-value-loss',Number.isFinite(Number(last.valueLoss))?Number(last.valueLoss).toFixed(6):'—');
 }
 /* Token management — password-protected, AES-GCM encrypted storage */
 const LS_GH_TOKEN='g2048_gh_token_v2';
@@ -3325,9 +3320,8 @@ initAiNet(w);aiTrainGames=w.version||100;loadedWeightVersion=aiTrainGames;refres
 // Store meta for stats & charts
 if(aiNet)aiNet._meta=w;
       // Update stats and charts
-      loadTrainingStatsFromWeights();
-      drawTrainingCurve();
-      drawMaxTileChart();
+loadTrainingStatsFromWeights();
+drawTrainingCurve();
       console.log('AI weights reloaded from repo:',w.l1W.length,'weights, v'+(w.version||0));
       $('training-log').innerHTML='✅ <strong>Weights updated!</strong><br>Version v'+(w.version||0)+' · '+w.l1W.length+' parameters'+(w.trainTime?' · Training time '+w.trainTime:'')+(w.bestMaxTile?' · Best tile '+w.bestMaxTile:'');
     }
