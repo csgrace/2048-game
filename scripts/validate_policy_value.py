@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from time import perf_counter
 
 import torch
 
@@ -31,8 +32,17 @@ def main() -> None:
     model.load_state_dict(target)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    results = [play_game(model, args.seed + index, device) for index in range(args.games)]
-    wins = sum(result["win"] for result in results)
+    results = []
+    for index in range(args.games):
+        started_at = perf_counter()
+        result = play_game(model, args.seed + index, device)
+        result.update({
+            "game": index + 1,
+            "result": "win" if result.pop("win") else "lose",
+            "duration": round((perf_counter() - started_at) * 1000),
+        })
+        results.append(result)
+    wins = sum(result["result"] == "win" for result in results)
     payload = {
         "active": False, "phase": "validation", "version": weights["version"], "seed": args.seed,
         "totalGames": args.games, "completedGames": args.games, "wins": wins, "fails": args.games - wins,
