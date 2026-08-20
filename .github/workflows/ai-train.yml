@@ -1,7 +1,7 @@
 name: AI Training v1
 
 on:
-  # A commit explicitly tagged [train-v1] bootstraps the first 10-game chunk.
+  # A commit explicitly tagged [train-v1] starts/resumes the chunk loop.
   push:
     branches: [main]
   workflow_dispatch:
@@ -14,10 +14,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  train-chunk:
+  train-chunks:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[train-v1]')
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 90
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,14 +33,23 @@ jobs:
       - name: Install trainer dependencies
         run: pip install -r requirements.txt
 
-      - name: Train exactly one 10-game resumable chunk
-        run: python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed 2048 --full-validation-every 50 --validation-games 50
-
-      - name: Commit and push this checkpoint
+      - name: Train, checkpoint, and push every 10 games
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-weights.json js/ai-best-checkpoint.json
-          git diff --staged --quiet && echo "No checkpoint changes" && exit 0
-          git commit -m "chore(ai): checkpoint v1 training chunk [skip ci]"
-          git push
+          for chunk in $(seq 1 25); do
+            python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed 2048 --full-validation-every 50 --validation-games 50
+            git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-weights.json js/ai-best-checkpoint.json
+            if git diff --staged --quiet; then
+              echo "No checkpoint changes; training target has already been reached."
+              break
+            fi
+            git commit -m "chore(ai): checkpoint v1 training chunk ${chunk}/25 [skip ci]"
+            git push
+            if python -c "import json; raise SystemExit(0 if not json.load(open('js/ai-training-progress.json'))['active'] else 1)"; then
+              echo "Training target reached."
+              break
+            fi
+          done
