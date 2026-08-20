@@ -174,20 +174,22 @@ class PolicyValueNet(nn.Module):
         return torch.tanh(self.l4(trunk)).squeeze(-1), self.policy(trunk)
 
 
-def sample_teacher_data(games: int, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
+def sample_teacher_data(games: int, seed: int, max_steps: int = 1000) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
+    """Collect teacher trajectories, including enough late-game positions to learn 1024/2048 play."""
     rng = seeded_rng(seed)
     states, policies, values, game_metrics = [], [], [], []
     for _ in range(games):
         board = initial_board(rng)
         steps = score = 0
-        while has_moves(board) and steps < 300:
+        while has_moves(board) and steps < max_steps:
             action = teacher_move(board)
             if action < 0:
                 break
             states.append(encode(board))
             policies.append(action)
-            # Bounded, scale-free target; no arbitrary multiplication during inference.
-            values.append(math.tanh(heuristic(board) / 800.0))
+            # /800 saturated near 1 for almost every board, making the value head
+            # uninformative. This wider scale preserves early/mid/late-game signal.
+            values.append(math.tanh(heuristic(board) / 4000.0))
             board, _, gained = move(board, action)
             score += gained
             add_tile(board, rng)
@@ -259,7 +261,7 @@ def js_weights(model: PolicyValueNet, version: int, metrics: dict, history: list
     def array(key: str) -> list[float]:
         return state[key].detach().cpu().numpy().reshape(-1).astype(float).tolist()
     return {
-        "format": "policy-value-v1", "version": version, "normalization": "tanh(heuristic/800)",
+        "format": "policy-value-v1", "version": version, "normalization": "tanh(heuristic/4000)",
         "architecture": "256-96-48-16-(value:1,policy:4)", "description": "Reproducible normalized policy-value model",
         "l1W": array("l1.weight"), "l1b": array("l1.bias"), "l2W": array("l2.weight"), "l2b": array("l2.bias"),
         "l3W": array("l3.weight"), "l3b": array("l3.bias"), "l4W": array("l4.weight"), "l4b": array("l4.bias"),

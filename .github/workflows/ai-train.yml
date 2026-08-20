@@ -78,8 +78,8 @@ jobs:
             sync_and_push
 
             for checkpoint in $(seq 1 25); do
-              python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed $((2048 + round * 1000)) --full-validation-every 50 --validation-games 50 --version "$version"
-              git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-weights.json js/ai-best-checkpoint.json
+              python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 8 --seed $((2048 + round * 1000)) --full-validation-every 50 --validation-games 50 --version "$version"
+              git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-training-replay.npz js/ai-weights.json js/ai-best-checkpoint.json
               git commit -m "chore(ai): round $round checkpoint $checkpoint/25 [skip ci]" || true
               sync_and_push
             done
