@@ -2,7 +2,7 @@
   "active": true,
   "phase": "checkpoint",
   "version": 1,
-  "completedGames": 30,
+  "completedGames": 40,
   "targetGames": 250,
   "chunkSize": 10,
   "history": [
@@ -32,8 +32,17 @@
       "elapsedSeconds": 0.1,
       "validation": null,
       "fullValidation": false
+    },
+    {
+      "chunk": 4,
+      "game": 40,
+      "chunkGames": 10,
+      "loss": 1.096118,
+      "elapsedSeconds": 0.1,
+      "validation": null,
+      "fullValidation": false
     }
   ],
   "validation": null,
-  "message": "Checkpoint saved after 30/250 teacher games."
+  "message": "Checkpoint saved after 40/250 teacher games."
 }
