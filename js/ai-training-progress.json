@@ -1,7 +1,21 @@
 {
-  "active": false,
-  "phase": "idle",
+  "active": true,
+  "phase": "checkpoint",
   "version": 1,
-  "history": [],
-  "message": "Clean v1 initialization. Start AI Training v1 to produce the first fixed-seed checkpoint."
+  "completedGames": 10,
+  "targetGames": 250,
+  "chunkSize": 10,
+  "history": [
+    {
+      "chunk": 1,
+      "game": 10,
+      "chunkGames": 10,
+      "loss": 1.485904,
+      "elapsedSeconds": 0.1,
+      "validation": null,
+      "fullValidation": false
+    }
+  ],
+  "validation": null,
+  "message": "Checkpoint saved after 10/250 teacher games."
 }
