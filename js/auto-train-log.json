@@ -227,5 +227,18 @@
     "avgScore": 29748,
     "bestMax": 2048,
     "timestamp": "2026-08-19T07:46:30.654Z"
+  },
+  {
+    "round": 1,
+    "phase": "test",
+    "testPhase": "target",
+    "version": 2,
+    "testWins": 1,
+    "testTotal": 10,
+    "winRate": 10.0,
+    "avgScore": 11692,
+    "bestMax": 2048,
+    "targetWinRate": 80.0,
+    "timestamp": "2026-08-20T11:32:05.532158+00:00"
   }
 ]
