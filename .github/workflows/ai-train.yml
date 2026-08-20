@@ -1,13 +1,20 @@
-name: AI Training Continuation
+name: AI Training Until Target
 
 on:
-  # A commit explicitly tagged [train-v2] starts/resumes the v2 continuation loop.
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      target-win-rate:
+        description: 'Stop when the 10-game fixed-seed test reaches this win rate (%)'
+        required: false
+        default: '80'
+        type: string
+      max-rounds:
+        description: 'Safety limit for 250-game training rounds in one workflow run'
+        required: false
+        default: '20'
+        type: string
 
 permissions:
-  actions: write
   contents: write
 
 concurrency:
@@ -15,10 +22,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  train-chunks:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[train-v2]')
+  train-until-target:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 360
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,25 +40,53 @@ jobs:
       - name: Install trainer dependencies
         run: pip install -r requirements.txt
 
-      - name: Train and persist one 10-game checkpoint
+      - name: Train 250 games and test until target is reached
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
+          TARGET_WIN_RATE: ${{ inputs.target-win-rate }}
+          MAX_ROUNDS: ${{ inputs.max-rounds }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed 2048 --full-validation-every 50 --validation-games 50 --version 2
-          git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-weights.json js/ai-best-checkpoint.json
-          if git diff --staged --quiet; then
-            echo "No checkpoint changes; training target has already been reached."
-            exit 0
-          fi
-          git commit -m "chore(ai): checkpoint v2 continuation [skip ci]"
-          git push
-          if python -c "import json; raise SystemExit(0 if json.load(open('js/ai-training-progress.json'))['active'] else 1)"; then
-            echo "Checkpoint complete; dispatching the next independent 10-game run."
-            gh workflow run ai-train.yml --ref main
-          else
-            echo "Training target reached."
-          fi
+          version=$(python -c "import json; print(int(json.load(open('js/ai-weights.json')).get('version', 0)) + 1)")
+
+          for round in $(seq 1 "$MAX_ROUNDS"); do
+            if [ "$round" -eq 1 ]; then
+              python scripts/train_policy_value_chunk.py --initialize-only --initialize-from-published --version "$version" --target-games 250
+            else
+              python scripts/train_policy_value_chunk.py --initialize-only --version "$version" --target-games 250
+            fi
+            git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json
+            git commit -m "chore(ai): start training round $round [skip ci]" || true
+            git push
+
+            for checkpoint in $(seq 1 25); do
+              python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 2 --seed $((2048 + round * 1000)) --full-validation-every 50 --validation-games 50 --version "$version"
+              git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-weights.json js/ai-best-checkpoint.json
+              git commit -m "chore(ai): round $round checkpoint $checkpoint/25 [skip ci]" || true
+              git push
+            done
+
+            python scripts/validate_policy_value.py --games 10 --seed 10000 --weights-path js/ai-training-candidate.json
+            win_rate=$(python -c "import json; print(json.load(open('js/ai-playtest-progress.json'))['winRate'])")
+            python -c "import json,sys; from datetime import datetime,timezone; p='js/auto-train-log.json'; h=json.load(open(p)); r=json.load(open('js/ai-playtest-progress.json')); h.append({'round':int(sys.argv[1]),'phase':'test','testPhase':'target','version':r['version'],'testWins':r['wins'],'testTotal':r['totalGames'],'winRate':r['winRate'],'avgScore':r['avgScore'],'bestMax':r['bestMaxTile'],'targetWinRate':float(sys.argv[3]),'timestamp':datetime.now(timezone.utc).isoformat()}); json.dump(h[-100:],open(p,'w'),indent=2)" "$round" "$win_rate" "$TARGET_WIN_RATE"
+
+            if python -c "import sys; sys.exit(0 if float(sys.argv[1]) >= float(sys.argv[2]) else 1)" "$win_rate" "$TARGET_WIN_RATE"; then
+              cp js/ai-training-candidate.json js/ai-weights.json
+              cp js/ai-training-candidate.json js/ai-best-checkpoint.json
+              git add js/ai-playtest-progress.json js/auto-train-log.json js/ai-weights.json js/ai-best-checkpoint.json
+              git commit -m "chore(ai): reach ${win_rate}% target win rate [skip ci]"
+              git push
+              echo "Target reached: ${win_rate}% >= ${TARGET_WIN_RATE}%"
+              exit 0
+            fi
+
+            git add js/ai-playtest-progress.json js/auto-train-log.json
+            git commit -m "chore(ai): record round $round 10-game test [skip ci]"
+            git push
+            echo "Round $round reached ${win_rate}%; continuing toward ${TARGET_WIN_RATE}%."
+          done
+
+          echo "Safety limit reached before the target. Re-run the workflow to continue from the latest candidate."
+          exit 1

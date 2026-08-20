@@ -16,8 +16,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--games", type=int, default=50)
     parser.add_argument("--seed", type=int, default=10_000)
+    parser.add_argument("--weights-path", type=Path, default=WEIGHTS_PATH, help="Checkpoint to evaluate; defaults to the published weights.")
     args = parser.parse_args()
-    weights = json.loads(WEIGHTS_PATH.read_text(encoding="utf-8"))
+    weights = json.loads(args.weights_path.read_text(encoding="utf-8"))
     if weights.get("format") != "policy-value-v1":
         raise RuntimeError("Expected a policy-value-v1 ai-weights.json")
     model = PolicyValueNet()
