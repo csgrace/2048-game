@@ -24,6 +24,7 @@ from train_policy_value import (
 )
 
 CANDIDATE_PATH = ROOT / "js" / "ai-training-candidate.json"
+BACKEND_STATUS_PATH = ROOT / "js" / "ai-backend-status.json"
 STATE_KEYS = {
     "l1.weight": "l1W", "l1.bias": "l1b", "l2.weight": "l2W", "l2.bias": "l2b",
     "l3.weight": "l3W", "l3.bias": "l3b", "l4.weight": "l4W", "l4.bias": "l4b",
@@ -94,11 +95,13 @@ def main() -> None:
     games = min(args.games, args.target_games - completed)
     model = load_model(prior, device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
-    states, policies, values = sample_teacher_data(games, args.seed + completed)
+    chunk_started = time.time()
+    states, policies, values, game_metrics = sample_teacher_data(games, args.seed + completed)
+    teacher_seconds = time.time() - chunk_started
     x = torch.from_numpy(states).to(device)
     y_policy = torch.from_numpy(policies).to(device)
     y_value = torch.from_numpy(values).to(device)
-    started = time.time()
+    optimization_started = time.time()
     model.train()
     losses: list[float] = []
     for _ in range(args.epochs):
@@ -115,7 +118,13 @@ def main() -> None:
     validation = validate(model, list(range(10_000, 10_000 + args.validation_games)), device) if full_validation else None
     point = {
         "chunk": len(history) + 1, "game": completed, "chunkGames": games,
-        "loss": round(float(np.mean(losses)), 6), "elapsedSeconds": round(time.time() - started, 1),
+        "loss": round(float(np.mean(losses)), 6),
+        "maxTile": max(metric["maxTile"] for metric in game_metrics),
+        "avgScore": round(float(np.mean([metric["score"] for metric in game_metrics]))),
+        "avgSteps": round(float(np.mean([metric["steps"] for metric in game_metrics]))),
+        "teacherSeconds": round(teacher_seconds, 1),
+        "optimizationSeconds": round(time.time() - optimization_started, 1),
+        "elapsedSeconds": round(time.time() - chunk_started, 1),
         "validation": validation, "fullValidation": full_validation,
     }
     history.append(point)
@@ -128,6 +137,14 @@ def main() -> None:
         "message": f"Checkpoint saved after {completed}/{args.target_games} teacher games."
     }
     write_json(PROGRESS_PATH, progress)
+    write_json(BACKEND_STATUS_PATH, {
+        "pid": 0, "version": 1, "active": completed < args.target_games,
+        "phase": "training" if completed < args.target_games else "complete",
+        "trainProgress": f"{completed}/{args.target_games}", "loss": point["loss"],
+        "bestMaxTile": point["maxTile"], "avgScore": point["avgScore"],
+        "lastUpdate": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "message": f"v1 checkpoint {completed}/{args.target_games}; each checkpoint contains 10 teacher games."
+    })
 
     # The visible model changes only after a full fixed-seed validation beats the published score.
     if validation:

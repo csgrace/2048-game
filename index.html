@@ -2250,7 +2250,7 @@ function drawMaxTileChart(){
   const points=aiHistory.filter(function(p){return p&&Number.isFinite(Number(p.maxTile))&&Number(p.maxTile)>0;});
   if(!points.length){
     ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='11px sans-serif';ctx.textAlign='center';
-    ctx.fillText('Waiting for valid tile data',W/2,H/2);
+    ctx.fillText('Teacher max-tile data begins with the next 10-game checkpoint',W/2,H/2);
     return;
   }
   const tiles=points.map(function(p){return Number(p.maxTile)});
@@ -3080,13 +3080,13 @@ function updatePtBoard(){
 
 /* Update stat cards from live data */
 function updateLiveStats(d){
-  if(!aiLiveHistory.length)return;
-  const last=d||aiLiveHistory[aiLiveHistory.length-1];
-  setStat('ts-version','v'+last.version);
-  setStat('ts-games',last.game+'/'+last.total);
-  setStat('ts-best',last.bestMax);
-  setStat('ts-avg',last.avgScore);
-  setStat('ts-loss',last.loss.toFixed(6));
+if(!aiLiveHistory.length)return;
+const last=d||aiLiveHistory[aiLiveHistory.length-1];
+setStat('ts-version','v'+(last.version||1));
+setStat('ts-games',(last.game??'—')+(last.total?'/'+last.total:''));
+setStat('ts-best',last.maxTile??last.bestMax??'Pending @ 50');
+setStat('ts-avg',last.avgScore??'Pending @ 50');
+setStat('ts-loss',Number.isFinite(Number(last.loss))?Number(last.loss).toFixed(6):'—');
 }
 /* Token management — password-protected, AES-GCM encrypted storage */
 const LS_GH_TOKEN='g2048_gh_token_v2';

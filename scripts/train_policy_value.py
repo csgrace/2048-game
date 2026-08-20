@@ -174,12 +174,12 @@ class PolicyValueNet(nn.Module):
         return torch.tanh(self.l4(trunk)).squeeze(-1), self.policy(trunk)
 
 
-def sample_teacher_data(games: int, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def sample_teacher_data(games: int, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
     rng = seeded_rng(seed)
-    states, policies, values = [], [], []
+    states, policies, values, game_metrics = [], [], [], []
     for _ in range(games):
         board = initial_board(rng)
-        steps = 0
+        steps = score = 0
         while has_moves(board) and steps < 300:
             action = teacher_move(board)
             if action < 0:
@@ -188,10 +188,12 @@ def sample_teacher_data(games: int, seed: int) -> tuple[np.ndarray, np.ndarray, 
             policies.append(action)
             # Bounded, scale-free target; no arbitrary multiplication during inference.
             values.append(math.tanh(heuristic(board) / 800.0))
-            board, _, _ = move(board, action)
+            board, _, gained = move(board, action)
+            score += gained
             add_tile(board, rng)
             steps += 1
-    return np.asarray(states), np.asarray(policies), np.asarray(values, dtype=np.float32)
+        game_metrics.append({"maxTile": int(board.max()), "score": score, "steps": steps})
+    return np.asarray(states), np.asarray(policies), np.asarray(values, dtype=np.float32), game_metrics
 
 
 def model_outputs(model: PolicyValueNet, board: np.ndarray, device: torch.device) -> tuple[float, np.ndarray]:
@@ -279,7 +281,7 @@ def main() -> None:
     model = PolicyValueNet().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(args.epochs, 1), eta_min=2e-4)
-    states, policies, values = sample_teacher_data(args.games, args.seed)
+    states, policies, values, _ = sample_teacher_data(args.games, args.seed)
     if len(states) == 0:
         raise RuntimeError("Teacher produced no training states")
     x = torch.from_numpy(states).to(device); y_policy = torch.from_numpy(policies).to(device); y_value = torch.from_numpy(values).to(device)
