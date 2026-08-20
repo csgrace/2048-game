@@ -2314,14 +2314,31 @@ function isTrainingTriggeredLocally(){
 /* Shared: update training progress UI from data object */
 function renderTrainingProgressUI(data){
   const jobsEl=$('training-jobs');
+  const completed=Number(data.completedGames??data.game??0);
+  const target=Number(data.targetGames??data.total??0);
+  const progressLabel=target>0?completed+'/'+target:String(completed);
+  const latest=(data.history&&data.history[data.history.length-1])||{};
+  const validation=data.validation||latest.validation;
+  if(completed>0){
+    setStat('ts-version','v'+(data.version||1));
+    setStat('ts-games',progressLabel);
+    setStat('ts-loss',Number.isFinite(Number(latest.loss))?Number(latest.loss).toFixed(6):'—');
+    if(validation){
+      setStat('ts-best',validation.bestMaxTile??'—');
+      setStat('ts-avg',validation.avgScore??'—');
+    }else{
+      setStat('ts-best','Pending @ 50');
+      setStat('ts-avg','Pending @ 50');
+    }
+  }
   if(data.active){
     $('ai-train').disabled=true;
     $('ai-train').textContent='⏳ Training...';
     _liveTrainingActive=true;
     aiLiveHistory=data.history||[];
     aiHistory=aiLiveHistory;
-    drawTrainingCurve();drawMaxTileChart();updateLiveStats();
-    if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Game '+data.game+'/'+data.total+'</span></div>';
+    drawTrainingCurve();drawMaxTileChart();
+    if(jobsEl)jobsEl.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2)"><span style="font-size:13px;font-weight:600;color:#ffd166">⏳ Training in progress</span><span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:8px">Games '+progressLabel+' · checkpoint every 10</span></div>';
     return true;
   }else{
     _liveTrainingActive=false;
@@ -2329,8 +2346,8 @@ function renderTrainingProgressUI(data){
     $('ai-train').textContent='▶ Train';
     aiLiveHistory=data.history||[];
     aiHistory=aiLiveHistory;
-    drawTrainingCurve();drawMaxTileChart();updateLiveStats();
-    const completeMsg='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Best tile '+data.bestMaxTile+' · Avg score '+data.avgScore+' · Time '+data.trainTime+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
+    drawTrainingCurve();drawMaxTileChart();
+    const completeMsg='✅ <strong>Training complete!</strong><br>Version v'+data.version+' · Best tile '+(validation?.bestMaxTile??'—')+' · Avg score '+(validation?.avgScore??'—')+'<br><span style="font-size:11px;color:#6bcb77">Weights auto-committed to repo</span><br><span style="font-size:11px;color:rgba(255,255,255,.4)">Reloading weights...</span>';
     const jobsEl2=$('training-jobs');
     if(jobsEl2)jobsEl2.innerHTML='<div style="padding:8px 10px;border-radius:8px;background:rgba(107,203,119,.08);border:1px solid rgba(107,203,119,.2)"><span style="font-size:13px;font-weight:600;color:#6bcb77">✅ Training complete</span></div>';
     return false;
