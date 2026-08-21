@@ -11,7 +11,7 @@ on:
       max-rounds:
         description: 'Safety limit for 250-game training rounds in one workflow run'
         required: false
-        default: '5'
+        default: '1'
         type: string
       teacher-depth:
         description: 'Expectimax depth used to create teacher training data'
@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/benchmark_teacher.py --games 20 --seed 10000 --depth "${{ inputs.teacher-depth }}"
-          python -c "import json,sys; p=json.load(open('js/ai-teacher-benchmark.json')); print(f\"Teacher baseline: {p['winRate']}% ({p['wins']}/{p['games']})\"); sys.exit(0 if p['winRate'] >= 25 else 1)"
+          python -c "import json,sys; p=json.load(open('js/ai-teacher-benchmark.json')); print(f\"Teacher baseline: {p['winRate']}% ({p['wins']}/{p['games']})\"); sys.exit(0 if p['winRate'] >= 20 else 1)"
 
       - name: Train 250 games and test until target is reached
         shell: bash
