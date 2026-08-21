@@ -1,95 +1,95 @@
 {
   "active": false,
   "phase": "validation",
-  "version": 2,
+  "version": 3,
   "seed": 10000,
   "totalGames": 10,
   "completedGames": 10,
-  "wins": 1,
-  "fails": 9,
-  "winRate": 10.0,
-  "avgScore": 12161,
-  "bestMaxTile": 2048,
+  "wins": 0,
+  "fails": 10,
+  "winRate": 0.0,
+  "avgScore": 10570,
+  "bestMaxTile": 1024,
   "results": [
     {
-      "score": 3212,
-      "maxTile": 256,
-      "steps": 267,
+      "score": 7420,
+      "maxTile": 512,
+      "steps": 517,
       "game": 1,
       "result": "lose",
-      "duration": 1188
+      "duration": 2130
     },
     {
-      "score": 11304,
+      "score": 16196,
       "maxTile": 1024,
-      "steps": 677,
+      "steps": 955,
       "game": 2,
       "result": "lose",
-      "duration": 2772
+      "duration": 4006
     },
     {
-      "score": 9088,
-      "maxTile": 512,
-      "steps": 618,
+      "score": 4192,
+      "maxTile": 256,
+      "steps": 339,
       "game": 3,
       "result": "lose",
-      "duration": 2636
+      "duration": 1476
     },
     {
-      "score": 14232,
+      "score": 17576,
       "maxTile": 1024,
-      "steps": 873,
+      "steps": 1049,
       "game": 4,
       "result": "lose",
-      "duration": 3512
+      "duration": 4152
     },
     {
-      "score": 4180,
-      "maxTile": 256,
-      "steps": 340,
+      "score": 13532,
+      "maxTile": 1024,
+      "steps": 832,
       "game": 5,
       "result": "lose",
-      "duration": 1494
+      "duration": 3467
     },
     {
-      "score": 15952,
-      "maxTile": 1024,
-      "steps": 937,
+      "score": 3504,
+      "maxTile": 256,
+      "steps": 291,
       "game": 6,
       "result": "lose",
-      "duration": 3983
+      "duration": 1255
     },
     {
-      "score": 6756,
-      "maxTile": 512,
-      "steps": 454,
+      "score": 12104,
+      "maxTile": 1024,
+      "steps": 738,
       "game": 7,
       "result": "lose",
-      "duration": 2015
+      "duration": 3074
     },
     {
-      "score": 8688,
+      "score": 6424,
       "maxTile": 512,
-      "steps": 595,
+      "steps": 461,
       "game": 8,
       "result": "lose",
-      "duration": 2559
+      "duration": 1990
     },
     {
-      "score": 20560,
-      "maxTile": 1024,
-      "steps": 1202,
+      "score": 8200,
+      "maxTile": 512,
+      "steps": 577,
       "game": 9,
       "result": "lose",
-      "duration": 4954
+      "duration": 2410
     },
     {
-      "score": 27636,
-      "maxTile": 2048,
-      "steps": 1449,
+      "score": 16556,
+      "maxTile": 1024,
+      "steps": 998,
       "game": 10,
-      "result": "win",
-      "duration": 6248
+      "result": "lose",
+      "duration": 4135
     }
   ]
 }
