@@ -70,13 +70,23 @@ jobs:
           sync_and_push() {
             # A human commit or another completed workflow may land between
             # checkpoints. Retry the fetch/rebase/push sequence before failing.
-            for attempt in 1 2 3; do
-              if git fetch origin main && git rebase origin/main && git push origin HEAD:main; then
+            # GitHub may intermittently reset a long-running runner's HTTPS
+            # connection, and another checkpoint can land during this job.
+            # Retry both transient network failures and non-fast-forward races.
+            for attempt in 1 2 3 4 5 6 7 8; do
+              if git -c http.version=HTTP/1.1 fetch --prune origin main && \
+                 git rebase origin/main && \
+                 git -c http.version=HTTP/1.1 push origin HEAD:main; then
                 return 0
               fi
+              echo "sync_and_push attempt ${attempt}/8 failed; collecting diagnostics before retry"
+              git status --short || true
               git rebase --abort 2>/dev/null || true
-              sleep "$attempt"
+              # 2, 4, 8, ..., 256 seconds: avoids repeatedly colliding with
+              # GitHub's transient network recovery or a concurrent checkpoint.
+              sleep $((2 ** attempt))
             done
+            echo "Unable to synchronize training checkpoint after 8 attempts."
             return 1
           }
 
@@ -107,14 +117,14 @@ jobs:
               cp js/ai-training-candidate.json js/ai-weights.json
               cp js/ai-training-candidate.json js/ai-best-checkpoint.json
               git add js/ai-playtest-progress.json js/auto-train-log.json js/ai-weights.json js/ai-best-checkpoint.json
-              git commit -m "chore(ai): reach ${win_rate}% target win rate [skip ci]"
+              git diff --staged --quiet || git commit -m "chore(ai): reach ${win_rate}% target win rate [skip ci]"
               sync_and_push
               echo "Target reached: ${win_rate}% >= ${TARGET_WIN_RATE}%"
               exit 0
             fi
 
             git add js/ai-playtest-progress.json js/auto-train-log.json
-            git commit -m "chore(ai): record round $round 10-game test [skip ci]"
+            git diff --staged --quiet || git commit -m "chore(ai): record round $round 100-game test [skip ci]"
             sync_and_push
             echo "Round $round reached ${win_rate}%; continuing toward ${TARGET_WIN_RATE}%."
           done
