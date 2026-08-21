@@ -676,7 +676,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 <div class="train-stat" id="ts-games"><span class="ts-label">Progress</span><span class="ts-value">—</span></div>
 <div class="train-stat" id="ts-policy-loss"><span class="ts-label">Policy Loss</span><span class="ts-value">—</span></div>
 <div class="train-stat" id="ts-value-loss"><span class="ts-label">Value Loss</span><span class="ts-value">—</span></div>
-<div class="train-stat" id="ts-validation"><span class="ts-label">Validation</span><span class="ts-value">Awaiting 50 games</span></div>
+<div class="train-stat" id="ts-validation"><span class="ts-label">Validation</span><span class="ts-value">Validation pending at next 50-game checkpoint</span></div>
 </div>
 
       <!-- Backend status monitor panel -->
@@ -2285,8 +2285,12 @@ function renderTrainingProgressUI(data){
   const completed=Number(data.completedGames??data.game??0);
   const target=Number(data.targetGames??data.total??0);
   const progressLabel=target>0?completed+'/'+target:String(completed);
-  const latest=(data.history&&data.history[data.history.length-1])||{};
-  const validation=data.validation||latest.validation;
+  const history=Array.isArray(data.history)?data.history:[];
+  const latest=history[history.length-1]||{};
+  // A validation runs every 50 games, not at every 10-game checkpoint.
+  // Keep showing the latest completed validation while later chunks are training.
+  const latestValidated=[...history].reverse().find(function(point){return point&&point.validation&&point.validation.games;});
+  const validation=data.validation||latest.validation||(latestValidated&&latestValidated.validation);
   // Track the latest version from progress to prevent weight-file overwrites
   const progVersion=Number(data.version)||0;
   if(progVersion>0)_latestProgressVersion=Math.max(_latestProgressVersion,progVersion);
@@ -2298,7 +2302,7 @@ setStat('ts-value-loss',Number.isFinite(Number(latest.valueLoss))?Number(latest.
 if(validation&&validation.games){
 setStat('ts-validation',validation.winRate+'% win · '+validation.avgScore+' avg');
 }else{
-setStat('ts-validation','将在训练至 50 局后进行测试');
+setStat('ts-validation','Validation pending at next 50-game checkpoint');
 }
   }
   if(data.active){
