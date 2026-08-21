@@ -48,9 +48,14 @@ def write_json(path: Path, payload: dict) -> None:
 def load_replay() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     try:
         with np.load(REPLAY_PATH) as replay:
-            return replay["states"].astype(np.float32), replay["policies"].astype(np.int64), replay["values"].astype(np.float32)
+            states = replay["states"].astype(np.float32)
+            policies = replay["policies"].astype(np.float32)
+            values = replay["values"].astype(np.float32)
+            if policies.ndim != 2 or policies.shape[1] != 4:
+                raise ValueError("legacy hard-label replay buffer")
+            return states, policies, values
     except (OSError, KeyError, ValueError):
-        return np.empty((0, 256), dtype=np.float32), np.empty(0, dtype=np.int64), np.empty(0, dtype=np.float32)
+        return np.empty((0, 256), dtype=np.float32), np.empty((0, 4), dtype=np.float32), np.empty(0, dtype=np.float32)
 
 
 def update_replay(states: np.ndarray, policies: np.ndarray, values: np.ndarray, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -63,7 +68,7 @@ def update_replay(states: np.ndarray, policies: np.ndarray, values: np.ndarray, 
         indexes = np.sort(rng.choice(len(all_states), REPLAY_CAPACITY, replace=False))
         all_states, all_policies, all_values = all_states[indexes], all_policies[indexes], all_values[indexes]
     # One-hot features compress extremely well while preserving the exact inputs.
-    np.savez_compressed(REPLAY_PATH, states=all_states.astype(np.uint8), policies=all_policies.astype(np.uint8), values=all_values.astype(np.float32))
+    np.savez_compressed(REPLAY_PATH, states=all_states.astype(np.uint8), policies=all_policies.astype(np.float32), values=all_values.astype(np.float32))
     return all_states, all_policies, all_values
 
 
@@ -103,6 +108,7 @@ def main() -> None:
     parser.add_argument("--full-validation-every", type=int, default=50)
     parser.add_argument("--validation-games", type=int, default=50)
     parser.add_argument("--version", type=int, default=1)
+    parser.add_argument("--teacher-depth", type=int, default=3)
     parser.add_argument("--initialize-from-published", action="store_true", help="Start this version from the published checkpoint instead of an older candidate.")
     parser.add_argument("--initialize-only", action="store_true", help="Persist an initialized candidate and queued status without training a chunk.")
     args = parser.parse_args()
@@ -134,7 +140,7 @@ def main() -> None:
     games = min(args.games, args.target_games - completed)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
     chunk_started = time.time()
-    states, policies, values, game_metrics = sample_teacher_data(games, args.seed + completed, max_steps=800)
+    states, policies, values, game_metrics = sample_teacher_data(games, args.seed + completed, max_steps=1500, teacher_depth=args.teacher_depth)
     teacher_seconds = time.time() - chunk_started
     replay_states, replay_policies, replay_values = update_replay(states, policies, values, args.seed + completed)
     x = torch.from_numpy(replay_states).to(device)
@@ -150,7 +156,7 @@ def main() -> None:
             indexes = permutation[start:start + 128]
             predicted_value, logits = model(x[indexes])
             value_loss = F.huber_loss(predicted_value, y_value[indexes])
-            policy_loss = F.cross_entropy(logits, y_policy[indexes])
+            policy_loss = -(y_policy[indexes] * F.log_softmax(logits, dim=1)).sum(dim=1).mean()
             loss = value_loss + policy_loss
             optimizer.zero_grad(); loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
             value_losses.append(float(value_loss.item()))

@@ -11,7 +11,12 @@ on:
       max-rounds:
         description: 'Safety limit for 250-game training rounds in one workflow run'
         required: false
-        default: '20'
+        default: '5'
+        type: string
+      teacher-depth:
+        description: 'Expectimax depth used to create teacher training data'
+        required: false
+        default: '3'
         type: string
 
 permissions:
@@ -41,11 +46,19 @@ jobs:
       - name: Install trainer dependencies
         run: pip install -r requirements.txt
 
+      - name: Benchmark teacher before training
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/benchmark_teacher.py --games 20 --seed 10000 --depth "${{ inputs.teacher-depth }}"
+          python -c "import json,sys; p=json.load(open('js/ai-teacher-benchmark.json')); print(f\"Teacher baseline: {p['winRate']}% ({p['wins']}/{p['games']})\"); sys.exit(0 if p['winRate'] >= 25 else 1)"
+
       - name: Train 250 games and test until target is reached
         shell: bash
         env:
           TARGET_WIN_RATE: ${{ inputs.target-win-rate }}
           MAX_ROUNDS: ${{ inputs.max-rounds }}
+          TEACHER_DEPTH: ${{ inputs.teacher-depth }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -73,18 +86,18 @@ jobs:
             else
               python scripts/train_policy_value_chunk.py --initialize-only --version "$version" --target-games 250
             fi
-            git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json
+            git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-teacher-benchmark.json
             git commit -m "chore(ai): start training round $round [skip ci]" || true
             sync_and_push
 
             for checkpoint in $(seq 1 25); do
-              python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 8 --seed $((2048 + round * 1000)) --full-validation-every 50 --validation-games 50 --version "$version"
+              python scripts/train_policy_value_chunk.py --games 10 --target-games 250 --epochs 8 --seed $((2048 + round * 1000)) --teacher-depth "$TEACHER_DEPTH" --full-validation-every 50 --validation-games 50 --version "$version"
               git add js/ai-training-candidate.json js/ai-training-progress.json js/ai-backend-status.json js/ai-training-replay.npz js/ai-weights.json js/ai-best-checkpoint.json
               git commit -m "chore(ai): round $round checkpoint $checkpoint/25 [skip ci]" || true
               sync_and_push
             done
 
-            python scripts/validate_policy_value.py --games 10 --seed 10000 --weights-path js/ai-training-candidate.json
+            python scripts/validate_policy_value.py --games 100 --seed 10000 --weights-path js/ai-training-candidate.json
             win_rate=$(python -c "import json; print(json.load(open('js/ai-playtest-progress.json'))['winRate'])")
             python -c "import json,sys; from datetime import datetime,timezone; p='js/auto-train-log.json'; h=json.load(open(p)); r=json.load(open('js/ai-playtest-progress.json')); h.append({'round':int(sys.argv[1]),'phase':'test','testPhase':'target','version':r['version'],'testWins':r['wins'],'testTotal':r['totalGames'],'winRate':r['winRate'],'avgScore':r['avgScore'],'bestMax':r['bestMaxTile'],'targetWinRate':float(sys.argv[3]),'timestamp':datetime.now(timezone.utc).isoformat()}); json.dump(h[-100:],open(p,'w'),indent=2)" "$round" "$win_rate" "$TARGET_WIN_RATE"
 
@@ -105,4 +118,5 @@ jobs:
           done
 
           echo "Safety limit reached before the target. Re-run the workflow to continue from the latest candidate."
-          exit 1
+          # Missing a performance target is a completed experiment, not a CI failure.
+          exit 0

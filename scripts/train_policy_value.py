@@ -134,28 +134,53 @@ def sampled_cells(board: np.ndarray) -> list[tuple[int, int]]:
     return cells[::stride] if len(cells) > 4 else cells
 
 
-def search(board: np.ndarray, depth: int, chance: bool) -> float:
+def search(board: np.ndarray, depth: int, chance: bool, cache: dict[tuple, float] | None = None) -> float:
+    """Sampled expectimax with a per-position transposition table."""
+    key = None
+    if cache is not None:
+        key = (tuple(int(value) for value in board.ravel()), depth, chance)
+        if key in cache:
+            return cache[key]
     if depth <= 0:
-        return heuristic(board)
-    if not chance:
-        candidates = [gained + search(next_board, depth - 1, True) for direction in range(4)
+        value = heuristic(board)
+    elif not chance:
+        candidates = [gained + search(next_board, depth - 1, True, cache) for direction in range(4)
                       for next_board, changed, gained in [move(board, direction)] if changed]
-        return max(candidates, default=-100000.0)
-    cells = sampled_cells(board)
-    if not cells:
-        return search(board, depth - 1, False)
-    total = 0.0
-    for r, c in cells:
-        two, four = board.copy(), board.copy()
-        two[r, c], four[r, c] = 2, 4
-        total += 0.9 * search(two, depth - 1, False) + 0.1 * search(four, depth - 1, False)
-    return total / len(cells)
+        value = max(candidates, default=-100000.0)
+    else:
+        cells = sampled_cells(board)
+        if not cells:
+            value = search(board, depth - 1, False, cache)
+        else:
+            total = 0.0
+            for r, c in cells:
+                two, four = board.copy(), board.copy()
+                two[r, c], four[r, c] = 2, 4
+                total += 0.9 * search(two, depth - 1, False, cache) + 0.1 * search(four, depth - 1, False, cache)
+            value = total / len(cells)
+    if cache is not None and key is not None:
+        cache[key] = value
+    return value
 
 
-def teacher_move(board: np.ndarray, depth: int = 2) -> int:
-    scored = [(gained + search(next_board, depth, True), direction) for direction in range(4)
-              for next_board, changed, gained in [move(board, direction)] if changed]
-    return max(scored, default=(-float("inf"), -1))[1]
+def teacher_policy(board: np.ndarray, depth: int = 3, temperature: float = 160.0) -> tuple[int, np.ndarray]:
+    """Return teacher action plus a soft target over all four directions."""
+    cache: dict[tuple, float] = {}
+    scores = np.full(4, -1e9, dtype=np.float32)
+    for direction in range(4):
+        next_board, changed, gained = move(board, direction)
+        if changed:
+            scores[direction] = gained + search(next_board, depth, True, cache)
+    action = int(np.argmax(scores))
+    legal = scores > -1e8
+    centered = (scores - np.max(scores[legal])) / temperature
+    weights = np.zeros(4, dtype=np.float32)
+    weights[legal] = np.exp(np.clip(centered[legal], -30, 0))
+    return action, weights / weights.sum()
+
+
+def teacher_move(board: np.ndarray, depth: int = 3) -> int:
+    return teacher_policy(board, depth)[0]
 
 
 class PolicyValueNet(nn.Module):
@@ -174,7 +199,7 @@ class PolicyValueNet(nn.Module):
         return torch.tanh(self.l4(trunk)).squeeze(-1), self.policy(trunk)
 
 
-def sample_teacher_data(games: int, seed: int, max_steps: int = 1000) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
+def sample_teacher_data(games: int, seed: int, max_steps: int = 1500, teacher_depth: int = 3) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
     """Collect teacher trajectories, including enough late-game positions to learn 1024/2048 play."""
     rng = seeded_rng(seed)
     states, policies, values, game_metrics = [], [], [], []
@@ -182,11 +207,11 @@ def sample_teacher_data(games: int, seed: int, max_steps: int = 1000) -> tuple[n
         board = initial_board(rng)
         steps = score = 0
         while has_moves(board) and steps < max_steps:
-            action = teacher_move(board)
+            action, policy = teacher_policy(board, depth=teacher_depth)
             if action < 0:
                 break
             states.append(encode(board))
-            policies.append(action)
+            policies.append(policy)
             # /800 saturated near 1 for almost every board, making the value head
             # uninformative. This wider scale preserves early/mid/late-game signal.
             values.append(math.tanh(heuristic(board) / 4000.0))
@@ -195,7 +220,7 @@ def sample_teacher_data(games: int, seed: int, max_steps: int = 1000) -> tuple[n
             add_tile(board, rng)
             steps += 1
         game_metrics.append({"maxTile": int(board.max()), "score": score, "steps": steps})
-    return np.asarray(states), np.asarray(policies), np.asarray(values, dtype=np.float32), game_metrics
+    return np.asarray(states), np.asarray(policies, dtype=np.float32), np.asarray(values, dtype=np.float32), game_metrics
 
 
 def model_outputs(model: PolicyValueNet, board: np.ndarray, device: torch.device) -> tuple[float, np.ndarray]:
@@ -301,7 +326,7 @@ def main() -> None:
             indexes = permutation[start:start + 128]
             predicted_value, logits = model(x[indexes])
             value_loss = F.huber_loss(predicted_value, y_value[indexes])
-            policy_loss = F.cross_entropy(logits, y_policy[indexes])
+            policy_loss = -(y_policy[indexes] * F.log_softmax(logits, dim=1)).sum(dim=1).mean()
             loss = value_loss + policy_loss
             optimizer.zero_grad(); loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
             losses.append(float(loss.item()))
