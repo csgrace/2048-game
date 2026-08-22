@@ -3,10 +3,10 @@
   "version": 3,
   "active": true,
   "phase": "training",
-  "trainProgress": "180/250",
-  "loss": 1.05192,
+  "trainProgress": "190/250",
+  "loss": 1.055024,
   "bestMaxTile": 2048,
-  "avgScore": 27245,
-  "lastUpdate": "2026-08-22T17:20:24Z",
-  "message": "v3 checkpoint 180/250; each checkpoint contains 10 teacher games."
+  "avgScore": 26960,
+  "lastUpdate": "2026-08-22T17:28:40Z",
+  "message": "v3 checkpoint 190/250; each checkpoint contains 10 teacher games."
 }
