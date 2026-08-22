@@ -45,7 +45,18 @@ def write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def load_replay() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def state_priorities(states: np.ndarray) -> np.ndarray:
+    """Give scarce 512/1024 and low-empty-cell decisions more training influence."""
+    boards = states.reshape(-1, 16, 16)
+    exponents = boards.argmax(axis=2)
+    max_exponent = exponents.max(axis=1)
+    empty_cells = (exponents == 0).sum(axis=1)
+    # Late boards decide whether a run reaches 2048; early boards remain in the
+    # buffer for general play but cannot crowd out those difficult decisions.
+    return (1.0 + 0.20 * np.maximum(max_exponent - 7, 0) + 0.08 * np.maximum(8 - empty_cells, 0)).astype(np.float32)
+
+
+def load_replay() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     try:
         with np.load(REPLAY_PATH) as replay:
             states = replay["states"].astype(np.float32)
@@ -53,23 +64,30 @@ def load_replay() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
             values = replay["values"].astype(np.float32)
             if policies.ndim != 2 or policies.shape[1] != 4:
                 raise ValueError("legacy hard-label replay buffer")
-            return states, policies, values
+            priorities = replay["priorities"].astype(np.float32) if "priorities" in replay else state_priorities(states)
+            return states, policies, values, priorities
     except (OSError, KeyError, ValueError):
-        return np.empty((0, 256), dtype=np.float32), np.empty((0, 4), dtype=np.float32), np.empty(0, dtype=np.float32)
+        return (np.empty((0, 256), dtype=np.float32), np.empty((0, 4), dtype=np.float32),
+                np.empty(0, dtype=np.float32), np.empty(0, dtype=np.float32))
 
 
-def update_replay(states: np.ndarray, policies: np.ndarray, values: np.ndarray, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    old_states, old_policies, old_values = load_replay()
+def update_replay(states: np.ndarray, policies: np.ndarray, values: np.ndarray, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    old_states, old_policies, old_values, old_priorities = load_replay()
     all_states = np.concatenate((old_states, states))
     all_policies = np.concatenate((old_policies, policies))
     all_values = np.concatenate((old_values, values))
+    all_priorities = np.concatenate((old_priorities, state_priorities(states)))
     if len(all_states) > REPLAY_CAPACITY:
         rng = np.random.default_rng(seed)
-        indexes = np.sort(rng.choice(len(all_states), REPLAY_CAPACITY, replace=False))
-        all_states, all_policies, all_values = all_states[indexes], all_policies[indexes], all_values[indexes]
-    # One-hot features compress extremely well while preserving the exact inputs.
-    np.savez_compressed(REPLAY_PATH, states=all_states.astype(np.uint8), policies=all_policies.astype(np.float32), values=all_values.astype(np.float32))
-    return all_states, all_policies, all_values
+        # Priority-weighted retention preserves rare decisive endgames while
+        # retaining a diverse sample of opening and midgame positions.
+        probabilities = all_priorities / all_priorities.sum()
+        indexes = np.sort(rng.choice(len(all_states), REPLAY_CAPACITY, replace=False, p=probabilities))
+        all_states, all_policies, all_values, all_priorities = (all_states[indexes], all_policies[indexes],
+            all_values[indexes], all_priorities[indexes])
+    np.savez_compressed(REPLAY_PATH, states=all_states.astype(np.uint8), policies=all_policies.astype(np.float32),
+                        values=all_values.astype(np.float32), priorities=all_priorities.astype(np.float32))
+    return all_states, all_policies, all_values, all_priorities
 
 
 def load_model(payload: dict, device: torch.device) -> PolicyValueNet:
@@ -142,10 +160,11 @@ def main() -> None:
     chunk_started = time.time()
     states, policies, values, game_metrics = sample_teacher_data(games, args.seed + completed, max_steps=1500, teacher_depth=args.teacher_depth)
     teacher_seconds = time.time() - chunk_started
-    replay_states, replay_policies, replay_values = update_replay(states, policies, values, args.seed + completed)
+    replay_states, replay_policies, replay_values, replay_priorities = update_replay(states, policies, values, args.seed + completed)
     x = torch.from_numpy(replay_states).to(device)
     y_policy = torch.from_numpy(replay_policies).to(device)
     y_value = torch.from_numpy(replay_values).to(device)
+    sample_weight = torch.from_numpy(replay_priorities).to(device)
     optimization_started = time.time()
     model.train()
     policy_losses: list[float] = []
@@ -155,8 +174,9 @@ def main() -> None:
         for start in range(0, len(x), 128):
             indexes = permutation[start:start + 128]
             predicted_value, logits = model(x[indexes])
-            value_loss = F.huber_loss(predicted_value, y_value[indexes])
-            policy_loss = -(y_policy[indexes] * F.log_softmax(logits, dim=1)).sum(dim=1).mean()
+            weights = sample_weight[indexes]
+            value_loss = (F.huber_loss(predicted_value, y_value[indexes], reduction="none") * weights).sum() / weights.sum()
+            policy_loss = (-(y_policy[indexes] * F.log_softmax(logits, dim=1)).sum(dim=1) * weights).sum() / weights.sum()
             loss = value_loss + policy_loss
             optimizer.zero_grad(); loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
             value_losses.append(float(value_loss.item()))

@@ -163,14 +163,22 @@ def search(board: np.ndarray, depth: int, chance: bool, cache: dict[tuple, float
     return value
 
 
+def teacher_depth_for_board(board: np.ndarray, base_depth: int) -> int:
+    """Spend additional search only where 512/1024 endgame decisions matter."""
+    max_tile = int(board.max())
+    empties = len(empty_cells(board))
+    return base_depth + int(base_depth >= 3 and max_tile >= 512 and empties <= 6)
+
+
 def teacher_policy(board: np.ndarray, depth: int = 3, temperature: float = 160.0) -> tuple[int, np.ndarray]:
     """Return teacher action plus a soft target over all four directions."""
+    search_depth = teacher_depth_for_board(board, depth)
     cache: dict[tuple, float] = {}
     scores = np.full(4, -1e9, dtype=np.float32)
     for direction in range(4):
         next_board, changed, gained = move(board, direction)
         if changed:
-            scores[direction] = gained + search(next_board, depth, True, cache)
+            scores[direction] = gained + search(next_board, search_depth, True, cache)
     action = int(np.argmax(scores))
     legal = scores > -1e8
     centered = (scores - np.max(scores[legal])) / temperature
