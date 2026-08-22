@@ -2,7 +2,7 @@
   "active": true,
   "phase": "checkpoint",
   "version": 3,
-  "completedGames": 120,
+  "completedGames": 130,
   "targetGames": 250,
   "chunkSize": 10,
   "history": [
@@ -223,8 +223,25 @@
       "elapsedSeconds": 151.7,
       "validation": null,
       "fullValidation": false
+    },
+    {
+      "chunk": 13,
+      "game": 130,
+      "chunkGames": 10,
+      "replayStates": 6000,
+      "loss": 1.085895,
+      "policyLoss": 1.084692,
+      "valueLoss": 0.001203,
+      "maxTile": 2048,
+      "avgScore": 19038,
+      "avgSteps": 1061,
+      "teacherSeconds": 147.9,
+      "optimizationSeconds": 0.5,
+      "elapsedSeconds": 148.5,
+      "validation": null,
+      "fullValidation": false
     }
   ],
   "validation": null,
-  "message": "Checkpoint saved after 120/250 teacher games."
+  "message": "Checkpoint saved after 130/250 teacher games."
 }
