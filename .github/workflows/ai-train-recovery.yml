@@ -1,0 +1,32 @@
+name: AI Training Failure Recovery
+
+on:
+  workflow_run:
+    workflows: [AI Training Until Target]
+    types: [completed]
+
+permissions:
+  actions: write
+
+jobs:
+  retry-once:
+    # Only retry the original failed run. A re-run has run_attempt > 1, so a
+    # persistent code error is reported instead of creating an endless loop.
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.run_attempt == 1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-run failed training job once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --retry 5 --retry-all-errors --retry-delay 5 \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${REPOSITORY}/actions/runs/${RUN_ID}/rerun-failed-jobs"
+          echo "Re-ran failed training workflow ${RUN_ID} once."
