@@ -1963,23 +1963,9 @@ function aiBestMove(){
     if(completed&&localBest){bestDirection=localBest;bestScore=localScore;depthReached=targetDepth;}
     if(!completed)break;
   }
-  // Monte Carlo tie-break / validation between the two best expectimax choices
-  const candidates=[];
-  for(const direction of AI_DIRECTIONS){
-    const result=aiMoveBoard(board,direction);if(!result.changed)continue;
-    candidates.push({direction,expectimax:result.gained+aiPolicyBonus(board,direction)+aiExpectimax(result.board,2,true,new Map())});
-  }
-  candidates.sort((a,b)=>b.expectimax-a.expectimax);
-  if(candidates.length){
-    const top1=candidates[0];
-    const top2=candidates.length>1?candidates[1]:null;
-    const probeRounds=8;
-    const mc1=aiMonteCarlo(board,top1.direction,probeRounds);
-    const mc2=top2?aiMonteCarlo(board,top2.direction,probeRounds):-1;
-    // Choose expectimax winner unless Monte Carlo shows a clear 15%+ improvement on the runner-up
-    if(top2&&mc2>mc1*1.15)bestDirection=top2.direction;
-    else bestDirection=top1.direction;
-  }
+  // Preserve the deepest completed expectimax result. The former random rollout
+  // tie-break discarded deeper search information and could select a weaker move
+  // differently on the same board, making 2048 play needlessly unstable.
   return bestDirection;
 }
 function aiDirectionLabel(direction){return({up:'↑ Up',down:'↓ Down',left:'← Left',right:'→ Right'})[direction]||''}
