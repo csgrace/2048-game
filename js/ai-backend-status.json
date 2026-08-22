@@ -1,12 +1,8 @@
 {
   "pid": 0,
   "version": 3,
-  "active": false,
-  "phase": "complete",
-  "trainProgress": "250/250",
-  "loss": 0.655251,
-  "bestMaxTile": 1024,
-  "avgScore": 13541,
-  "lastUpdate": "2026-08-21T10:52:53Z",
-  "message": "v3 checkpoint 250/250; each checkpoint contains 10 teacher games."
+  "active": true,
+  "phase": "queued",
+  "trainProgress": "0/250",
+  "message": "v3 will continue from the published checkpoint."
 }
