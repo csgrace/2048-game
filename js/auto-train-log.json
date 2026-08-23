@@ -305,5 +305,18 @@
     "bestMax": 2048,
     "targetWinRate": 80.0,
     "timestamp": "2026-08-22T18:24:50.082303+00:00"
+  },
+  {
+    "round": 1,
+    "phase": "test",
+    "testPhase": "target",
+    "version": 3,
+    "testWins": 6,
+    "testTotal": 100,
+    "winRate": 6.0,
+    "avgScore": 12018,
+    "bestMax": 2048,
+    "targetWinRate": 80.0,
+    "timestamp": "2026-08-23T19:50:34.160443+00:00"
   }
 ]
