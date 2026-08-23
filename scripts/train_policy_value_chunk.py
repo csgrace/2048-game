@@ -24,6 +24,7 @@ from train_policy_value import (
 )
 
 CANDIDATE_PATH = ROOT / "js" / "ai-training-candidate.json"
+BEST_CANDIDATE_PATH = ROOT / "js" / "ai-training-best-candidate.json"
 REPLAY_PATH = ROOT / "js" / "ai-training-replay.npz"
 BACKEND_STATUS_PATH = ROOT / "js" / "ai-backend-status.json"
 REPLAY_CAPACITY = 6000
@@ -128,6 +129,7 @@ def main() -> None:
     parser.add_argument("--version", type=int, default=1)
     parser.add_argument("--teacher-depth", type=int, default=3)
     parser.add_argument("--initialize-from-published", action="store_true", help="Start this version from the published checkpoint instead of an older candidate.")
+    parser.add_argument("--initialize-from-best-candidate", action="store_true", help="Start from the best validated unpublished candidate when available.")
     parser.add_argument("--initialize-only", action="store_true", help="Persist an initialized candidate and queued status without training a chunk.")
     args = parser.parse_args()
     if args.games != 10:
@@ -136,19 +138,28 @@ def main() -> None:
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     prior = read_json(CANDIDATE_PATH, {})
-    starting_from_published = args.initialize_from_published and int(prior.get("version", 0)) != args.version
-    if starting_from_published:
+    restarting = False
+    source_label = "candidate"
+    if args.initialize_from_best_candidate:
+        best_candidate = read_json(BEST_CANDIDATE_PATH, {})
+        if best_candidate.get("l1W"):
+            prior = best_candidate
+            restarting = True
+            source_label = "best validated candidate"
+    if args.initialize_from_published and int(prior.get("version", 0)) != args.version:
         prior = read_json(WEIGHTS_PATH, {})
-    completed = 0 if starting_from_published else int(prior.get("trainingGames", 0))
-    history: list[dict] = [] if starting_from_published else list(prior.get("history", []))
+        restarting = True
+        source_label = "published checkpoint"
+    completed = 0 if restarting else int(prior.get("trainingGames", 0))
+    history: list[dict] = [] if restarting else list(prior.get("history", []))
     model = load_model(prior, device)
     if args.initialize_only:
         if REPLAY_PATH.exists():
             REPLAY_PATH.unlink()
         write_json(CANDIDATE_PATH, candidate_payload(model, args.version, 0, [], None))
-        write_json(PROGRESS_PATH, {"active": True, "phase": "queued", "version": args.version, "completedGames": 0, "targetGames": args.target_games, "chunkSize": 10, "history": [], "validation": None, "message": f"v{args.version} queued from the published v{prior.get('version', 'unknown')} checkpoint."})
-        write_json(BACKEND_STATUS_PATH, {"pid": 0, "version": args.version, "active": True, "phase": "queued", "trainProgress": f"0/{args.target_games}", "message": f"v{args.version} will continue from the published checkpoint."})
-        print(f"Initialized v{args.version} from published checkpoint.")
+        write_json(PROGRESS_PATH, {"active": True, "phase": "queued", "version": args.version, "completedGames": 0, "targetGames": args.target_games, "chunkSize": 10, "history": [], "validation": None, "message": f"v{args.version} queued from {source_label} v{prior.get('version', 'unknown')}."})
+        write_json(BACKEND_STATUS_PATH, {"pid": 0, "version": args.version, "active": True, "phase": "queued", "trainProgress": f"0/{args.target_games}", "message": f"v{args.version} will continue from {source_label}."})
+        print(f"Initialized v{args.version} from {source_label}.")
         return
     if completed >= args.target_games:
         write_json(PROGRESS_PATH, {"active": False, "phase": "complete", "version": args.version, "completedGames": completed, "targetGames": args.target_games, "history": history, "message": f"All v{args.version} chunks have already completed."})
@@ -202,6 +213,15 @@ def main() -> None:
     history.append(point)
     candidate = candidate_payload(model, args.version, completed, history, validation)
     write_json(CANDIDATE_PATH, candidate)
+    if validation:
+        incumbent = read_json(BEST_CANDIDATE_PATH, {}).get("validation", {})
+        candidate_score = (validation.get("winRate", 0), validation.get("avgScore", 0), validation.get("bestMaxTile", 0))
+        incumbent_score = (incumbent.get("winRate", -1), incumbent.get("avgScore", -1), incumbent.get("bestMaxTile", -1))
+        if candidate_score > incumbent_score:
+            best_candidate = dict(candidate)
+            best_candidate["status"] = "best-unpublished-candidate"
+            best_candidate["description"] = "Best fixed-seed validated unpublished policy-value candidate."
+            write_json(BEST_CANDIDATE_PATH, best_candidate)
     progress = {
         "active": completed < args.target_games, "phase": "checkpoint", "version": args.version,
         "completedGames": completed, "targetGames": args.target_games, "chunkSize": 10,
