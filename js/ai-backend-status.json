@@ -2,7 +2,11 @@
   "pid": 0,
   "version": 3,
   "active": true,
-  "phase": "queued",
-  "trainProgress": "0/300",
-  "message": "v3 will continue from best validated candidate."
+  "phase": "training",
+  "trainProgress": "10/300",
+  "loss": 1.047889,
+  "bestMaxTile": 2048,
+  "avgScore": 29759,
+  "lastUpdate": "2026-08-23T15:40:13Z",
+  "message": "v3 checkpoint 10/300; each checkpoint contains 10 teacher games."
 }
