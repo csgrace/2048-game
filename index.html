@@ -1001,7 +1001,7 @@ const TIMER_POLL_INTERVAL_MS=10000;          // training/backend poll every 10s
 const PLAYTEST_POLL_INTERVAL_MS=15000;       // playtest poll every 15s
 const TRAIGGER_WINDOW_MS=300000;             // 5 min session trigger window
 const SWIPE_THRESHOLD_PX=30;                 // min px for swipe gesture
-const AI_MOVE_BUDGET_MS=60;                  // AI move time budget
+const AI_MOVE_BUDGET_MS=90;                  // base AI move time budget
 const MAX_UNDO_STACK=30;                     // max undo history
 const WEIGHTS_RELOAD_DELAY_MS=2000;          // delay before reloading weights after training
 const TRAINING_LOG_POLL_DELAY_MS=20000;      // delay before starting progress poll after dispatch
@@ -1947,19 +1947,27 @@ function aiMonteCarlo(grid,move,rounds){
   return totalGained/rounds;
 }
 /* Top-level move selection: deepening + Monte Carlo validation --------------- */
+function aiDecisionBudget(grid){
+  const empties=aiEmptyCells(grid).length;
+  let maxTile=0;for(const row of grid)for(const value of row)maxTile=Math.max(maxTile,value);
+  // Keep opening moves responsive, but spend more deterministic search exactly
+  // where one mistake with a 512/1024 tile ends an otherwise winning run.
+  return maxTile>=512&&empties<=6?220:maxTile>=256&&empties<=8?140:AI_BUDGET_MS;
+}
 function aiBestMove(){
-  if(SIZE!==4)return null;
-  const table=new Map();
-  const start=performance.now();
-  let bestDirection=null,bestScore=-Infinity,depthReached=0;
-  for(let targetDepth=2;targetDepth<=6;targetDepth++){
+if(SIZE!==4)return null;
+const table=new Map();
+const start=performance.now();
+const budget=aiDecisionBudget(board);
+let bestDirection=null,bestScore=-Infinity,depthReached=0;
+for(let targetDepth=2;targetDepth<=6;targetDepth++){
     let localBest=null,localScore=-Infinity,completed=true;
     for(const direction of AI_DIRECTIONS){
       const result=aiMoveBoard(board,direction);if(!result.changed)continue;
       const value=result.gained+aiPolicyBonus(board,direction)+aiExpectimax(result.board,targetDepth,true,table);
       if(value>localScore){localScore=value;localBest=direction;}
     }
-    if(performance.now()-start>AI_BUDGET_MS){completed=false;}
+    if(performance.now()-start>budget){completed=false;}
     if(completed&&localBest){bestDirection=localBest;bestScore=localScore;depthReached=targetDepth;}
     if(!completed)break;
   }
@@ -2033,16 +2041,15 @@ function initAiNet(weights){
   aiUseNN=!!weights&&weights.format==='policy-value-v1';
 }
 function aiNeuralEvaluate(grid){
-  if(!aiUseNN||!aiNet)return aiEvaluate(grid);
-  const input=window.AIBrain.encodeBoard(grid);
-  // v1 is trained against tanh(heuristic / 800): retain a bounded, compatible leaf contribution.
-  return aiEvaluate(grid)+aiNet.forward(input)*120;
+  // Candidate networks are evaluated in cloud tests but do not influence the
+  // live player until they beat the deterministic search baseline. This avoids
+  // a weak unpublished model overriding reliable board-structure evaluation.
+  return aiEvaluate(grid);
 }
 function aiPolicyBonus(grid,direction){
-  if(!aiUseNN||!aiNet||!aiNet.forwardPolicy)return 0;
-  const logits=aiNet.forwardPolicy(window.AIBrain.encodeBoard(grid));
-  const index=AI_DIRECTIONS.indexOf(direction);
-  return index<0?0:logits[index]*12;
+  // See aiNeuralEvaluate: live move choice remains a deterministic Expectimax
+  // policy while candidate models are still below the promotion threshold.
+  return 0;
 }
 function refreshAiEvalLeaf(){
   aiExpectimax=function(grid,depth,isChance,table){
