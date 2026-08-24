@@ -5,811 +5,811 @@
   "seed": 10000,
   "totalGames": 100,
   "completedGames": 100,
-  "wins": 6,
-  "fails": 94,
-  "winRate": 6.0,
-  "avgScore": 12018,
+  "wins": 12,
+  "fails": 88,
+  "winRate": 12.0,
+  "avgScore": 13087,
   "bestMaxTile": 2048,
   "results": [
     {
-      "score": 5812,
-      "maxTile": 512,
-      "steps": 414,
+      "score": 14372,
+      "maxTile": 1024,
+      "steps": 852,
       "game": 1,
       "result": "lose",
-      "duration": 1338
+      "duration": 8074
     },
     {
-      "score": 17736,
-      "maxTile": 1024,
-      "steps": 1053,
+      "score": 22504,
+      "maxTile": 2048,
+      "steps": 1127,
       "game": 2,
-      "result": "lose",
-      "duration": 3286
+      "result": "win",
+      "duration": 8825
     },
     {
-      "score": 11360,
+      "score": 13508,
       "maxTile": 1024,
-      "steps": 650,
+      "steps": 797,
       "game": 3,
       "result": "lose",
-      "duration": 2070
+      "duration": 8718
     },
     {
-      "score": 7136,
-      "maxTile": 512,
-      "steps": 496,
+      "score": 26664,
+      "maxTile": 2048,
+      "steps": 1402,
       "game": 4,
-      "result": "lose",
-      "duration": 1640
+      "result": "win",
+      "duration": 13404
     },
     {
-      "score": 15572,
-      "maxTile": 1024,
-      "steps": 931,
+      "score": 7496,
+      "maxTile": 512,
+      "steps": 511,
       "game": 5,
       "result": "lose",
-      "duration": 2941
+      "duration": 4574
     },
     {
-      "score": 18088,
-      "maxTile": 1024,
-      "steps": 1081,
-      "game": 6,
-      "result": "lose",
-      "duration": 3314
-    },
-    {
-      "score": 16204,
-      "maxTile": 1024,
-      "steps": 956,
-      "game": 7,
-      "result": "lose",
-      "duration": 3011
-    },
-    {
-      "score": 7948,
-      "maxTile": 512,
-      "steps": 557,
-      "game": 8,
-      "result": "lose",
-      "duration": 1731
-    },
-    {
-      "score": 6704,
-      "maxTile": 512,
-      "steps": 468,
-      "game": 9,
-      "result": "lose",
-      "duration": 1451
-    },
-    {
-      "score": 8428,
-      "maxTile": 512,
-      "steps": 597,
-      "game": 10,
-      "result": "lose",
-      "duration": 1817
-    },
-    {
-      "score": 11336,
-      "maxTile": 512,
-      "steps": 733,
-      "game": 11,
-      "result": "lose",
-      "duration": 2255
-    },
-    {
-      "score": 15284,
-      "maxTile": 1024,
-      "steps": 908,
-      "game": 12,
-      "result": "lose",
-      "duration": 2821
-    },
-    {
-      "score": 7968,
-      "maxTile": 512,
-      "steps": 563,
-      "game": 13,
-      "result": "lose",
-      "duration": 1714
-    },
-    {
-      "score": 7616,
-      "maxTile": 512,
-      "steps": 524,
-      "game": 14,
-      "result": "lose",
-      "duration": 1740
-    },
-    {
-      "score": 15412,
-      "maxTile": 1024,
-      "steps": 890,
-      "game": 15,
-      "result": "lose",
-      "duration": 2806
-    },
-    {
-      "score": 15040,
-      "maxTile": 1024,
-      "steps": 882,
-      "game": 16,
-      "result": "lose",
-      "duration": 2793
-    },
-    {
-      "score": 14452,
-      "maxTile": 1024,
-      "steps": 841,
-      "game": 17,
-      "result": "lose",
-      "duration": 2623
-    },
-    {
-      "score": 6724,
-      "maxTile": 512,
-      "steps": 481,
-      "game": 18,
-      "result": "lose",
-      "duration": 1581
-    },
-    {
-      "score": 8528,
-      "maxTile": 512,
-      "steps": 596,
-      "game": 19,
-      "result": "lose",
-      "duration": 1919
-    },
-    {
-      "score": 8636,
-      "maxTile": 512,
-      "steps": 605,
-      "game": 20,
-      "result": "lose",
-      "duration": 1906
-    },
-    {
-      "score": 17760,
-      "maxTile": 1024,
-      "steps": 1059,
-      "game": 21,
-      "result": "lose",
-      "duration": 3264
-    },
-    {
-      "score": 8532,
-      "maxTile": 512,
-      "steps": 592,
-      "game": 22,
-      "result": "lose",
-      "duration": 1970
-    },
-    {
-      "score": 7904,
-      "maxTile": 512,
-      "steps": 551,
-      "game": 23,
-      "result": "lose",
-      "duration": 1831
-    },
-    {
-      "score": 9204,
-      "maxTile": 512,
-      "steps": 617,
-      "game": 24,
-      "result": "lose",
-      "duration": 1941
-    },
-    {
-      "score": 21660,
-      "maxTile": 2048,
-      "steps": 1086,
-      "game": 25,
-      "result": "win",
-      "duration": 3562
-    },
-    {
-      "score": 7164,
-      "maxTile": 512,
-      "steps": 490,
-      "game": 26,
-      "result": "lose",
-      "duration": 1473
-    },
-    {
-      "score": 7308,
-      "maxTile": 512,
-      "steps": 509,
-      "game": 27,
-      "result": "lose",
-      "duration": 1523
-    },
-    {
-      "score": 15472,
-      "maxTile": 1024,
-      "steps": 903,
-      "game": 28,
-      "result": "lose",
-      "duration": 2897
-    },
-    {
-      "score": 29896,
+      "score": 30216,
       "maxTile": 2048,
       "steps": 1500,
-      "game": 29,
+      "game": 6,
       "result": "win",
-      "duration": 4767
+      "duration": 15587
     },
     {
-      "score": 6788,
+      "score": 7708,
       "maxTile": 512,
-      "steps": 472,
+      "steps": 540,
+      "game": 7,
+      "result": "lose",
+      "duration": 5974
+    },
+    {
+      "score": 7564,
+      "maxTile": 512,
+      "steps": 527,
+      "game": 8,
+      "result": "lose",
+      "duration": 6920
+    },
+    {
+      "score": 15372,
+      "maxTile": 1024,
+      "steps": 895,
+      "game": 9,
+      "result": "lose",
+      "duration": 10244
+    },
+    {
+      "score": 9208,
+      "maxTile": 512,
+      "steps": 637,
+      "game": 10,
+      "result": "lose",
+      "duration": 6521
+    },
+    {
+      "score": 26264,
+      "maxTile": 2048,
+      "steps": 1365,
+      "game": 11,
+      "result": "win",
+      "duration": 13529
+    },
+    {
+      "score": 7916,
+      "maxTile": 512,
+      "steps": 566,
+      "game": 12,
+      "result": "lose",
+      "duration": 5095
+    },
+    {
+      "score": 8572,
+      "maxTile": 512,
+      "steps": 590,
+      "game": 13,
+      "result": "lose",
+      "duration": 7342
+    },
+    {
+      "score": 7476,
+      "maxTile": 512,
+      "steps": 525,
+      "game": 14,
+      "result": "lose",
+      "duration": 6282
+    },
+    {
+      "score": 8344,
+      "maxTile": 512,
+      "steps": 591,
+      "game": 15,
+      "result": "lose",
+      "duration": 6341
+    },
+    {
+      "score": 26896,
+      "maxTile": 2048,
+      "steps": 1406,
+      "game": 16,
+      "result": "win",
+      "duration": 26146
+    },
+    {
+      "score": 16232,
+      "maxTile": 1024,
+      "steps": 964,
+      "game": 17,
+      "result": "lose",
+      "duration": 19956
+    },
+    {
+      "score": 7792,
+      "maxTile": 512,
+      "steps": 540,
+      "game": 18,
+      "result": "lose",
+      "duration": 13408
+    },
+    {
+      "score": 16692,
+      "maxTile": 1024,
+      "steps": 992,
+      "game": 19,
+      "result": "lose",
+      "duration": 22038
+    },
+    {
+      "score": 10544,
+      "maxTile": 1024,
+      "steps": 619,
+      "game": 20,
+      "result": "lose",
+      "duration": 18366
+    },
+    {
+      "score": 15692,
+      "maxTile": 1024,
+      "steps": 942,
+      "game": 21,
+      "result": "lose",
+      "duration": 16105
+    },
+    {
+      "score": 8944,
+      "maxTile": 512,
+      "steps": 611,
+      "game": 22,
+      "result": "lose",
+      "duration": 12355
+    },
+    {
+      "score": 8752,
+      "maxTile": 512,
+      "steps": 619,
+      "game": 23,
+      "result": "lose",
+      "duration": 9849
+    },
+    {
+      "score": 28276,
+      "maxTile": 2048,
+      "steps": 1500,
+      "game": 24,
+      "result": "win",
+      "duration": 27244
+    },
+    {
+      "score": 18200,
+      "maxTile": 1024,
+      "steps": 1092,
+      "game": 25,
+      "result": "lose",
+      "duration": 21361
+    },
+    {
+      "score": 10840,
+      "maxTile": 1024,
+      "steps": 636,
+      "game": 26,
+      "result": "lose",
+      "duration": 11131
+    },
+    {
+      "score": 7592,
+      "maxTile": 512,
+      "steps": 532,
+      "game": 27,
+      "result": "lose",
+      "duration": 7491
+    },
+    {
+      "score": 12384,
+      "maxTile": 1024,
+      "steps": 744,
+      "game": 28,
+      "result": "lose",
+      "duration": 6610
+    },
+    {
+      "score": 15512,
+      "maxTile": 1024,
+      "steps": 929,
+      "game": 29,
+      "result": "lose",
+      "duration": 10936
+    },
+    {
+      "score": 16300,
+      "maxTile": 1024,
+      "steps": 969,
       "game": 30,
       "result": "lose",
-      "duration": 1534
+      "duration": 10260
     },
     {
-      "score": 8484,
+      "score": 8780,
       "maxTile": 512,
-      "steps": 585,
+      "steps": 595,
       "game": 31,
       "result": "lose",
-      "duration": 1895
+      "duration": 6882
     },
     {
-      "score": 8108,
-      "maxTile": 512,
-      "steps": 565,
+      "score": 15932,
+      "maxTile": 1024,
+      "steps": 934,
       "game": 32,
       "result": "lose",
-      "duration": 1816
+      "duration": 9816
     },
     {
-      "score": 14316,
+      "score": 10908,
       "maxTile": 1024,
-      "steps": 873,
+      "steps": 654,
       "game": 33,
       "result": "lose",
-      "duration": 2663
+      "duration": 5924
     },
     {
-      "score": 14352,
-      "maxTile": 1024,
-      "steps": 837,
+      "score": 4572,
+      "maxTile": 256,
+      "steps": 367,
       "game": 34,
       "result": "lose",
-      "duration": 2616
+      "duration": 4270
     },
     {
-      "score": 11444,
-      "maxTile": 1024,
-      "steps": 689,
+      "score": 7252,
+      "maxTile": 512,
+      "steps": 503,
       "game": 35,
       "result": "lose",
-      "duration": 2167
+      "duration": 5338
     },
     {
-      "score": 12744,
+      "score": 15444,
       "maxTile": 1024,
-      "steps": 771,
+      "steps": 916,
       "game": 36,
       "result": "lose",
-      "duration": 2432
+      "duration": 14420
     },
     {
-      "score": 9172,
-      "maxTile": 512,
-      "steps": 623,
+      "score": 18344,
+      "maxTile": 1024,
+      "steps": 1092,
       "game": 37,
       "result": "lose",
-      "duration": 1845
+      "duration": 10907
     },
     {
-      "score": 5748,
+      "score": 8392,
       "maxTile": 512,
-      "steps": 419,
+      "steps": 608,
       "game": 38,
       "result": "lose",
-      "duration": 1347
+      "duration": 6212
     },
     {
-      "score": 15312,
-      "maxTile": 1024,
-      "steps": 880,
+      "score": 7452,
+      "maxTile": 512,
+      "steps": 514,
       "game": 39,
       "result": "lose",
-      "duration": 2834
+      "duration": 8449
     },
     {
-      "score": 6052,
-      "maxTile": 512,
-      "steps": 437,
+      "score": 3204,
+      "maxTile": 256,
+      "steps": 266,
       "game": 40,
       "result": "lose",
-      "duration": 1438
+      "duration": 6326
     },
     {
-      "score": 8512,
+      "score": 7940,
       "maxTile": 512,
-      "steps": 572,
+      "steps": 552,
       "game": 41,
       "result": "lose",
-      "duration": 1806
+      "duration": 4887
     },
     {
-      "score": 3512,
-      "maxTile": 256,
-      "steps": 287,
-      "game": 42,
-      "result": "lose",
-      "duration": 843
-    },
-    {
-      "score": 26916,
+      "score": 30204,
       "maxTile": 2048,
-      "steps": 1416,
-      "game": 43,
+      "steps": 1500,
+      "game": 42,
       "result": "win",
-      "duration": 4394
+      "duration": 22004
     },
     {
-      "score": 7500,
+      "score": 7208,
       "maxTile": 512,
-      "steps": 508,
+      "steps": 503,
+      "game": 43,
+      "result": "lose",
+      "duration": 10705
+    },
+    {
+      "score": 11780,
+      "maxTile": 1024,
+      "steps": 697,
       "game": 44,
       "result": "lose",
-      "duration": 1627
+      "duration": 13446
     },
     {
-      "score": 16332,
-      "maxTile": 1024,
-      "steps": 978,
+      "score": 7684,
+      "maxTile": 512,
+      "steps": 550,
       "game": 45,
       "result": "lose",
-      "duration": 3053
+      "duration": 8970
     },
     {
-      "score": 9860,
-      "maxTile": 512,
-      "steps": 636,
+      "score": 17300,
+      "maxTile": 1024,
+      "steps": 1040,
       "game": 46,
       "result": "lose",
-      "duration": 1995
+      "duration": 11807
     },
     {
-      "score": 4276,
-      "maxTile": 256,
-      "steps": 355,
+      "score": 16840,
+      "maxTile": 1024,
+      "steps": 1004,
       "game": 47,
       "result": "lose",
-      "duration": 1167
+      "duration": 9585
     },
     {
-      "score": 16176,
+      "score": 13352,
       "maxTile": 1024,
-      "steps": 950,
+      "steps": 819,
       "game": 48,
       "result": "lose",
-      "duration": 2992
+      "duration": 10006
     },
     {
-      "score": 12380,
+      "score": 10108,
       "maxTile": 1024,
-      "steps": 754,
+      "steps": 585,
       "game": 49,
       "result": "lose",
-      "duration": 2290
+      "duration": 9618
     },
     {
-      "score": 12544,
+      "score": 16140,
       "maxTile": 1024,
-      "steps": 758,
+      "steps": 953,
       "game": 50,
       "result": "lose",
-      "duration": 2471
+      "duration": 10759
     },
     {
-      "score": 25236,
-      "maxTile": 2048,
-      "steps": 1328,
-      "game": 51,
-      "result": "win",
-      "duration": 4187
-    },
-    {
-      "score": 12380,
+      "score": 11328,
       "maxTile": 1024,
-      "steps": 743,
+      "steps": 679,
+      "game": 51,
+      "result": "lose",
+      "duration": 7427
+    },
+    {
+      "score": 16828,
+      "maxTile": 1024,
+      "steps": 1002,
       "game": 52,
       "result": "lose",
-      "duration": 2341
+      "duration": 12375
     },
     {
-      "score": 8588,
-      "maxTile": 512,
-      "steps": 583,
+      "score": 16876,
+      "maxTile": 1024,
+      "steps": 1007,
       "game": 53,
       "result": "lose",
-      "duration": 1888
+      "duration": 7710
     },
     {
-      "score": 8536,
-      "maxTile": 512,
-      "steps": 593,
+      "score": 12200,
+      "maxTile": 1024,
+      "steps": 726,
       "game": 54,
       "result": "lose",
-      "duration": 1860
+      "duration": 5669
     },
     {
-      "score": 13236,
-      "maxTile": 1024,
-      "steps": 812,
+      "score": 24320,
+      "maxTile": 2048,
+      "steps": 1279,
       "game": 55,
-      "result": "lose",
-      "duration": 2508
+      "result": "win",
+      "duration": 13077
     },
     {
-      "score": 14204,
-      "maxTile": 1024,
-      "steps": 799,
+      "score": 4092,
+      "maxTile": 256,
+      "steps": 323,
       "game": 56,
       "result": "lose",
-      "duration": 2440
+      "duration": 2614
     },
     {
-      "score": 15488,
+      "score": 16836,
       "maxTile": 1024,
-      "steps": 919,
+      "steps": 1018,
       "game": 57,
       "result": "lose",
-      "duration": 2820
+      "duration": 10803
     },
     {
-      "score": 27324,
-      "maxTile": 2048,
-      "steps": 1433,
-      "game": 58,
-      "result": "win",
-      "duration": 4635
-    },
-    {
-      "score": 7360,
-      "maxTile": 512,
-      "steps": 505,
-      "game": 59,
-      "result": "lose",
-      "duration": 1632
-    },
-    {
-      "score": 16348,
+      "score": 12452,
       "maxTile": 1024,
-      "steps": 977,
+      "steps": 744,
+      "game": 58,
+      "result": "lose",
+      "duration": 7427
+    },
+    {
+      "score": 26260,
+      "maxTile": 2048,
+      "steps": 1360,
+      "game": 59,
+      "result": "win",
+      "duration": 14718
+    },
+    {
+      "score": 17160,
+      "maxTile": 1024,
+      "steps": 1024,
       "game": 60,
       "result": "lose",
-      "duration": 2991
+      "duration": 10141
     },
     {
-      "score": 3744,
-      "maxTile": 256,
-      "steps": 312,
+      "score": 8456,
+      "maxTile": 512,
+      "steps": 592,
       "game": 61,
       "result": "lose",
-      "duration": 1030
+      "duration": 7047
     },
     {
-      "score": 8312,
+      "score": 5064,
       "maxTile": 512,
-      "steps": 588,
+      "steps": 348,
       "game": 62,
       "result": "lose",
-      "duration": 1878
+      "duration": 4199
     },
     {
-      "score": 7900,
-      "maxTile": 512,
-      "steps": 547,
+      "score": 16484,
+      "maxTile": 1024,
+      "steps": 979,
       "game": 63,
       "result": "lose",
-      "duration": 1747
+      "duration": 14526
     },
     {
-      "score": 7204,
-      "maxTile": 512,
-      "steps": 489,
+      "score": 12332,
+      "maxTile": 1024,
+      "steps": 737,
       "game": 64,
       "result": "lose",
-      "duration": 1455
+      "duration": 9663
     },
     {
-      "score": 12576,
+      "score": 14540,
       "maxTile": 1024,
-      "steps": 759,
+      "steps": 878,
       "game": 65,
       "result": "lose",
-      "duration": 2348
+      "duration": 7391
     },
     {
-      "score": 15248,
-      "maxTile": 1024,
-      "steps": 899,
+      "score": 21100,
+      "maxTile": 2048,
+      "steps": 1032,
       "game": 66,
-      "result": "lose",
-      "duration": 2768
+      "result": "win",
+      "duration": 10407
     },
     {
-      "score": 11744,
-      "maxTile": 1024,
-      "steps": 712,
+      "score": 8028,
+      "maxTile": 512,
+      "steps": 562,
       "game": 67,
       "result": "lose",
-      "duration": 2289
+      "duration": 6819
     },
     {
-      "score": 7224,
-      "maxTile": 512,
-      "steps": 496,
+      "score": 14128,
+      "maxTile": 1024,
+      "steps": 854,
       "game": 68,
       "result": "lose",
-      "duration": 1565
+      "duration": 11014
     },
     {
-      "score": 7492,
-      "maxTile": 512,
-      "steps": 520,
+      "score": 17048,
+      "maxTile": 1024,
+      "steps": 1013,
       "game": 69,
       "result": "lose",
-      "duration": 1686
+      "duration": 11798
     },
     {
-      "score": 10500,
-      "maxTile": 1024,
-      "steps": 617,
+      "score": 3332,
+      "maxTile": 256,
+      "steps": 284,
       "game": 70,
       "result": "lose",
-      "duration": 1929
+      "duration": 2842
     },
     {
-      "score": 15704,
-      "maxTile": 1024,
-      "steps": 930,
+      "score": 3516,
+      "maxTile": 256,
+      "steps": 295,
       "game": 71,
       "result": "lose",
-      "duration": 2845
+      "duration": 3900
     },
     {
-      "score": 6312,
-      "maxTile": 512,
-      "steps": 444,
+      "score": 15260,
+      "maxTile": 1024,
+      "steps": 934,
       "game": 72,
       "result": "lose",
-      "duration": 1416
+      "duration": 11580
     },
     {
-      "score": 11244,
-      "maxTile": 1024,
-      "steps": 677,
+      "score": 9588,
+      "maxTile": 512,
+      "steps": 663,
       "game": 73,
       "result": "lose",
-      "duration": 2088
+      "duration": 7629
     },
     {
-      "score": 16468,
-      "maxTile": 1024,
-      "steps": 976,
+      "score": 7504,
+      "maxTile": 512,
+      "steps": 526,
       "game": 74,
       "result": "lose",
-      "duration": 3111
+      "duration": 7018
     },
     {
-      "score": 14416,
+      "score": 14728,
       "maxTile": 1024,
-      "steps": 849,
+      "steps": 874,
       "game": 75,
       "result": "lose",
-      "duration": 2795
+      "duration": 16376
     },
     {
-      "score": 16516,
+      "score": 12412,
       "maxTile": 1024,
-      "steps": 983,
+      "steps": 746,
       "game": 76,
       "result": "lose",
-      "duration": 3174
+      "duration": 11530
     },
     {
-      "score": 14240,
-      "maxTile": 1024,
-      "steps": 866,
+      "score": 6716,
+      "maxTile": 512,
+      "steps": 463,
       "game": 77,
       "result": "lose",
-      "duration": 2706
+      "duration": 8734
     },
     {
-      "score": 13148,
-      "maxTile": 1024,
-      "steps": 803,
+      "score": 3628,
+      "maxTile": 256,
+      "steps": 300,
       "game": 78,
       "result": "lose",
-      "duration": 2402
+      "duration": 5428
     },
     {
-      "score": 17124,
+      "score": 15220,
       "maxTile": 1024,
-      "steps": 1009,
+      "steps": 899,
       "game": 79,
       "result": "lose",
-      "duration": 3136
+      "duration": 13250
     },
     {
-      "score": 12192,
-      "maxTile": 1024,
-      "steps": 728,
+      "score": 8180,
+      "maxTile": 512,
+      "steps": 572,
       "game": 80,
       "result": "lose",
-      "duration": 2344
+      "duration": 7207
     },
     {
-      "score": 16524,
+      "score": 14460,
       "maxTile": 1024,
-      "steps": 993,
+      "steps": 889,
       "game": 81,
       "result": "lose",
-      "duration": 3150
+      "duration": 7026
     },
     {
-      "score": 4180,
-      "maxTile": 256,
-      "steps": 352,
+      "score": 30268,
+      "maxTile": 2048,
+      "steps": 1500,
       "game": 82,
-      "result": "lose",
-      "duration": 1131
+      "result": "win",
+      "duration": 14955
     },
     {
-      "score": 15332,
-      "maxTile": 1024,
-      "steps": 906,
+      "score": 7724,
+      "maxTile": 512,
+      "steps": 538,
       "game": 83,
       "result": "lose",
-      "duration": 2879
+      "duration": 6079
     },
     {
-      "score": 14620,
+      "score": 12616,
       "maxTile": 1024,
-      "steps": 850,
+      "steps": 750,
       "game": 84,
       "result": "lose",
-      "duration": 2813
+      "duration": 5656
     },
     {
-      "score": 17004,
+      "score": 16588,
       "maxTile": 1024,
-      "steps": 983,
+      "steps": 989,
       "game": 85,
       "result": "lose",
-      "duration": 2942
+      "duration": 6834
     },
     {
-      "score": 14152,
+      "score": 12024,
       "maxTile": 1024,
-      "steps": 859,
+      "steps": 714,
       "game": 86,
       "result": "lose",
-      "duration": 2704
+      "duration": 4771
     },
     {
-      "score": 4784,
-      "maxTile": 256,
-      "steps": 371,
+      "score": 16452,
+      "maxTile": 1024,
+      "steps": 976,
       "game": 87,
       "result": "lose",
-      "duration": 1087
+      "duration": 6161
     },
     {
-      "score": 7672,
-      "maxTile": 512,
-      "steps": 533,
+      "score": 10204,
+      "maxTile": 1024,
+      "steps": 591,
       "game": 88,
       "result": "lose",
-      "duration": 1675
+      "duration": 4185
     },
     {
-      "score": 7176,
-      "maxTile": 512,
-      "steps": 494,
+      "score": 14324,
+      "maxTile": 1024,
+      "steps": 875,
       "game": 89,
       "result": "lose",
-      "duration": 1471
+      "duration": 6218
     },
     {
-      "score": 7588,
-      "maxTile": 512,
-      "steps": 531,
+      "score": 13568,
+      "maxTile": 1024,
+      "steps": 822,
       "game": 90,
       "result": "lose",
-      "duration": 1675
+      "duration": 5619
     },
     {
-      "score": 10868,
-      "maxTile": 1024,
-      "steps": 648,
+      "score": 7716,
+      "maxTile": 512,
+      "steps": 537,
       "game": 91,
       "result": "lose",
-      "duration": 2003
+      "duration": 3749
     },
     {
-      "score": 9508,
+      "score": 7592,
       "maxTile": 512,
-      "steps": 648,
+      "steps": 532,
       "game": 92,
       "result": "lose",
-      "duration": 2059
+      "duration": 3662
     },
     {
-      "score": 15324,
-      "maxTile": 1024,
-      "steps": 888,
+      "score": 8364,
+      "maxTile": 512,
+      "steps": 586,
       "game": 93,
       "result": "lose",
-      "duration": 2877
+      "duration": 3928
     },
     {
-      "score": 14984,
+      "score": 10592,
       "maxTile": 1024,
-      "steps": 893,
+      "steps": 628,
       "game": 94,
       "result": "lose",
-      "duration": 2682
+      "duration": 4188
     },
     {
-      "score": 7156,
+      "score": 7148,
       "maxTile": 512,
-      "steps": 500,
+      "steps": 499,
       "game": 95,
       "result": "lose",
-      "duration": 1610
+      "duration": 3988
     },
     {
-      "score": 7844,
-      "maxTile": 512,
-      "steps": 551,
+      "score": 17040,
+      "maxTile": 1024,
+      "steps": 1022,
       "game": 96,
       "result": "lose",
-      "duration": 1804
+      "duration": 6973
     },
     {
-      "score": 23652,
-      "maxTile": 2048,
-      "steps": 1235,
+      "score": 7776,
+      "maxTile": 512,
+      "steps": 535,
       "game": 97,
-      "result": "win",
-      "duration": 3853
+      "result": "lose",
+      "duration": 3717
     },
     {
-      "score": 16656,
-      "maxTile": 1024,
-      "steps": 986,
+      "score": 6592,
+      "maxTile": 512,
+      "steps": 449,
       "game": 98,
       "result": "lose",
-      "duration": 3004
+      "duration": 3224
     },
     {
-      "score": 13364,
-      "maxTile": 1024,
-      "steps": 821,
+      "score": 23140,
+      "maxTile": 2048,
+      "steps": 1174,
       "game": 99,
-      "result": "lose",
-      "duration": 2554
+      "result": "win",
+      "duration": 8439
     },
     {
-      "score": 14004,
+      "score": 16264,
       "maxTile": 1024,
-      "steps": 870,
+      "steps": 967,
       "game": 100,
       "result": "lose",
-      "duration": 2761
+      "duration": 6461
     }
   ]
 }
