@@ -530,9 +530,9 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
   <!-- ============ ENTRY ============ -->
   <div class="screen active" id="entry-screen">
-<div class="home-kicker">A quiet game of strategy</div>
+<div class="home-kicker" data-i18n="home.kicker">A quiet game of strategy</div>
 <div class="title-big">2048</div>
-<div class="subtitle">A classic puzzle, reimagined with smart play, personal themes, and a little more atmosphere.</div>
+<div class="subtitle" data-i18n="home.subtitle">A classic puzzle, reimagined with smart play, personal themes, and a little more atmosphere.</div>
 
         <!-- Feature tags -->
         <div class="home-features">
@@ -544,19 +544,19 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
 <div class="card-pick">
       <button class="pick" id="btn-user">
-        <span class="icon">👤</span>User Mode
-        <small>Save · Leaderboard · Resume</small>
+<span class="icon">👤</span><span data-i18n="mode.user.title">User Mode</span>
+<small data-i18n="mode.user.desc">Save · Leaderboard · Resume</small>
       </button>
       <button class="pick" id="btn-guest">
-        <span class="icon">🎮</span>Guest Mode
-        <small>Jump in · No saves · Free play</small>
+<span class="icon">🎮</span><span data-i18n="mode.guest.title">Guest Mode</span>
+<small data-i18n="mode.guest.desc">Jump in · No saves · Free play</small>
       </button>
     </div>
     <button class="pt-entry" id="btn-playtest" style="margin-top:18px">
         <span class="pt-icon">🤖</span>
         <span class="pt-text">
-          <strong>AI Auto Play Arena</strong>
-          <small>Training strategy · All AI auto-play records · Mode · User · Score · Max Tile · Time</small>
+<strong data-i18n="arena.title">AI Auto Play Arena</strong>
+<small data-i18n="arena.desc">Training strategy · All AI auto-play records · Mode · User · Score · Max Tile · Time</small>
         </span>
         <span class="pt-arrow">→</span>
       </button>
@@ -634,15 +634,15 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
   <div class="screen" id="auth-screen">
     <button class="back-btn" id="btn-auth-back">← Back</button>
     <div class="glass auth-box">
-      <div class="title-big" style="font-size:32px;text-align:center;margin-bottom:4px">User Mode</div>
-      <div class="subtitle" style="text-align:center;margin-bottom:16px">Log in or register</div>
-      <label for="auth-user">Username</label>
-      <input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" />
-      <label for="auth-pass">Password</label>
-      <input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" />
-      <div class="btn-row">
-        <button class="btn" id="btn-login">Login</button>
-        <button class="btn" id="btn-register">Register</button>
+<div class="title-big" data-i18n="auth.title" style="font-size:32px;text-align:center;margin-bottom:4px">User Mode</div>
+<div class="subtitle" data-i18n="auth.subtitle" style="text-align:center;margin-bottom:16px">Log in or register</div>
+<label for="auth-user" data-i18n="auth.username">Username</label>
+<input id="auth-user" type="text" autocomplete="username" placeholder="Enter username" data-i18n-placeholder="auth.usernamePlaceholder" />
+<label for="auth-pass" data-i18n="auth.password">Password</label>
+<input id="auth-pass" type="password" autocomplete="current-password" placeholder="Enter password" data-i18n-placeholder="auth.passwordPlaceholder" />
+<div class="btn-row">
+<button class="btn" id="btn-login" data-i18n="auth.login">Login</button>
+<button class="btn" id="btn-register" data-i18n="auth.register">Register</button>
       </div>
       <div class="status-msg" id="auth-status"></div>
     </div>
@@ -652,29 +652,29 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
   <div class="screen" id="settings-screen">
     <button class="back-btn" id="btn-settings-back">← Back</button>
     <div class="glass" style="width:100%;max-width:480px">
-      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">Game Settings</div>
-      <div class="subtitle" style="text-align:center;margin-bottom:20px">Configure your board</div>
-      <div class="settings-grid">
-        <div class="setting-group">
-          <label>Grid Size</label>
-          <select id="sel-grid">
-            <option value="4">4 × 4  (Classic)</option>
-            <option value="6">6 × 6  (Extended)</option>
-            <option value="8">8 × 8  (Mega)</option>
-          </select>
-        </div>
-        <div class="setting-group">
-          <label>Timer Mode</label>
-          <select id="sel-timer">
-            <option value="up">⏱ Count Up (Stopwatch)</option>
-            <option value="down-60">⏳ Count Down 60s</option>
-            <option value="down-120">⏳ Count Down 2 min</option>
-            <option value="down-300">⏳ Count Down 5 min</option>
-          </select>
+<div class="title-big" data-i18n="settings.title" style="font-size:28px;text-align:center;margin-bottom:4px">Game Settings</div>
+<div class="subtitle" data-i18n="settings.subtitle" style="text-align:center;margin-bottom:20px">Configure your board</div>
+<div class="settings-grid">
+<div class="setting-group">
+<label data-i18n="settings.grid">Grid Size</label>
+<select id="sel-grid">
+<option value="4" data-i18n="settings.grid4">4 × 4  (Classic)</option>
+<option value="6" data-i18n="settings.grid6">6 × 6  (Extended)</option>
+<option value="8" data-i18n="settings.grid8">8 × 8  (Mega)</option>
+</select>
+</div>
+<div class="setting-group">
+<label data-i18n="settings.timer">Timer Mode</label>
+<select id="sel-timer">
+<option value="up" data-i18n="settings.timerUp">⏱ Count Up (Stopwatch)</option>
+<option value="down-60" data-i18n="settings.timer60">⏳ Count Down 60s</option>
+<option value="down-120" data-i18n="settings.timer120">⏳ Count Down 2 min</option>
+<option value="down-300" data-i18n="settings.timer300">⏳ Count Down 5 min</option>
+</select>
         </div>
       </div>
       <div class="btn-row" style="margin-top:24px">
-        <button class="btn" id="btn-start-game" style="padding:14px;font-size:16px">Start Game →</button>
+        <button class="btn" id="btn-start-game" data-i18n="settings.start" style="padding:14px;font-size:16px">Start Game →</button>
       </div>
     </div>
   </div>
@@ -776,11 +776,11 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       </section>
     </div>
     <nav class="sides" aria-label="Game controls">
-      <button class="btn" id="b-undo">↩ Undo</button>
-      <button class="btn" id="b-replay" title="Replay this game">▶ Replay</button>
-      <button class="btn" id="b-restart">↺ Restart</button>
-      <button class="btn utility-trigger" id="b-tools" aria-label="Open practice tools">✦ Practice</button>
-      <button class="btn utility-trigger" id="b-game-menu" aria-label="Open save, load, and leaderboard options">☰ More</button>
+<button class="btn" id="b-undo" data-i18n="game.undo">↩ Undo</button>
+<button class="btn" id="b-replay" title="Replay this game" data-i18n="game.replay">▶ Replay</button>
+<button class="btn" id="b-restart" data-i18n="game.restart">↺ Restart</button>
+<button class="btn utility-trigger" id="b-tools" aria-label="Open practice tools" data-i18n="game.practice">✦ Practice</button>
+<button class="btn utility-trigger" id="b-game-menu" aria-label="Open save, load, and leaderboard options" data-i18n="game.more">☰ More</button>
     </nav>
     <div class="arrows">
       <button class="btn" id="b-up">↑</button>
@@ -4078,6 +4078,8 @@ function initTheme(){
 const I18N={
   en:{
     'app.subtitle':'Choose how you want to play',
+'home.kicker':'A quiet game of strategy',
+'home.subtitle':'A classic puzzle, reimagined with smart play, personal themes, and a little more atmosphere.',
     'mode.user.title':'User Mode',
     'mode.user.desc':'Save · Leaderboard · Resume',
     'mode.guest.title':'Guest Mode',
@@ -4108,12 +4110,26 @@ const I18N={
     'settings.grid':'Grid Size',
     'settings.timer':'Timer Mode',
     'settings.start':'Start Game →',
+'settings.grid4':'4 × 4  (Classic)',
+'settings.grid6':'6 × 6  (Extended)',
+'settings.grid8':'8 × 8  (Mega)',
+'settings.timerUp':'⏱ Count Up (Stopwatch)',
+'settings.timer60':'⏳ Count Down 60s',
+'settings.timer120':'⏳ Count Down 2 min',
+'settings.timer300':'⏳ Count Down 5 min',
+'game.undo':'↩ Undo',
+'game.replay':'▶ Replay',
+'game.restart':'↺ Restart',
+'game.practice':'✦ Practice',
+'game.more':'☰ More',
     'auth.title':'User Mode',
     'auth.subtitle':'Log in or register',
     'auth.username':'Username',
     'auth.password':'Password',
     'auth.login':'Login',
     'auth.register':'Register',
+'auth.usernamePlaceholder':'Enter username',
+'auth.passwordPlaceholder':'Enter password',
     'strategy.title':'🧠 Training Strategy',
     'strategy.heading':'Architecture & Training Pipeline',
     'strategy.intro':'The AI uses a 4-layer MLP value network (256 → 96 → 48 → 16 → 1) that estimates board state quality through self-play reinforcement learning.',
@@ -4160,6 +4176,8 @@ const I18N={
 },
   zh:{
     'app.subtitle':'选择你想要的游戏模式',
+'home.kicker':'一场安静的策略游戏',
+'home.subtitle':'经典的数字谜题，融入智能对弈、个性主题和更具氛围感的体验。',
     'mode.user.title':'用户模式',
     'mode.user.desc':'存档 · 排行榜 · 继续游戏',
     'mode.guest.title':'游客模式',
@@ -4190,12 +4208,26 @@ const I18N={
     'settings.grid':'网格大小',
     'settings.timer':'计时模式',
     'settings.start':'开始游戏 →',
+'settings.grid4':'4 × 4（经典）',
+'settings.grid6':'6 × 6（扩展）',
+'settings.grid8':'8 × 8（大型）',
+'settings.timerUp':'⏱ 正向计时（秒表）',
+'settings.timer60':'⏳ 60 秒倒计时',
+'settings.timer120':'⏳ 2 分钟倒计时',
+'settings.timer300':'⏳ 5 分钟倒计时',
+'game.undo':'↩ 撤销',
+'game.replay':'▶ 回放',
+'game.restart':'↺ 重新开始',
+'game.practice':'✦ 练习',
+'game.more':'☰ 更多',
     'auth.title':'用户模式',
     'auth.subtitle':'登录或注册',
     'auth.username':'用户名',
     'auth.password':'密码',
     'auth.login':'登录',
     'auth.register':'注册',
+'auth.usernamePlaceholder':'请输入用户名',
+'auth.passwordPlaceholder':'请输入密码',
     'strategy.title':'🧠 训练策略',
     'strategy.heading':'架构与训练流程',
     'strategy.intro':'AI 使用一个 4 层 MLP 价值网络 (256 → 96 → 48 → 16 → 1)，通过自对弈强化学习来评估棋盘状态质量。',
@@ -4214,7 +4246,15 @@ const I18N={
 'records.count':'条记录',
 'records.empty1':'暂无 AI 自动对战记录。在游客/用户模式使用 🤖 AI 自动对战或批量测试来记录结果。',
 'records.empty2':'暂无记录 — 开始一局 AI 自动对战即可在此查看结果。',
-    'arena.title.static':'🤖 AI 自动对战竞技场',
+'records.th.time':'时间',
+'records.th.mode':'模式',
+'records.th.user':'用户',
+'records.th.score':'分数',
+'records.th.steps':'步数',
+'records.th.maxtile':'最大方块',
+'records.th.duration':'时长',
+'records.th.ver':'版本',
+'arena.title.static':'🤖 AI 自动对战竞技场',
     'arena.subtitle':'训练策略与完整自动对战记录',
     'arena.strategyToggle':'训练策略',
     'arena.architecture':'架构与训练流程',
@@ -4270,6 +4310,10 @@ document.querySelectorAll('[data-i18n]').forEach(function(el){
 const key=el.getAttribute('data-i18n');
 const val=t(key);
 if(val&&val!==key){el.innerHTML=val}
+});
+document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+const val=t(el.getAttribute('data-i18n-placeholder'));
+if(val){el.placeholder=val}
 });
 }
 function initLang(){
