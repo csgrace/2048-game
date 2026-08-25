@@ -231,6 +231,22 @@ box-sizing:border-box;
   .ai-entry .ai-arrow{display:none}
 }
 
+/* Home features strip */
+.home-features{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:680px;margin:24px auto 0}
+.feature-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:center;transition:all .2s}
+.feature-item:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+.feature-icon{font-size:24px}
+.feature-text{font-size:11px;color:rgba(255,255,255,.6);font-weight:600}
+@media(max-width:520px){
+  .home-features{grid-template-columns:repeat(2,1fr);max-width:460px}
+}
+@media(max-width:400px){
+  .home-features{grid-template-columns:repeat(2,1fr);gap:8px}
+  .feature-item{padding:10px 6px}
+  .feature-icon{font-size:20px}
+  .feature-text{font-size:10px}
+}
+
 /* ================================================================== AI Auto Play Arena */
 #stat-ai{display:none}
 
@@ -242,7 +258,11 @@ box-sizing:border-box;
 .arena-section-toggle{display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;border-radius:12px;background:rgba(147,112,219,.08);border:1px solid rgba(147,112,219,.2);color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s}
 .arena-section-toggle:hover{background:rgba(147,112,219,.15);border-color:rgba(147,112,219,.35)}
 .arena-arrow{margin-left:auto;font-size:12px;opacity:.6}
-.arena-section-body{margin-top:10px;padding:18px 20px;border-radius:14px;background:rgba(0,0,0,.2);border:1px solid rgba(147,112,219,.15);font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.75}
+.arena-section-body{margin-top:10px;padding:18px 20px;border-radius:14px;background:rgba(0,0,0,.2);border:1px solid rgba(147,112,219,.15);font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.75;max-height:360px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(147,112,219,.4) rgba(0,0,0,.2)}
+.arena-section-body::-webkit-scrollbar{width:6px}
+.arena-section-body::-webkit-scrollbar-track{background:rgba(0,0,0,.2);border-radius:3px}
+.arena-section-body::-webkit-scrollbar-thumb{background:rgba(147,112,219,.4);border-radius:3px}
+.arena-section-body::-webkit-scrollbar-thumb:hover{background:rgba(147,112,219,.6)}
 .arena-section-body p{margin:0 0 10px}
 .arena-section-body p:last-child{margin-bottom:0}
 .arena-section-body code{background:rgba(147,112,219,.15);color:#c4b5fd;padding:1px 6px;border-radius:4px;font-size:11.5px}
@@ -260,6 +280,11 @@ box-sizing:border-box;
 .pt-stat-value.lose{color:#f87171}
 
 /* Records table */
+.records-scroll{scrollbar-width:thin;scrollbar-color:rgba(20,184,166,.4) rgba(0,0,0,.2)}
+.records-scroll::-webkit-scrollbar{width:6px}
+.records-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,.2);border-radius:3px}
+.records-scroll::-webkit-scrollbar-thumb{background:rgba(20,184,166,.4);border-radius:3px}
+.records-scroll::-webkit-scrollbar-thumb:hover{background:rgba(20,184,166,.6)}
 #playtest-records th,#playtest-records td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.05);text-align:left}
 #playtest-records tbody tr:hover{background:rgba(20,184,166,.06)}
 #playtest-records tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
@@ -482,6 +507,26 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         </span>
         <span class="pt-arrow">→</span>
       </button>
+
+      <!-- Featured highlights -->
+      <div class="home-features">
+        <div class="feature-item">
+          <span class="feature-icon">🏆</span>
+          <span class="feature-text">Global leaderboard</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🧠</span>
+          <span class="feature-text">Self-play trained AI</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">💾</span>
+          <span class="feature-text">Save &amp; resume games</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🎨</span>
+          <span class="feature-text">12 album-inspired themes</span>
+        </div>
+      </div>
   </div>
 
   <!-- ============ AI AUTO PLAY ARENA ============ -->
@@ -529,7 +574,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
           <!-- version stats summary -->
         </div>
-        <div style="overflow-x:auto;max-height:360px;overflow-y:auto">
+        <div class="records-scroll" style="overflow-x:auto;max-height:400px;overflow-y:auto">
           <table id="playtest-records" style="width:100%;border-collapse:collapse;font-size:11.5px">
             <thead style="position:sticky;top:0;background:rgba(20,20,36,.95);z-index:1">
               <tr style="color:rgba(255,255,255,.5);text-align:left">
