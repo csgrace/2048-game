@@ -84,13 +84,14 @@ body::before{
 .subtitle{font-family:var(--theme-ui);font-size:16px;color:rgba(255,255,255,.7);margin:8px 0 32px}
 
 .card-pick{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
-#entry-screen .card-pick{width:100%;max-width:680px}
+#entry-screen .card-pick{width:100%;max-width:680px;margin:0 auto}
 .pick{
 width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
   background:rgba(143,122,102,.2);backdrop-filter:blur(10px);
   color:#fff;border-radius:var(--radius);cursor:pointer;
   border:1px solid rgba(255,255,255,.12);font-size:18px;font-weight:700;
   transition:all .25s ease;
+  box-sizing:border-box;
 }
 .pick .icon{font-size:40px;display:block;margin-bottom:8px}.pick{font-family:var(--theme-display)}
 .pick small{font-family:var(--theme-ui);display:block;font-weight:400;opacity:.75;font-size:13px;margin-top:6px}
@@ -114,12 +115,13 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
 @media(max-width:440px){.theme-picker{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,40px);gap:6px}.theme-choice{height:40px;padding:5px;font-size:8.5px}.title-big{letter-spacing:2px}}
 
 .ai-entry{
-  display:flex;align-items:center;gap:14px;width:100%;max-width:450px;
-  margin:18px auto 0;padding:16px 22px;text-align:left;
+  display:flex;align-items:center;gap:14px;width:100%;max-width:680px;
+  margin:18px auto 0;padding:18px 24px;text-align:left;
   background:linear-gradient(135deg,rgba(106,90,205,.25),rgba(72,61,139,.2));
   backdrop-filter:blur(10px);color:#fff;border-radius:var(--radius);
   cursor:pointer;border:1px solid rgba(147,112,219,.3);
   transition:all .25s ease;
+  box-sizing:border-box;
 }
 .ai-entry:hover{background:linear-gradient(135deg,rgba(106,90,205,.4),rgba(72,61,139,.35));transform:translateY(-3px);box-shadow:0 8px 28px rgba(106,90,205,.25)}
 .ai-entry .ai-icon{font-size:32px;flex-shrink:0}
@@ -203,12 +205,13 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
 
 /* playtest entry on entry-screen (same style as ai-entry but teal) */
 .pt-entry{
-display:flex;align-items:center;gap:14px;width:100%;max-width:450px;
-margin:10px auto 0;padding:16px 22px;text-align:left;
+display:flex;align-items:center;gap:14px;width:100%;max-width:680px;
+margin:18px auto 0;padding:18px 24px;text-align:left;
 background:linear-gradient(135deg,rgba(20,184,166,.22),rgba(15,118,110,.18));
 backdrop-filter:blur(10px);color:#fff;border-radius:var(--radius);
 cursor:pointer;border:1px solid rgba(20,184,166,.3);
 transition:all .25s ease;
+box-sizing:border-box;
 }
 .pt-entry:hover{background:linear-gradient(135deg,rgba(20,184,166,.38),rgba(15,118,110,.32));transform:translateY(-3px);box-shadow:0 8px 28px rgba(20,184,166,.2)}
 .pt-entry .pt-icon{font-size:32px;flex-shrink:0}
@@ -216,18 +219,38 @@ transition:all .25s ease;
 .pt-entry .pt-text small{font-family:var(--theme-ui);font-size:12.5px;opacity:.72;line-height:1.4}
 .pt-entry .pt-arrow{margin-left:auto;font-size:22px;opacity:.6}
 @media(max-width:400px){
-.pt-entry{padding:10px 14px;font-size:14px}
+.pt-entry{padding:12px 16px;font-size:14px}
 .pt-entry .pt-icon{font-size:26px}
 .pt-entry .pt-text strong{font-size:15px}
 .pt-entry .pt-arrow{display:none}
+}
+@media(max-width:400px){
+  .ai-entry{padding:12px 16px;font-size:14px}
+  .ai-entry .ai-icon{font-size:26px}
+  .ai-entry .ai-text strong{font-size:15px}
+  .ai-entry .ai-arrow{display:none}
 }
 
 /* ================================================================== AI Auto Play Arena */
 #stat-ai{display:none}
 
-/* Strategy toggle */
-#pt-strategy-toggle:hover{background:rgba(147,112,219,.15)!important;border-color:rgba(147,112,219,.35)!important}
-#pt-strategy-details code{background:rgba(147,112,219,.15)!important;color:#c4b5fd!important}
+/* Arena glass card */
+.arena-glass{width:100%;max-width:960px;padding:28px 28px 32px;box-sizing:border-box;overflow:hidden}
+
+/* Arena section */
+.arena-section{margin-bottom:0}
+.arena-section-toggle{display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;border-radius:12px;background:rgba(147,112,219,.08);border:1px solid rgba(147,112,219,.2);color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s}
+.arena-section-toggle:hover{background:rgba(147,112,219,.15);border-color:rgba(147,112,219,.35)}
+.arena-arrow{margin-left:auto;font-size:12px;opacity:.6}
+.arena-section-body{margin-top:10px;padding:18px 20px;border-radius:14px;background:rgba(0,0,0,.2);border:1px solid rgba(147,112,219,.15);font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.75}
+.arena-section-body p{margin:0 0 10px}
+.arena-section-body p:last-child{margin-bottom:0}
+.arena-section-body code{background:rgba(147,112,219,.15);color:#c4b5fd;padding:1px 6px;border-radius:4px;font-size:11.5px}
+.arena-section-title{font-weight:700;color:#a78bfa;margin-bottom:10px;font-size:14px}
+.arena-subtitle{font-weight:600;color:rgba(255,255,255,.8);margin:12px 0 6px;font-size:12.5px}
+.arena-list{margin:6px 0;padding-left:22px}
+.arena-list li{margin-bottom:6px}
+.arena-note{margin-top:14px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.12);font-size:11.5px;color:rgba(255,255,255,.5)}
 
 /* Stats summary cards */
 .pt-stat-card{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.15);display:flex;flex-direction:column;gap:2px}
@@ -425,8 +448,9 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
   .stat{font-size:11px;min-width:68px;padding:5px 8px}
-  .pick{width:170px;font-size:16px}
-.ai-entry{padding:12px 16px;max-width:340px}
+  .pick{width:100%;min-width:0;font-size:16px}
+  .ai-entry{padding:12px 16px;max-width:340px}
+  .pt-entry{padding:12px 16px;max-width:340px}
   .sides .btn{min-width:60px;font-size:12px;padding:7px 6px}
 }
 </style>
@@ -460,142 +484,63 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       </button>
   </div>
 
-  <!-- ============ PLAYTEST ARENA ============ -->
+  <!-- ============ AI AUTO PLAY ARENA ============ -->
   <div class="screen" id="playtest-screen">
     <button class="back-btn" id="btn-playtest-back">← Back</button>
-    <div class="glass" style="width:100%;max-width:1100px;padding:22px 20px 26px;box-sizing:border-box;overflow:hidden">
-      <div class="title-big" style="font-size:26px;text-align:center;margin-bottom:2px">🤖 AI Auto Play Arena</div>
-      <div class="subtitle" style="text-align:center;margin-bottom:18px;font-size:13px">Training strategy · Batch auto-play · Complete auto-play records</div>
-
-      <!-- Weight info bar -->
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.18);margin-bottom:14px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span id="pt-weight-badge" style="font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px;background:rgba(255,209,102,.15);color:#ffd166">v42</span>
-          <div>
-            <div style="font-size:12px;color:rgba(255,255,255,.8)" id="pt-weight-summary">MLP 256→96→48→16→1 · 42 games trained</div>
-            <div style="font-size:10.5px;color:rgba(255,255,255,.4);margin-top:1px" id="pt-weight-extra">Best tile: 4096 · Avg score: 20587</div>
-          </div>
-        </div>
-        <button class="btn-sm-ghost" id="pt-toggle-details">Details ▾</button>
-      </div>
-
-      <!-- Weight details (collapsible) -->
-      <div id="pt-weight-details" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);font-size:11.5px;color:rgba(255,255,255,.6);line-height:1.7">
-        <div style="font-weight:600;color:#14b8a6;margin-bottom:4px;font-size:12.5px">Weight parameters (what gets trained)</div>
-        The weights are a <b style="color:rgba(255,255,255,.85)">4-layer MLP value network</b> that estimates how good a board state is:
-        <table style="width:100%;margin:6px 0 2px;border-collapse:collapse;font-size:11px">
-          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Input</td><td style="padding:3px 0">4×4 grid × 16 channels (one-hot log₂ values) = <b>256</b></td></tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 1 (l1W/l1b)</td><td style="padding:3px 0">256 → <b>96</b> (He init)</td></tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 2 (l2W/l2b)</td><td style="padding:3px 0">96 → <b>48</b></td></tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.06)"><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 3 (l3W/l3b)</td><td style="padding:3px 0">48 → <b>16</b></td></tr>
-          <tr><td style="padding:3px 8px 3px 0;color:#14b8a6">Layer 4 (l4W/l4b)</td><td style="padding:3px 0">16 → <b>1</b> state value (Xavier init)</td></tr>
-        </table>
-        Plus <b style="color:rgba(255,255,255,.85)">adam_t</b> (Adam optimizer timestep).<br>
-        <span style="font-size:10.5px;color:rgba(255,255,255,.4)">Training = self-play games + TD(λ) updates to all W/b matrices. Higher version = more games = stronger AI.</span>
-      </div>
+    <div class="glass arena-glass">
+      <div class="title-big" style="font-size:28px;text-align:center;margin-bottom:4px">🤖 AI Auto Play Arena</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:24px;font-size:13px">Training Strategy &amp; Complete Auto-Play Records</div>
 
       <!-- Training Strategy (collapsible) -->
-      <div style="margin-bottom:14px">
-        <button id="pt-strategy-toggle" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border-radius:10px;background:rgba(147,112,219,.08);border:1px solid rgba(147,112,219,.2);color:#a78bfa;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s">
-          <span>🧠</span><span>Training Strategy</span><span id="pt-strategy-arrow" style="margin-left:auto;font-size:12px;opacity:.6">▾</span>
+      <div class="arena-section">
+        <button id="pt-strategy-toggle" class="arena-section-toggle">
+          <span>🧠</span><span>Training Strategy</span><span id="pt-strategy-arrow" class="arena-arrow">▾</span>
         </button>
-        <div id="pt-strategy-details" style="display:none;margin-top:8px;padding:14px 16px;border-radius:12px;background:rgba(0,0,0,.2);border:1px solid rgba(147,112,219,.15);font-size:12px;color:rgba(255,255,255,.65);line-height:1.7">
-          <div style="font-weight:600;color:#a78bfa;margin-bottom:6px;font-size:13px">Architecture &amp; Training Pipeline</div>
-          The AI uses a <b style="color:rgba(255,255,255,.85)">4-layer MLP value network</b> (256→96→48→16→1) that estimates board state quality.<br>
-          <b style="color:rgba(255,255,255,.85)">Board encoding</b>: one-hot log₂ values, 16 channels × 4×4 grid = 256 inputs.<br><br>
-          <b>Self-play TD(λ) Training:</b>
-          <ol style="margin:4px 0 4px;padding-left:20px">
-            <li><strong>Teacher Search</strong> — Deterministic Expectimax labels moves; chance nodes model tile spawns (2 at 90%, 4 at 10%)</li>
-            <li><strong>Policy-Value Training</strong> — PyTorch model learns 4 move logits + normalized value, with Huber loss, gradient clipping, decaying LR</li>
-            <li><strong>Unified Scale</strong> — Value target is <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px">tanh(heuristic / 800)</code>; same bounded interpretation in-browser</li>
-            <li><strong>Fixed-seed Checkpoints</strong> — Every epoch tested against 50 fixed seeds; only the best becomes the deployed weights</li>
-            <li><strong>Auto Deploy</strong> — Actions commits validated weights so page refreshes load the latest model</li>
+        <div id="pt-strategy-details" style="display:none" class="arena-section-body">
+          <div class="arena-section-title">Architecture &amp; Training Pipeline</div>
+
+          <p>The AI uses a <b>4-layer MLP value network</b> (256 → 96 → 48 → 16 → 1) that estimates board state quality through self-play reinforcement learning.</p>
+
+          <div class="arena-subtitle">Board Encoding</div>
+          <p>Each 4×4 grid cell is encoded as a 16-dimensional one-hot vector based on log₂(tile value), producing 256 input features that capture the full board state.</p>
+
+          <div class="arena-subtitle">Training Algorithm — Self-Play TD(λ)</div>
+          <ol class="arena-list">
+            <li><strong>Teacher Search:</strong> A deterministic Expectimax algorithm (depth 3–4) with chance nodes models tile spawns (2 at 90%, 4 at 10%) to generate move labels for training data.</li>
+            <li><strong>Policy-Value Network Training:</strong> A PyTorch model learns both a policy head (4 move logits) and a value head (normalized state value). Uses Huber loss, gradient clipping (max norm 1.0), and a decaying learning rate schedule.</li>
+            <li><strong>Unified Value Scaling:</strong> The value target is <code>tanh(heuristic_score / 800)</code>, providing a bounded [−1, 1] interpretation that works consistently across training and in-browser inference.</li>
+            <li><strong>Expected Tile API:</strong> The trained MLP serves as the evaluation function for the browser-based AI, which uses a depth-3 Expectimax search with the MLP replacing the handcrafted heuristic for move selection.</li>
+            <li><strong>Fixed-Seed Validation:</strong> Every epoch is tested against 50 fixed random seeds; only the best-performing checkpoint becomes the deployed weights, ensuring consistent improvement.</li>
           </ol>
-          All AI auto-play games (from Guest mode, User mode, or batch tests) are recorded below with mode, player, steps, score, max tile, and time.
+
+          <div class="arena-subtitle">Inference in Browser</div>
+          <p>During auto-play, the JavaScript engine runs Expectimax search (depth 2–3) using the deserialized MLP weights. At each leaf node, the board is evaluated by the neural network to score positions, enabling the AI to reach 2048+ tiles consistently.</p>
+
+          <div class="arena-note">All AI auto-play games — from Guest mode, User mode — are recorded below with mode, player, steps, score, max tile, and time.</div>
         </div>
       </div>
-
-      <!-- Controls row -->
-      <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
-        <label style="font-size:12px;color:rgba(255,255,255,.5)">Games</label>
-        <select id="playtest-batch-count" style="padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:13px">
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="20" selected>20</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-        <button class="btn-arena-start" id="playtest-batch-start">▶ Start Cloud Test</button>
-        <button class="btn-arena-stop" id="playtest-batch-stop" style="display:none">⏹ Stop</button>
-        <span style="font-size:11px;color:rgba(255,255,255,.3);margin-left:4px">⏱ max 6h · commits every 5 games</span>
-      </div>
-
-      <!-- Backend status mini panel (Playtest Arena) -->
-      <div id="pt-backend-status" style="margin-bottom:8px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.15)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:12px;font-weight:600;color:#14b8a6">🖥️ Backend Monitor</span>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span id="pt-backend-badge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.12);color:#6bcb77;font-weight:600">IDLE</span>
-            <button id="btn-refresh-pt-backend" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(20,184,166,.3);background:rgba(20,184,166,.08);color:#14b8a6;cursor:pointer;transition:all .2s" title="Refresh backend status">🔄 Refresh</button>
-          </div>
-        </div>
-        <div id="pt-backend-detail" style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6">Waiting for backend status...</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="pt-backend-tags">
-          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Version —</span>
-          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Round —/—</span>
-          <span style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.2);color:rgba(255,255,255,.5)">Win rate —%</span>
-        </div>
-      </div>
-
-      <!-- Status / log panel -->
-      <div id="playtest-cloud-status" style="margin-bottom:8px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;white-space:pre-wrap">Idle — click "Start Cloud Test" to dispatch the AI playtest workflow on GitHub Actions.</div>
-
-      <!-- Progress bar -->
-      <div id="playtest-batch-progress" style="display:none;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px">
-          <span id="playtest-batch-info" style="color:rgba(255,255,255,.6)">Preparing...</span>
-          <span id="playtest-batch-rate" style="color:#6bcb77;font-weight:600"></span>
-        </div>
-        <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden">
-          <div id="playtest-batch-bar" style="height:100%;background:linear-gradient(90deg,#14b8a6,#6bcb77);width:0%;transition:width .3s"></div>
-        </div>
-      </div>
-
-      <!-- Per-game results table -->
-      <div id="pt-game-results" style="display:none;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:11px;color:rgba(255,255,255,.45)">Game Results</span>
-          <span id="pt-summary-badge" style="font-size:10.5px;padding:2px 8px;border-radius:10px;background:rgba(20,184,166,.12);color:#14b8a6;font-weight:600"></span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;min-width:0" id="pt-game-list">
-          <!-- JS dynamic fill -->
-        </div>
-      </div>
-
-      <!-- Inline log -->
-      <div id="playtest-batch-log" style="display:none;margin-top:8px;font-size:11px;color:rgba(255,255,255,.4);max-height:60px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
 
       <!-- AI Auto Play Records (all-time) -->
-      <div id="pt-auto-play-records" style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:14px;font-weight:700;color:#14b8a6">📋 AI Auto Play Records</span>
+      <div id="pt-auto-play-records" class="arena-section" style="margin-top:24px;border-top:1px solid rgba(255,255,255,.08);padding-top:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:15px;font-weight:700;color:#14b8a6">📋 AI Auto Play Records</span>
           <span style="font-size:10.5px;color:rgba(255,255,255,.35)" id="pt-records-count">0 records</span>
         </div>
-        <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
           <!-- version stats summary -->
         </div>
-        <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
+        <div style="overflow-x:auto;max-height:360px;overflow-y:auto">
           <table id="playtest-records" style="width:100%;border-collapse:collapse;font-size:11.5px">
             <thead style="position:sticky;top:0;background:rgba(20,20,36,.95);z-index:1">
               <tr style="color:rgba(255,255,255,.5);text-align:left">
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Time</th>
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Mode</th>
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">User</th>
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Score</th>
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Steps</th>
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Max Tile</th>
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Duration</th>
-                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Ver</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Time</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Mode</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">User</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Score</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Steps</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Max Tile</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Duration</th>
+                <th style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Ver</th>
               </tr>
             </thead>
             <tbody id="playtest-records-body">
