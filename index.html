@@ -248,7 +248,7 @@ box-sizing:border-box;
 #entry-screen::after{width:350px;height:350px;right:calc(50% - 490px);bottom:2%;background:radial-gradient(circle,rgba(var(--bg-star-secondary),.15),transparent 68%)}
 .home-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;padding:7px 12px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(255,255,255,.07);box-shadow:inset 0 1px rgba(255,255,255,.1);color:rgba(255,255,255,.82);font-size:10px;font-weight:700;letter-spacing:1.35px;text-transform:uppercase}.home-kicker::before{content:'';width:7px;height:7px;border-radius:50%;background:#ffd166;box-shadow:0 0 12px #ffd166}
 #entry-screen .title-big{line-height:.92;font-size:clamp(62px,12vw,92px);letter-spacing:-2px;text-shadow:0 5px 30px var(--c-glow),0 1px 0 rgba(255,255,255,.25)}
-#entry-screen .subtitle{max-width:430px;margin:15px auto 25px;color:rgba(255,255,255,.7);font-size:15px;line-height:1.6;text-align:center}
+#entry-screen .subtitle{max-width:760px;margin:15px auto 25px;color:rgba(255,255,255,.7);font-size:15px;line-height:1.6;text-align:center;white-space:nowrap}
 #entry-screen .card-pick{position:relative;max-width:720px;gap:14px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:rgba(8,10,28,.13);box-shadow:0 20px 50px rgba(0,0,0,.12),inset 0 1px rgba(255,255,255,.08)}
 #entry-screen .pick{position:relative;min-height:156px;padding:25px 18px 21px;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.06));border-color:rgba(255,255,255,.19);box-shadow:inset 0 1px rgba(255,255,255,.13)}
 #entry-screen .pick::after{content:'';position:absolute;width:120px;height:120px;right:-40px;bottom:-52px;border-radius:28px;transform:rotate(25deg);background:linear-gradient(135deg,var(--c-glow),transparent);opacity:.65}
@@ -260,7 +260,7 @@ box-sizing:border-box;
 #entry-screen .feature-tag{padding:6px 11px;background:rgba(8,10,28,.15);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.68)}
 #entry-screen .pt-entry{margin-top:14px!important;max-width:720px;padding:15px 20px;background:linear-gradient(105deg,rgba(70,59,149,.38),rgba(20,184,166,.17));border-color:rgba(160,142,255,.3);box-shadow:0 12px 30px rgba(0,0,0,.12)}
 #entry-screen .pt-entry:hover{border-color:rgba(190,180,255,.6);box-shadow:0 14px 34px rgba(20,184,166,.16),0 0 0 1px rgba(255,255,255,.12)}
-@media(max-width:680px){#entry-screen{justify-content:flex-start;padding-top:64px;min-height:100vh}#entry-screen .card-pick{max-width:460px;padding:7px}#entry-screen .pick{min-height:140px}#entry-screen::before{left:-230px;top:0}#entry-screen::after{right:-210px;bottom:12%}}
+@media(max-width:680px){#entry-screen{justify-content:flex-start;padding-top:64px;min-height:100vh}#entry-screen .card-pick{max-width:460px;padding:7px}#entry-screen .pick{min-height:140px}#entry-screen .subtitle{max-width:430px;white-space:normal}#entry-screen::before{left:-230px;top:0}#entry-screen::after{right:-210px;bottom:12%}}
 @media(max-width:440px){#entry-screen .title-big{font-size:68px}#entry-screen .card-pick{gap:8px}.home-kicker{font-size:9px;letter-spacing:1px}}
 
 /* ================================================================== AI Auto Play Arena */
@@ -406,7 +406,7 @@ box-sizing:border-box;
 .merge-spark{position:absolute;z-index:6;pointer-events:none;width:11px;height:11px;background:var(--c-accent-h);box-shadow:0 0 12px var(--c-glow);animation:mergeSpark .9s cubic-bezier(.15,.7,.3,1) forwards}.merge-spark.heart{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}.merge-spark.heart::before,.merge-spark.heart::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:inherit}.merge-spark.heart::before{left:-4px}.merge-spark.heart::after{top:-4px}.merge-spark.star{clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%)}.merge-spark.paper{width:11px;height:7px;border-radius:1px;transform:skewX(-18deg)}.merge-spark.wave{width:13px;height:6px;border:2px solid var(--c-accent-h);border-top:0;background:transparent;border-radius:0 0 12px 12px}.merge-spark.glitch{width:13px;height:3px;border-radius:0}.merge-spark.leaf{width:8px;height:13px;border-radius:100% 0 100% 0;transform:rotate(35deg)}@keyframes mergeSpark{from{opacity:1;translate:0 0;scale:1;rotate:var(--spark-rotate)}to{opacity:0;translate:var(--spark-x) var(--spark-y);scale:.2;rotate:calc(var(--spark-rotate) + 120deg)}}
 
 .sides{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-.sides .btn{min-width:76px;padding:8px 11px;font-size:13px}
+.sides .btn{min-width:76px;padding:8px 11px;font-size:13px}#b-restart{min-width:108px}
 .sides .utility-trigger{min-width:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.13)}
 .sides .utility-trigger:hover{background:rgba(255,255,255,.22)}
 
@@ -842,9 +842,9 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
     <div class="lb-grid">
       <!-- Global leaderboard -->
       <div class="lb-panel">
-        <h3 class="lb-section-title">All Players · Top 5</h3>
-        <table class="lb-table">
-          <thead><tr><th>#</th><th>Player</th><th>Max Tile</th><th>Score</th><th>Time</th></tr></thead>
+<h3 class="lb-section-title" data-i18n="lb.global">All Players · Top 5</h3>
+<table class="lb-table">
+<thead><tr><th>#</th><th data-i18n="lb.player">Player</th><th data-i18n="lb.maxTile">Max Tile</th><th data-i18n="lb.score">Score</th><th data-i18n="lb.time">Time</th></tr></thead>
         </table>
         <div class="lb-scroll">
           <table class="lb-table">
@@ -854,10 +854,10 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       </div>
       <!-- Personal history -->
       <div class="lb-panel">
-        <h3 class="lb-section-title">My Game History</h3>
-        <p class="lb-note" id="lb-personal-note">Log in to view your personal game history.</p>
-        <table class="lb-table">
-          <thead><tr><th>#</th><th>Max Tile</th><th>Score</th><th>Steps</th><th>Played At</th></tr></thead>
+<h3 class="lb-section-title" data-i18n="lb.personal">My Game History</h3>
+<p class="lb-note" id="lb-personal-note" data-i18n="lb.loginNote">Log in to view your personal game history.</p>
+<table class="lb-table">
+<thead><tr><th>#</th><th data-i18n="lb.maxTile">Max Tile</th><th data-i18n="lb.score">Score</th><th data-i18n="lb.steps">Steps</th><th data-i18n="lb.playedAt">Played At</th></tr></thead>
         </table>
         <div class="lb-scroll">
           <table class="lb-table">
@@ -947,14 +947,14 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 <!-- Secondary game actions stay available without competing with movement controls. -->
 <div class="modal" id="game-menu-modal" role="dialog" aria-modal="true" aria-labelledby="game-menu-title">
   <div class="game-menu-box">
-    <h2 id="game-menu-title">Game Menu</h2>
-    <p>Progress, records, and account actions.</p>
-    <div class="game-menu-actions">
-      <button class="btn" id="b-save">💾 Save <span>Store this game to your account</span></button>
-      <button class="btn" id="b-load">📂 Load <span>Resume your saved game</span></button>
-      <button class="btn" id="b-leaderboard">🏆 Leaderboards <span>View high scores and history</span></button>
-    </div>
-    <button class="modal-close" id="game-menu-close">Close</button>
+<h2 id="game-menu-title" data-i18n="menu.title">Game Menu</h2>
+<p data-i18n="menu.subtitle">Progress, records, and account actions.</p>
+<div class="game-menu-actions">
+<button class="btn" id="b-save">💾 <span class="menu-action-title" data-i18n="menu.save">Save</span><span data-i18n="menu.saveDesc">Store this game to your account</span></button>
+<button class="btn" id="b-load">📂 <span class="menu-action-title" data-i18n="menu.load">Load</span><span data-i18n="menu.loadDesc">Resume your saved game</span></button>
+<button class="btn" id="b-leaderboard">🏆 <span class="menu-action-title" data-i18n="menu.leaderboard">Leaderboards</span><span data-i18n="menu.leaderboardDesc">View high scores and history</span></button>
+</div>
+<button class="modal-close" id="game-menu-close" data-i18n="lb.close">Close</button>
   </div>
 </div>
 
@@ -3705,7 +3705,7 @@ async function recordScore(){
 }
 const lbCache=new Map();
 async function showLeaderboard(){
-  $('lb-mode-label').textContent=`${SIZE}×${SIZE} Grid · ${timerMode==='up'?'Stopwatch':'Countdown'}`;
+  $('lb-mode-label').textContent=currentLang==='zh'?`${SIZE}×${SIZE} 网格 · ${timerMode==='up'?'正向计时':'倒计时'}`:`${SIZE}×${SIZE} Grid · ${timerMode==='up'?'Stopwatch':'Countdown'}`;
   const cacheKey=`${SIZE}:${timerMode}`;
   const cached=lbCache.get(cacheKey);
   if(cached){
@@ -4105,6 +4105,20 @@ const I18N={
     'lb.loginNote':'Log in to view your personal game history.',
     'lb.noRecords':'No personal records yet.',
     'lb.close':'Close',
+'lb.player':'Player',
+'lb.maxTile':'Max Tile',
+'lb.score':'Score',
+'lb.time':'Time',
+'lb.steps':'Steps',
+'lb.playedAt':'Played At',
+'menu.title':'Game Menu',
+'menu.subtitle':'Progress, records, and account actions.',
+'menu.save':'Save',
+'menu.saveDesc':'Store this game to your account',
+'menu.load':'Load',
+'menu.loadDesc':'Resume your saved game',
+'menu.leaderboard':'Leaderboards',
+'menu.leaderboardDesc':'View high scores and history',
     'settings.title':'Game Settings',
     'settings.subtitle':'Configure your board',
     'settings.grid':'Grid Size',
@@ -4203,6 +4217,20 @@ const I18N={
     'lb.loginNote':'登录后查看你的个人游戏历史。',
     'lb.noRecords':'暂无个人记录。',
     'lb.close':'关闭',
+'lb.player':'玩家',
+'lb.maxTile':'最大方块',
+'lb.score':'分数',
+'lb.time':'时间',
+'lb.steps':'步数',
+'lb.playedAt':'游戏时间',
+'menu.title':'游戏菜单',
+'menu.subtitle':'管理游戏进度、记录和账号操作。',
+'menu.save':'保存游戏',
+'menu.saveDesc':'将本局游戏保存到你的账号',
+'menu.load':'读取存档',
+'menu.loadDesc':'继续已保存的游戏',
+'menu.leaderboard':'排行榜',
+'menu.leaderboardDesc':'查看最高分和游戏历史',
     'settings.title':'游戏设置',
     'settings.subtitle':'配置你的棋盘',
     'settings.grid':'网格大小',
@@ -4305,6 +4333,7 @@ const lbGlobalT=$('.lb-panel .lb-section-title');if(lbGlobalT)lbGlobalT.textCont
 const lbPersonalT=$('.lb-panel + .lb-panel .lb-section-title');if(lbPersonalT)lbPersonalT.textContent=t('lb.personal');
 const lbNote=$('lb-personal-note');if(lbNote&&!currentUser)lbNote.textContent=t('lb.loginNote');
 const lbClose=$('lb-close');if(lbClose)lbClose.textContent=t('lb.close');
+const lbMode=$('lb-mode-label');if(lbMode&&lbMode.textContent)lbMode.textContent=currentLang==='zh'?`${SIZE}×${SIZE} 网格 · ${timerMode==='up'?'正向计时':'倒计时'}`:`${SIZE}×${SIZE} Grid · ${timerMode==='up'?'Stopwatch':'Countdown'}`;
 /* Generic data-i18n lookup (supports innerHTML for formatted content) */
 document.querySelectorAll('[data-i18n]').forEach(function(el){
 const key=el.getAttribute('data-i18n');
