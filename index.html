@@ -402,6 +402,7 @@ box-sizing:border-box;
 @keyframes replayTile{from{opacity:0;transform:scale(.68) translateY(12px);filter:brightness(1.35)}to{opacity:1;transform:scale(1);filter:brightness(1)}}
 @keyframes replayBoard{0%{filter:brightness(1.22);box-shadow:0 0 34px var(--c-glow)}100%{filter:none;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 24px var(--c-glow)}}
 #board .cell.merging{animation:pop .2s ease .15s both;z-index:3}
+#board.ai-fast .cell{transition-duration:.09s,.09s,.2s,.2s}#board.ai-fast .cell.new{animation-duration:.12s}#board.ai-fast .cell.merging{animation-duration:.12s;animation-delay:.08s}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
 .merge-spark{position:absolute;z-index:6;pointer-events:none;width:11px;height:11px;background:var(--c-accent-h);box-shadow:0 0 12px var(--c-glow);animation:mergeSpark .9s cubic-bezier(.15,.7,.3,1) forwards}.merge-spark.heart{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}.merge-spark.heart::before,.merge-spark.heart::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:inherit}.merge-spark.heart::before{left:-4px}.merge-spark.heart::after{top:-4px}.merge-spark.star{clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%)}.merge-spark.paper{width:11px;height:7px;border-radius:1px;transform:skewX(-18deg)}.merge-spark.wave{width:13px;height:6px;border:2px solid var(--c-accent-h);border-top:0;background:transparent;border-radius:0 0 12px 12px}.merge-spark.glitch{width:13px;height:3px;border-radius:0}.merge-spark.leaf{width:8px;height:13px;border-radius:100% 0 100% 0;transform:rotate(35deg)}@keyframes mergeSpark{from{opacity:1;translate:0 0;scale:1;rotate:var(--spark-rotate)}to{opacity:0;translate:var(--spark-x) var(--spark-y);scale:.2;rotate:calc(var(--spark-rotate) + 120deg)}}
 
@@ -1075,8 +1076,8 @@ const TRAINING_LOG_POLL_DELAY_MS=20000;      // delay before starting progress p
 const SHOWCASE_TICK_MS=500;                  // showcase auto-play interval
 const SHOWCASE_WIN_RESET_MS=1200;            // delay after winning showcase game
 const SHOWCASE_OVER_RESET_MS=800;            // delay after game over in showcase
-const AI_RETRY_DELAY_MS=120;                 // AI move retry when input locked
-const AI_AUTO_PLAY_DELAY_MS=360;             // delay between AI auto-play moves
+const AI_RETRY_DELAY_MS=70;                  // AI move retry when input locked
+const AI_AUTO_PLAY_DELAY_MS=220;             // delay between AI auto-play moves
 const PLAYTEST_POLL_START_DELAY_MS=25000;    // delay before polling playtest progress
 const PET_BUBBLE_DUR_MS=1600;                // pet speech bubble duration
 const PET_BLINK_THRESHOLD=150;               // frames between宠物 blinks
@@ -2203,12 +2204,13 @@ move(direction,true);
 aiTimer=setTimeout(scheduleAiMove,AI_AUTO_PLAY_DELAY_MS);
 }
 function startAiAutoPlay(){
-  if(SIZE!==4){$('tool-status').textContent='AI Auto Play is available on 4×4 only.';return}
-  cancelToolSelection();$('tools-modal').classList.remove('show');
-  cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
+if(SIZE!==4){$('tool-status').textContent='AI Auto Play is available on 4×4 only.';return}
+cancelToolSelection();$('tools-modal').classList.remove('show');
+$('board').classList.add('ai-fast');
+cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
 }
 function stopAiAutoPlay(){
-aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}if($('ai-auto'))updateAiControls();
+aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}const boardEl=$('board');if(boardEl)boardEl.classList.remove('ai-fast');if($('ai-auto'))updateAiControls();
 }
 
 /* Reset any AI-training-mode UI state so normal play can proceed */
