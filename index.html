@@ -241,6 +241,28 @@ box-sizing:border-box;
 .feature-tag .ft-icon{font-size:12px}
 }
 
+/* ================================================================== polished home */
+#entry-screen{position:relative;min-height:calc(100vh - 48px);justify-content:center;padding:42px 0 34px;isolation:isolate}
+#entry-screen::before,#entry-screen::after{content:'';position:absolute;z-index:-1;border-radius:50%;filter:blur(2px);pointer-events:none}
+#entry-screen::before{width:420px;height:420px;top:4%;left:calc(50% - 500px);background:radial-gradient(circle,rgba(var(--bg-star),.16),transparent 67%)}
+#entry-screen::after{width:350px;height:350px;right:calc(50% - 490px);bottom:2%;background:radial-gradient(circle,rgba(var(--bg-star-secondary),.15),transparent 68%)}
+.home-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;padding:7px 12px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(255,255,255,.07);box-shadow:inset 0 1px rgba(255,255,255,.1);color:rgba(255,255,255,.82);font-size:10px;font-weight:700;letter-spacing:1.35px;text-transform:uppercase}.home-kicker::before{content:'';width:7px;height:7px;border-radius:50%;background:#ffd166;box-shadow:0 0 12px #ffd166}
+#entry-screen .title-big{line-height:.92;font-size:clamp(62px,12vw,92px);letter-spacing:-2px;text-shadow:0 5px 30px var(--c-glow),0 1px 0 rgba(255,255,255,.25)}
+#entry-screen .subtitle{max-width:430px;margin:15px auto 25px;color:rgba(255,255,255,.7);font-size:15px;line-height:1.6;text-align:center}
+#entry-screen .card-pick{position:relative;max-width:720px;gap:14px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:rgba(8,10,28,.13);box-shadow:0 20px 50px rgba(0,0,0,.12),inset 0 1px rgba(255,255,255,.08)}
+#entry-screen .pick{position:relative;min-height:156px;padding:25px 18px 21px;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.06));border-color:rgba(255,255,255,.19);box-shadow:inset 0 1px rgba(255,255,255,.13)}
+#entry-screen .pick::after{content:'';position:absolute;width:120px;height:120px;right:-40px;bottom:-52px;border-radius:28px;transform:rotate(25deg);background:linear-gradient(135deg,var(--c-glow),transparent);opacity:.65}
+#entry-screen .pick:first-child{background:linear-gradient(145deg,rgba(255,209,102,.2),rgba(255,255,255,.055))}
+#entry-screen .pick .icon{position:relative;z-index:1;margin-bottom:10px;font-size:37px;filter:drop-shadow(0 5px 10px rgba(0,0,0,.2))}
+#entry-screen .pick small{position:relative;z-index:1;margin-top:8px;line-height:1.45}
+#entry-screen .pick:hover{border-color:rgba(255,255,255,.42);transform:translateY(-5px) scale(1.01);box-shadow:0 14px 32px rgba(0,0,0,.25),0 0 0 1px var(--c-glow)}
+#entry-screen .home-features{order:4;margin-top:24px;max-width:720px}
+#entry-screen .feature-tag{padding:6px 11px;background:rgba(8,10,28,.15);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.68)}
+#entry-screen .pt-entry{margin-top:14px!important;max-width:720px;padding:15px 20px;background:linear-gradient(105deg,rgba(70,59,149,.38),rgba(20,184,166,.17));border-color:rgba(160,142,255,.3);box-shadow:0 12px 30px rgba(0,0,0,.12)}
+#entry-screen .pt-entry:hover{border-color:rgba(190,180,255,.6);box-shadow:0 14px 34px rgba(20,184,166,.16),0 0 0 1px rgba(255,255,255,.12)}
+@media(max-width:680px){#entry-screen{justify-content:flex-start;padding-top:64px;min-height:100vh}#entry-screen .card-pick{max-width:460px;padding:7px}#entry-screen .pick{min-height:140px}#entry-screen::before{left:-230px;top:0}#entry-screen::after{right:-210px;bottom:12%}}
+@media(max-width:440px){#entry-screen .title-big{font-size:68px}#entry-screen .card-pick{gap:8px}.home-kicker{font-size:9px;letter-spacing:1px}}
+
 /* ================================================================== AI Auto Play Arena */
 #stat-ai{display:none}
 
@@ -508,8 +530,9 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
   <!-- ============ ENTRY ============ -->
   <div class="screen active" id="entry-screen">
+<div class="home-kicker">A quiet game of strategy</div>
 <div class="title-big">2048</div>
-<div class="subtitle">Choose how you want to play</div>
+<div class="subtitle">A classic puzzle, reimagined with smart play, personal themes, and a little more atmosphere.</div>
 
         <!-- Feature tags -->
         <div class="home-features">
