@@ -465,8 +465,7 @@ box-sizing:border-box;
 .lb-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
 .lb-panel{display:flex;flex-direction:column;min-width:0}
 .lb-section-title{margin:0 0 8px;color:#776e65;font-size:14px;font-weight:700}
-.lb-note{margin:0 0 8px;font-size:12px;color:#777}
-.lb-scroll{max-height:240px;overflow-y:auto;border-radius:8px;border:1px solid rgba(0,0,0,.08);scrollbar-width:thin;scrollbar-color:rgba(119,110,101,.3) transparent}
+.lb-scroll{height:240px;overflow-y:auto;border-radius:8px;border:1px solid rgba(0,0,0,.08);scrollbar-width:thin;scrollbar-color:rgba(119,110,101,.3) transparent}
 .lb-scroll::-webkit-scrollbar{width:5px}
 .lb-scroll::-webkit-scrollbar-track{background:transparent}
 .lb-scroll::-webkit-scrollbar-thumb{background:rgba(119,110,101,.3);border-radius:3px}
@@ -478,8 +477,8 @@ box-sizing:border-box;
 .modal-close{margin-top:16px;display:block;width:100%;padding:10px;border:none;background:var(--c-accent);color:#fff;font-weight:700;border-radius:8px;cursor:pointer;transition:background .2s}
 .modal-close:hover{background:var(--c-accent-h)}
 @media(max-width:600px){
-  .lb-grid{grid-template-columns:1fr}
-  .lb-scroll{max-height:180px}
+.lb-grid{grid-template-columns:1fr}
+.lb-scroll{height:180px}
 }
 
 /* back button */
@@ -842,7 +841,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
     <div class="lb-grid">
       <!-- Global leaderboard -->
       <div class="lb-panel">
-<h3 class="lb-section-title" data-i18n="lb.global">All Players · Top 5</h3>
+<h3 class="lb-section-title" data-i18n="lb.global">All Players · Scroll to view all</h3>
 <table class="lb-table">
 <thead><tr><th>#</th><th data-i18n="lb.player">Player</th><th data-i18n="lb.maxTile">Max Tile</th><th data-i18n="lb.score">Score</th><th data-i18n="lb.time">Time</th></tr></thead>
         </table>
@@ -855,7 +854,6 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       <!-- Personal history -->
       <div class="lb-panel">
 <h3 class="lb-section-title" data-i18n="lb.personal">My Game History</h3>
-<p class="lb-note" id="lb-personal-note" data-i18n="lb.loginNote">Log in to view your personal game history.</p>
 <table class="lb-table">
 <thead><tr><th>#</th><th data-i18n="lb.maxTile">Max Tile</th><th data-i18n="lb.score">Score</th><th data-i18n="lb.steps">Steps</th><th data-i18n="lb.playedAt">Played At</th></tr></thead>
         </table>
@@ -3710,8 +3708,7 @@ async function showLeaderboard(){
   const cached=lbCache.get(cacheKey);
   if(cached){
     $('lb-global-body').innerHTML=cached.global;
-    $('lb-personal-body').innerHTML=cached.personal;
-    $('lb-personal-note').textContent=cached.personalNote;
+$('lb-personal-body').innerHTML=cached.personal;
   }else{
     $('lb-global-body').innerHTML='<tr><td colspan="5" style="text-align:center;padding:16px">Loading…</td></tr>';
     $('lb-personal-body').innerHTML='';
@@ -3723,12 +3720,10 @@ async function showLeaderboard(){
       currentUser?api(`/records/me/${SIZE}`):Promise.resolve([])
     ]);
     const gHtml=global.length?global.slice(0,15).map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.username)}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${fmtTime(e.durationMs)}</td></tr>`).join(''):(currentLang==='zh'?'<tr><td colspan="5" style="text-align:center;padding:16px">暂无记录——做第一名吧！</td></tr>':'<tr><td colspan="5" style="text-align:center;padding:16px">No records yet – be the first!</td></tr>');
-    const pNote=currentUser?(currentLang==='zh'?'所有已完成游戏，按时间倒序。':'All completed games, newest first.'):(currentLang==='zh'?'登录后查看你的个人游戏历史。':'Log in to view your personal game history.');
-    const pHtml=personal.length?personal.map((e,i)=>`<tr><td>${i+1}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${e.steps}</td><td>${new Date(e.completedAt).toLocaleString()}</td></tr>`).join(''):(currentLang==='zh'?'<tr><td colspan="5" style="text-align:center;padding:16px">暂无个人记录。</td></tr>':'<tr><td colspan="5" style="text-align:center;padding:16px">No personal records yet.</td></tr>');
-    $('lb-global-body').innerHTML=gHtml;
-    $('lb-personal-note').textContent=pNote;
-    $('lb-personal-body').innerHTML=pHtml;
-    lbCache.set(cacheKey,{global:gHtml,personal:pHtml,personalNote:pNote});
+const pHtml=personal.length?personal.map((e,i)=>`<tr><td>${i+1}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${e.steps}</td><td>${new Date(e.completedAt).toLocaleString()}</td></tr>`).join(''):(currentLang==='zh'?'<tr><td colspan="5" style="text-align:center;padding:16px">暂无个人记录。</td></tr>':'<tr><td colspan="5" style="text-align:center;padding:16px">No personal records yet.</td></tr>');
+$('lb-global-body').innerHTML=gHtml;
+$('lb-personal-body').innerHTML=pHtml;
+lbCache.set(cacheKey,{global:gHtml,personal:pHtml});
   }catch(error){$('lb-global-body').innerHTML=`<tr><td colspan="5" style="text-align:center;padding:16px">${escapeHtml(error.message)}</td></tr>`;}
 }
 function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -4100,7 +4095,7 @@ const I18N={
 'pref.musicSub':'album-matched local tracks',
     'pref.musicNote':'Choose an album theme above to switch to its matching local track.',
     'lb.title':'🏆 High Scores',
-    'lb.global':'All Players · Top 5',
+    'lb.global':'All Players · Scroll to view all',
     'lb.personal':'My Game History',
     'lb.loginNote':'Log in to view your personal game history.',
     'lb.noRecords':'No personal records yet.',
@@ -4212,7 +4207,7 @@ const I18N={
 'pref.musicSub':'专辑匹配的本地音轨',
     'pref.musicNote':'选择上方的专辑主题可切换至对应的本地音乐。',
     'lb.title':'🏆 最高分',
-    'lb.global':'所有玩家 · 前 5 名',
+    'lb.global':'所有玩家 · 向下滚动查看全部',
     'lb.personal':'我的游戏历史',
     'lb.loginNote':'登录后查看你的个人游戏历史。',
     'lb.noRecords':'暂无个人记录。',
@@ -4331,7 +4326,6 @@ const langLabel=$('lang-label');if(langLabel)langLabel.textContent=t('lang.label
 const lbTitle=$('lb-title');if(lbTitle)lbTitle.textContent=t('lb.title');
 const lbGlobalT=$('.lb-panel .lb-section-title');if(lbGlobalT)lbGlobalT.textContent=t('lb.global');
 const lbPersonalT=$('.lb-panel + .lb-panel .lb-section-title');if(lbPersonalT)lbPersonalT.textContent=t('lb.personal');
-const lbNote=$('lb-personal-note');if(lbNote&&!currentUser)lbNote.textContent=t('lb.loginNote');
 const lbClose=$('lb-close');if(lbClose)lbClose.textContent=t('lb.close');
 const lbMode=$('lb-mode-label');if(lbMode&&lbMode.textContent)lbMode.textContent=currentLang==='zh'?`${SIZE}×${SIZE} 网格 · ${timerMode==='up'?'正向计时':'倒计时'}`:`${SIZE}×${SIZE} Grid · ${timerMode==='up'?'Stopwatch':'Countdown'}`;
 /* Generic data-i18n lookup (supports innerHTML for formatted content) */
