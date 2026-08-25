@@ -233,7 +233,7 @@ box-sizing:border-box;
 
 /* Home features strip */
 .home-features{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:680px;margin:24px auto 0}
-.feature-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:center;transition:all .2s}
+.feature-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:center;transition:all .2s;cursor:pointer}
 .feature-item:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
 .feature-icon{font-size:24px}
 .feature-text{font-size:11px;color:rgba(255,255,255,.6);font-weight:600}
@@ -271,6 +271,12 @@ box-sizing:border-box;
 .arena-list{margin:6px 0;padding-left:22px}
 .arena-list li{margin-bottom:6px}
 .arena-note{margin-top:14px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.12);font-size:11.5px;color:rgba(255,255,255,.5)}
+
+/* Language toggle */
+.lang-toggle{display:flex;gap:6px}
+.lang-btn{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.lang-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+.lang-btn.active{background:rgba(255,209,102,.2);border-color:rgba(255,209,102,.4);color:#ffd166}
 
 /* Stats summary cards */
 .pt-stat-card{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.15);display:flex;flex-direction:column;gap:2px}
@@ -426,18 +432,29 @@ box-sizing:border-box;
 .modal.show{display:flex}
 .modal-box{
   background:linear-gradient(135deg,#faf8ef,#f5efe0);color:#333;padding:28px 32px;border-radius:16px;
-  min-width:360px;max-width:92vw;max-height:80vh;overflow-y:auto;
+  min-width:360px;max-width:92vw;max-height:85vh;overflow-y:auto;
   box-shadow:0 16px 48px rgba(0,0,0,.4);
 }
 .modal-box h2{margin-bottom:14px;text-align:center;color:#776e65;font-size:22px}
-.lb-section-title{margin:20px 0 0;color:#776e65;font-size:15px}
-.lb-note{margin:5px 0 8px;font-size:12px;color:#777}
+.lb-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+.lb-panel{display:flex;flex-direction:column;min-width:0}
+.lb-section-title{margin:0 0 8px;color:#776e65;font-size:14px;font-weight:700}
+.lb-note{margin:0 0 8px;font-size:12px;color:#777}
+.lb-scroll{max-height:240px;overflow-y:auto;border-radius:8px;border:1px solid rgba(0,0,0,.08);scrollbar-width:thin;scrollbar-color:rgba(119,110,101,.3) transparent}
+.lb-scroll::-webkit-scrollbar{width:5px}
+.lb-scroll::-webkit-scrollbar-track{background:transparent}
+.lb-scroll::-webkit-scrollbar-thumb{background:rgba(119,110,101,.3);border-radius:3px}
+.lb-scroll::-webkit-scrollbar-thumb:hover{background:rgba(119,110,101,.5)}
 .lb-table{width:100%;border-collapse:collapse}
-.lb-table th,.lb-table td{padding:7px 10px;text-align:left;font-size:14px}
-.lb-table th{border-bottom:2px solid #ccc;color:#776e65}
-.lb-table tr:nth-child(even){background:rgba(0,0,0,.03)}
+.lb-table th,.lb-table td{padding:7px 10px;text-align:left;font-size:13px}
+.lb-table th{border-bottom:2px solid #ccc;color:#776e65;position:sticky;top:0;background:#faf8ef;z-index:1}
+.lb-table tbody tr:nth-child(even){background:rgba(0,0,0,.03)}
 .modal-close{margin-top:16px;display:block;width:100%;padding:10px;border:none;background:var(--c-accent);color:#fff;font-weight:700;border-radius:8px;cursor:pointer;transition:background .2s}
 .modal-close:hover{background:var(--c-accent-h)}
+@media(max-width:600px){
+  .lb-grid{grid-template-columns:1fr}
+  .lb-scroll{max-height:180px}
+}
 
 /* back button */
 .back-btn{
@@ -510,19 +527,19 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
       <!-- Featured highlights -->
       <div class="home-features">
-        <div class="feature-item">
+        <div class="feature-item" id="feat-leaderboard">
           <span class="feature-icon">🏆</span>
           <span class="feature-text">Global leaderboard</span>
         </div>
-        <div class="feature-item">
+        <div class="feature-item" id="feat-ai">
           <span class="feature-icon">🧠</span>
           <span class="feature-text">Self-play trained AI</span>
         </div>
-        <div class="feature-item">
+        <div class="feature-item" id="feat-save">
           <span class="feature-icon">💾</span>
           <span class="feature-text">Save &amp; resume games</span>
         </div>
-        <div class="feature-item">
+        <div class="feature-item" id="feat-themes">
           <span class="feature-icon">🎨</span>
           <span class="feature-text">12 album-inspired themes</span>
         </div>
@@ -766,6 +783,13 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 <section class="atmosphere-panel" id="atmosphere-panel" role="dialog" aria-modal="true" aria-label="Appearance and sound preferences">
   <button class="atmosphere-close" id="btn-atmosphere-close" type="button" aria-label="Close preferences">×</button>
   <div class="preference-card">
+    <div class="preference-heading"><span class="pref-icon">🌐</span> Language <small id="lang-label">English / 中文</small></div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" data-lang="en" id="lang-en">English</button>
+      <button class="lang-btn" data-lang="zh" id="lang-zh">中文</button>
+    </div>
+  </div>
+  <div class="preference-card">
     <div class="preference-heading"><span class="pref-icon">🎨</span> Album eras <small>12 palettes</small></div>
     <div class="theme-picker" id="theme-picker" role="radiogroup" aria-label="Album-inspired color theme">
       <button class="theme-choice" type="button" data-theme-value="taylor-swift" role="radio" aria-label="Taylor Swift" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#72b8cf,#e1cd9e)"><span>Taylor Swift</span></button>
@@ -796,20 +820,36 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
 <!-- leaderboard modal -->
 <div class="modal" id="lb-modal">
-  <div class="modal-box">
-    <h2>🏆 High Scores</h2>
+  <div class="modal-box" style="max-width:780px">
+    <h2 id="lb-title">🏆 High Scores</h2>
     <div class="mode-badge" id="lb-mode-label"></div>
-    <h3 class="lb-section-title">All Players · Best Record per Player</h3>
-    <table class="lb-table" style="margin-top:8px">
-      <thead><tr><th>#</th><th>Player</th><th>Max Tile</th><th>Score</th><th>Time</th></tr></thead>
-      <tbody id="lb-global-body"></tbody>
-    </table>
-    <h3 class="lb-section-title">My Game History</h3>
-    <p class="lb-note" id="lb-personal-note"></p>
-    <table class="lb-table">
-      <thead><tr><th>#</th><th>Max Tile</th><th>Score</th><th>Steps</th><th>Played At</th></tr></thead>
-      <tbody id="lb-personal-body"></tbody>
-    </table>
+    <div class="lb-grid">
+      <!-- Global leaderboard -->
+      <div class="lb-panel">
+        <h3 class="lb-section-title">All Players · Top 5</h3>
+        <table class="lb-table">
+          <thead><tr><th>#</th><th>Player</th><th>Max Tile</th><th>Score</th><th>Time</th></tr></thead>
+        </table>
+        <div class="lb-scroll">
+          <table class="lb-table">
+            <tbody id="lb-global-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Personal history -->
+      <div class="lb-panel">
+        <h3 class="lb-section-title">My Game History</h3>
+        <p class="lb-note" id="lb-personal-note">Log in to view your personal game history.</p>
+        <table class="lb-table">
+          <thead><tr><th>#</th><th>Max Tile</th><th>Score</th><th>Steps</th><th>Played At</th></tr></thead>
+        </table>
+        <div class="lb-scroll">
+          <table class="lb-table">
+            <tbody id="lb-personal-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     <button class="modal-close" id="lb-close">Close</button>
   </div>
 </div>
@@ -1114,6 +1154,8 @@ document.addEventListener('DOMContentLoaded',function(){
   initAtmosphere();
   initTheme();
   initVolume();
+  initLang();
+  initFeatures();
 });
 
 /* ====================================================================
@@ -3665,9 +3707,9 @@ async function showLeaderboard(){
       api(`/leaderboard/${SIZE}`),
       currentUser?api(`/records/me/${SIZE}`):Promise.resolve([])
     ]);
-    const gHtml=global.length?global.slice(0,15).map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.username)}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${fmtTime(e.durationMs)}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No records yet – be the first!</td></tr>';
-    const pNote=currentUser?'All completed games, newest first.':'Log in to view your personal game history.';
-    const pHtml=personal.length?personal.map((e,i)=>`<tr><td>${i+1}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${e.steps}</td><td>${new Date(e.completedAt).toLocaleString()}</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px">No personal records yet.</td></tr>';
+    const gHtml=global.length?global.slice(0,15).map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.username)}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${fmtTime(e.durationMs)}</td></tr>`).join(''):(currentLang==='zh'?'<tr><td colspan="5" style="text-align:center;padding:16px">暂无记录——做第一名吧！</td></tr>':'<tr><td colspan="5" style="text-align:center;padding:16px">No records yet – be the first!</td></tr>');
+    const pNote=currentUser?(currentLang==='zh'?'所有已完成游戏，按时间倒序。':'All completed games, newest first.'):(currentLang==='zh'?'登录后查看你的个人游戏历史。':'Log in to view your personal game history.');
+    const pHtml=personal.length?personal.map((e,i)=>`<tr><td>${i+1}</td><td>${e.maxTile}</td><td>${e.score}</td><td>${e.steps}</td><td>${new Date(e.completedAt).toLocaleString()}</td></tr>`).join(''):(currentLang==='zh'?'<tr><td colspan="5" style="text-align:center;padding:16px">暂无个人记录。</td></tr>':'<tr><td colspan="5" style="text-align:center;padding:16px">No personal records yet.</td></tr>');
     $('lb-global-body').innerHTML=gHtml;
     $('lb-personal-note').textContent=pNote;
     $('lb-personal-body').innerHTML=pHtml;
@@ -4015,6 +4057,171 @@ function initTheme(){
     const value=choice.dataset.themeValue;
     applyTheme(value);renderThemeChoice(value);
   })});
+}
+
+/* i18n */
+const I18N={
+  en:{
+    'app.subtitle':'Choose how you want to play',
+    'mode.user.title':'User Mode',
+    'mode.user.desc':'Save · Leaderboard · Resume',
+    'mode.guest.title':'Guest Mode',
+    'mode.guest.desc':'Jump in · No saves · Free play',
+    'arena.title':'AI Auto Play Arena',
+    'arena.desc':'Training strategy · All AI auto-play records · Mode · User · Score · Max Tile · Time',
+    'feature.leaderboard':'Global leaderboard',
+    'feature.ai':'Self-play trained AI',
+    'feature.save':'Save & resume games',
+    'feature.themes':'12 album-inspired themes',
+    'atmosphere.label':'Atmosphere',
+    'atmosphere.desc':'Theme · sound · music',
+    'lang.label':'English / 中文',
+    'pref.album':'Album eras',
+    'pref.sound':'Sound & music',
+    'pref.music':'Music',
+    'pref.musicNote':'Choose an album theme above to switch to its matching local track.',
+    'lb.title':'🏆 High Scores',
+    'lb.global':'All Players · Top 5',
+    'lb.personal':'My Game History',
+    'lb.loginNote':'Log in to view your personal game history.',
+    'lb.noRecords':'No personal records yet.',
+    'lb.close':'Close',
+    'settings.title':'Game Settings',
+    'settings.subtitle':'Configure your board',
+    'settings.grid':'Grid Size',
+    'settings.timer':'Timer Mode',
+    'settings.start':'Start Game →',
+    'auth.title':'User Mode',
+    'auth.subtitle':'Log in or register',
+    'auth.username':'Username',
+    'auth.password':'Password',
+    'auth.login':'Login',
+    'auth.register':'Register',
+    'strategy.title':'🧠 Training Strategy',
+    'strategy.heading':'Architecture & Training Pipeline',
+    'strategy.intro':'The AI uses a 4-layer MLP value network (256 → 96 → 48 → 16 → 1) that estimates board state quality through self-play reinforcement learning.',
+    'strategy.encoding':'Board Encoding',
+    'strategy.encodingDesc':'Each 4×4 grid cell is encoded as a 16-dimensional one-hot vector based on log₂(tile value), producing 256 input features that capture the full board state.',
+    'strategy.algorithm':'Training Algorithm — Self-Play TD(λ)',
+    'strategy.step1':'Teacher Search: A deterministic Expectimax algorithm (depth 3–4) with chance nodes models tile spawns (2 at 90%, 4 at 10%) to generate move labels for training data.',
+    'strategy.step2':'Policy-Value Network Training: A PyTorch model learns both a policy head (4 move logits) and a value head (normalized state value). Uses Huber loss, gradient clipping (max norm 1.0), and a decaying learning rate schedule.',
+    'strategy.step3':'Unified Value Scaling: The value target is tanh(heuristic_score / 800), providing a bounded [−1, 1] interpretation that works consistently across training and in-browser inference.',
+    'strategy.step4':'Expected Tile API: The trained MLP serves as the evaluation function for the browser-based AI, which uses a depth-3 Expectimax search with the MLP replacing the handcrafted heuristic for move selection.',
+    'strategy.step5':'Fixed-Seed Validation: Every epoch is tested against 50 fixed random seeds; only the best-performing checkpoint becomes the deployed weights, ensuring consistent improvement.',
+    'strategy.inference':'Inference in Browser',
+    'strategy.inferenceDesc':'During auto-play, the JavaScript engine runs Expectimax search (depth 2–3) using the deserialized MLP weights. At each leaf node, the board is evaluated by the neural network to score positions, enabling the AI to reach 2048+ tiles consistently.',
+    'strategy.note':'All AI auto-play games — from Guest mode, User mode — are recorded below with mode, player, steps, score, max tile, and time.',
+    'records.title':'📋 AI Auto Play Records',
+  },
+  zh:{
+    'app.subtitle':'选择你想要的游戏模式',
+    'mode.user.title':'用户模式',
+    'mode.user.desc':'存档 · 排行榜 · 继续游戏',
+    'mode.guest.title':'游客模式',
+    'mode.guest.desc':'立即开始 · 不存档 · 自由游玩',
+    'arena.title':'AI 自动对战竞技场',
+    'arena.desc':'训练策略 · 所有 AI 自动对战记录 · 模式 · 用户 · 分数 · 最大方块 · 时间',
+    'feature.leaderboard':'全球排行榜',
+    'feature.ai':'自对弈训练 AI',
+    'feature.save':'存档和继续游戏',
+    'feature.themes':'12 种专辑主题',
+    'atmosphere.label':'氛围',
+    'atmosphere.desc':'主题 · 音效 · 音乐',
+    'lang.label':'English / 中文',
+    'pref.album':'专辑时代',
+    'pref.sound':'声音和音乐',
+    'pref.music':'音乐',
+    'pref.musicNote':'选择上方的专辑主题可切换至对应的本地音乐。',
+    'lb.title':'🏆 最高分',
+    'lb.global':'所有玩家 · 前 5 名',
+    'lb.personal':'我的游戏历史',
+    'lb.loginNote':'登录后查看你的个人游戏历史。',
+    'lb.noRecords':'暂无个人记录。',
+    'lb.close':'关闭',
+    'settings.title':'游戏设置',
+    'settings.subtitle':'配置你的棋盘',
+    'settings.grid':'网格大小',
+    'settings.timer':'计时模式',
+    'settings.start':'开始游戏 →',
+    'auth.title':'用户模式',
+    'auth.subtitle':'登录或注册',
+    'auth.username':'用户名',
+    'auth.password':'密码',
+    'auth.login':'登录',
+    'auth.register':'注册',
+    'strategy.title':'🧠 训练策略',
+    'strategy.heading':'架构与训练流程',
+    'strategy.intro':'AI 使用一个 4 层 MLP 价值网络 (256 → 96 → 48 → 16 → 1)，通过自对弈强化学习来评估棋盘状态质量。',
+    'strategy.encoding':'棋盘编码',
+    'strategy.encodingDesc':'每个 4×4 网格单元基于 log₂(方块值) 编码为 16 维 one-hot 向量，产生 256 个输入特征来捕获完整棋盘状态。',
+    'strategy.algorithm':'训练算法 — 自对弈 TD(λ)',
+    'strategy.step1':'教师搜索：确定性 Expectimax 算法（深度 3-4）使用机会节点模拟方块生成（2 占 90%，4 占 10%）来生成训练数据的移动标签。',
+    'strategy.step2':'策略-价值网络训练：PyTorch 模型同时学习策略头（4 个移动 logit）和价值头（归一化状态值）。使用 Huber 损失、梯度裁剪（最大范数 1.0）和衰减学习率调度。',
+    'strategy.step3':'统一价值缩放：价值目标为 tanh(启发式分数 / 800)，提供有界 [−1, 1] 解释，在训练和浏览器推理中保持一致。',
+    'strategy.step4':'期望方块 API：训练好的 MLP 作为浏览器 AI 的评估函数，使用深度 3 的 Expectimax 搜索，MLP 替代手工设计的启发式进行移动选择。',
+    'strategy.step5':'固定种子验证：每个 epoch 都使用 50 个固定随机种子进行测试；只有表现最佳的检查点成为部署的权重，确保持续改进。',
+    'strategy.inference':'浏览器推理',
+    'strategy.inferenceDesc':'在自动对战期间，JavaScript 引擎使用反序列化的 MLP 权重运行 Expectimax 搜索（深度 2-3）。在每个叶节点，棋盘由神经网络评估以打分位置，使 AI 能够持续达到 2048+ 方块。',
+    'strategy.note':'所有 AI 自动对战游戏——来自游客模式、用户模式——都会在下表中记录，包括模式、玩家、步数、分数、最大方块和时间。',
+    'records.title':'📋 AI 自动对战记录',
+  }
+};
+let currentLang=localStorage.getItem('g2048_lang')||'en';
+function t(key){return(I18N[currentLang]&&I18N[currentLang][key])||key}
+function setLang(lang){
+  if(!I18N[lang])return;
+  currentLang=lang;
+  try{localStorage.setItem('g2048_lang',lang)}catch(e){}
+  document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.toggle('active',b.dataset.lang===lang)});
+  applyI18n();
+}
+function applyI18n(){
+  const el=$('app-subtitle');if(el)el.textContent=t('app.subtitle');
+  const userTitle=$('btn-user');if(userTitle)userTitle.querySelector('strong')&&(userTitle.querySelector('strong').textContent=t('mode.user.title'));
+  const userSmall=$('btn-user');if(userSmall)userSmall.querySelector('small')&&(userSmall.querySelector('small').textContent=t('mode.user.desc'));
+  const guestTitle=$('btn-guest');if(guestTitle)guestTitle.querySelector('strong')&&(guestTitle.querySelector('strong').textContent=t('mode.guest.title'));
+  const guestSmall=$('btn-guest');if(guestSmall)guestSmall.querySelector('small')&&(guestSmall.querySelector('small').textContent=t('mode.guest.desc'));
+  const arenaStrong=$('btn-playtest');if(arenaStrong)arenaStrong.querySelector('strong')&&(arenaStrong.querySelector('strong').textContent=t('arena.title'));
+  const arenaSmall=$('btn-playtest');if(arenaSmall)arenaSmall.querySelector('small')&&(arenaSmall.querySelector('small').textContent=t('arena.desc'));
+  document.querySelectorAll('.feature-text').forEach(function(el){
+    if(el.textContent.includes('leaderboard')||el.textContent.includes('排行榜'))el.textContent=t('feature.leaderboard');
+    else if(el.textContent.includes('AI')||el.textContent.includes('自对弈'))el.textContent=t('feature.ai');
+    else if(el.textContent.includes('Save')||el.textContent.includes('存档'))el.textContent=t('feature.save');
+    else if(el.textContent.includes('theme')||el.textContent.includes('主题'))el.textContent=t('feature.themes');
+  });
+  const atmStrong=$('btn-atmosphere');if(atmStrong)atmStrong.querySelector('strong')&&(atmStrong.querySelector('strong').textContent=t('atmosphere.label'));
+  const atmSmall=$('btn-atmosphere');if(atmSmall)atmSmall.querySelector('small')&&(atmSmall.querySelector('small').textContent=t('atmosphere.desc'));
+  const langLabel=$('lang-label');if(langLabel)langLabel.textContent=t('lang.label');
+  const lbTitle=$('lb-title');if(lbTitle)lbTitle.textContent=t('lb.title');
+  const lbGlobalT=$('.lb-panel .lb-section-title');if(lbGlobalT)lbGlobalT.textContent=t('lb.global');
+  const lbPersonalT=$('.lb-panel + .lb-panel .lb-section-title');if(lbPersonalT)lbPersonalT.textContent=t('lb.personal');
+  const lbNote=$('lb-personal-note');if(lbNote&&!currentUser)lbNote.textContent=t('lb.loginNote');
+  const lbClose=$('lb-close');if(lbClose)lbClose.textContent=t('lb.close');
+  const albumSmall=document.querySelector('.preference-card:nth-child(3) .preference-heading small');if(albumSmall)albumSmall.textContent='12 palettes';
+}
+function initLang(){
+  document.querySelectorAll('.lang-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){setLang(btn.dataset.lang)});
+  });
+  setLang(currentLang);
+}
+
+/* feature item click handlers */
+function initFeatures(){
+  const lbBtn=$('feat-leaderboard');
+  const aiBtn=$('feat-ai');
+  const saveBtn=$('feat-save');
+  const themesBtn=$('feat-themes');
+  if(lbBtn)lbBtn.addEventListener('click',function(){
+    if(currentUser){showLeaderboard();}
+    else{show('auth-screen')}
+  });
+  if(aiBtn)aiBtn.addEventListener('click',function(){show('playtest-screen');renderPlaytestPanel()});
+  if(saveBtn)saveBtn.addEventListener('click',function(){show('auth-screen')});
+  if(themesBtn)themesBtn.addEventListener('click',function(){
+    const panel=$('atmosphere-panel'),trigger=$('btn-atmosphere'),backdrop=$('atmosphere-backdrop');
+    if(panel)panel.classList.add('open');if(backdrop)backdrop.classList.add('open');if(trigger)trigger.setAttribute('aria-expanded','true');
+  });
 }
 
 /* keyboard */
