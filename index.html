@@ -111,7 +111,7 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
 .atmosphere-trigger{position:fixed;z-index:90;top:18px;right:20px;display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 12px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(13,16,34,.62);backdrop-filter:blur(14px);box-shadow:0 7px 20px rgba(0,0,0,.2);color:#fff;cursor:pointer;text-align:left;transition:transform .2s,box-shadow .2s}.atmosphere-trigger:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--c-glow)}.atmosphere-trigger strong{font-family:var(--theme-display);font-size:14px}.atmosphere-trigger small{font-size:10px;color:rgba(255,255,255,.65);line-height:1.35}.atmosphere-trigger .atmosphere-arrow{font-size:18px;opacity:.65;transition:transform .2s}.atmosphere-trigger[aria-expanded="true"] .atmosphere-arrow{transform:rotate(90deg)}
     .atmosphere-backdrop{display:none;position:fixed;z-index:90;inset:0;background:rgba(3,6,18,.58);backdrop-filter:blur(5px)}.atmosphere-backdrop.open{display:block}
     .atmosphere-panel{display:none;position:fixed;z-index:91;top:50%;left:50%;width:min(680px,calc(100vw - 40px));max-height:calc(100vh - 64px);overflow:auto;padding:46px 16px 16px;border:1px solid rgba(255,255,255,.2);border-radius:18px;background:rgba(13,16,34,.94);box-shadow:0 18px 48px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(20px);transform:translate(-50%,-50%)}.atmosphere-panel.open{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;animation:atmosphereIn .22s ease}.atmosphere-close{position:absolute;z-index:3;top:10px;right:12px;width:30px;height:30px;border:1px solid rgba(255,255,255,.26);border-radius:50%;background:rgba(13,16,34,.92);color:#fff;font-size:22px;line-height:26px;cursor:pointer}.atmosphere-close:hover{background:rgba(255,255,255,.18)}@keyframes atmosphereIn{from{opacity:0;transform:translate(-50%,-47%)}to{opacity:1;transform:translate(-50%,-50%)}}.atmosphere-panel .preference-card{background:rgba(255,255,255,.06)}
-@media(max-width:680px){#entry-screen .card-pick{max-width:460px}.pick{width:210px;min-width:0}.atmosphere-trigger{top:12px;right:12px}.atmosphere-trigger small{display:none}.atmosphere-panel{width:calc(100vw - 24px);max-height:calc(100vh - 32px)}.atmosphere-panel.open{grid-template-columns:1fr}.home-preferences{grid-template-columns:1fr;max-width:460px}.preference-card{min-height:auto}.volume-control{height:34px}}
+@media(max-width:680px){#entry-screen .card-pick{max-width:460px}.pick{width:210px;min-width:0}.atmosphere-trigger{top:12px;right:12px}.atmosphere-trigger small{display:none}.atmosphere-panel{width:calc(100vw - 24px);max-height:calc(100vh - 32px)}.atmosphere-panel.open{grid-template-columns:1fr}.home-preferences{grid-template-columns:1fr;max-width:460px}.preference-card{min-height:auto}.volume-control{height:34px}.lang-card .lang-toggle{flex-direction:row}.lang-card .lang-btn{width:auto}}
 @media(max-width:440px){.theme-picker{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,40px);gap:6px}.theme-choice{height:40px;padding:5px;font-size:8.5px}.title-big{letter-spacing:2px}}
 
 .ai-entry{
@@ -274,9 +274,12 @@ box-sizing:border-box;
 /* Atmosphere panel header */
 .atm-panel-header{display:flex;align-items:center;justify-content:space-between;padding:0 0 14px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);grid-column:1/-1}
 .atm-panel-title{font-family:var(--theme-display);font-size:16px;font-weight:700;color:#fff}
-/* Inline lang buttons in Sound&Music heading */
-.atm-lang-inline{display:inline-flex;gap:4px;margin-left:auto;vertical-align:middle;align-items:center}
-.atm-lang-inline .lang-btn{padding:2px 10px;font-size:10px;font-weight:600}
+/* Right column pair wrapper matches album height */
+.atm-right-pair{height:100%;display:flex;flex-direction:column;gap:10px}
+.lang-card{flex-shrink:0;padding:8px 12px}
+.lang-card .lang-toggle{flex-direction:column;gap:4px}
+.lang-card .lang-btn{width:100%;text-align:center;font-size:11px;padding:5px 10px}
+.sound-card{flex:1;min-height:0}
 
 /* Stats summary cards */
 .pt-stat-card{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.15);display:flex;flex-direction:column;gap:2px}
@@ -772,12 +775,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 <div class="atmosphere-backdrop" id="atmosphere-backdrop" aria-hidden="true"></div>
 <section class="atmosphere-panel" id="atmosphere-panel" role="dialog" aria-modal="true" aria-label="Appearance and sound preferences">
   <div class="atm-panel-header">
-    <span class="atm-close-placeholder" aria-hidden="true"></span>
     <span class="atm-panel-title" id="atm-title">✦ Atmosphere</span>
-    <div class="lang-toggle">
-      <button class="lang-btn active" data-lang="en" id="lang-en">EN</button>
-      <button class="lang-btn" data-lang="zh" id="lang-zh">中文</button>
-    </div>
     <button class="atmosphere-close" id="btn-atmosphere-close" type="button" aria-label="Close preferences">×</button>
   </div>
   <div class="preference-card">
@@ -797,9 +795,12 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       <button class="theme-choice" type="button" data-theme-value="showgirl" role="radio" aria-label="The Life of a Showgirl" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#3b1732,#ed875e)"><span>The Life of a Showgirl</span></button>
     </div>
   </div>
-  <div class="preference-card">
-    <div class="preference-heading"><span class="pref-icon">🔊</span> Sound &amp; music <small>local background track</small><span class="atm-lang-inline"><button class="lang-btn active" data-lang="en" id="lang-en">EN</button><button class="lang-btn" data-lang="zh" id="lang-zh">中文</button></span></div>
-    <div class="volume-control"><input type="range" id="vol-slider" min="0" max="100" value="20" aria-label="Sound and music volume"><span id="vol-label">20%</span></div>
+  <div class="atm-right-pair">
+    <div class="preference-card lang-card"><div class="lang-toggle"><button class="lang-btn active" data-lang="en" id="lang-en">English</button><button class="lang-btn" data-lang="zh" id="lang-zh">中文</button></div></div>
+    <div class="preference-card sound-card">
+      <div class="preference-heading"><span class="pref-icon">🔊</span> Sound &amp; music <small>local background track</small></div>
+      <div class="volume-control"><input type="range" id="vol-slider" min="0" max="100" value="20" aria-label="Sound and music volume"><span id="vol-label">20%</span></div>
+    </div>
   </div>
   <div class="preference-card music-card">
     <div class="preference-heading"><span class="pref-icon">🎵</span> Music <small>album-matched local tracks</small></div>
