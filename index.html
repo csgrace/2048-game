@@ -231,20 +231,13 @@ box-sizing:border-box;
   .ai-entry .ai-arrow{display:none}
 }
 
-/* Home features strip */
-.home-features{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:680px;margin:24px auto 0}
-.feature-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:center;transition:all .2s;cursor:pointer}
-.feature-item:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
-.feature-icon{font-size:24px}
-.feature-text{font-size:11px;color:rgba(255,255,255,.6);font-weight:600}
+/* Home feature tags - compact inline chips */
+.home-features{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%;max-width:680px;margin:22px auto 0}
+.feature-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:11.5px;color:rgba(255,255,255,.55);font-weight:500}
+.feature-tag .ft-icon{font-size:13px}
 @media(max-width:520px){
-  .home-features{grid-template-columns:repeat(2,1fr);max-width:460px}
-}
-@media(max-width:400px){
-  .home-features{grid-template-columns:repeat(2,1fr);gap:8px}
-  .feature-item{padding:10px 6px}
-  .feature-icon{font-size:20px}
-  .feature-text{font-size:10px}
+.home-features{gap:6px;max-width:460px}
+.feature-tag{padding:4px 10px;font-size:10.5px}
 }
 
 /* ================================================================== AI Auto Play Arena */
@@ -272,11 +265,17 @@ box-sizing:border-box;
 .arena-list li{margin-bottom:6px}
 .arena-note{margin-top:14px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.12);font-size:11.5px;color:rgba(255,255,255,.5)}
 
-/* Language toggle */
-.lang-toggle{display:flex;gap:6px}
-.lang-btn{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
-.lang-btn:hover{background:rgba(255,255,255,.15);color:#fff}
-.lang-btn.active{background:rgba(255,209,102,.2);border-color:rgba(255,209,102,.4);color:#ffd166}
+/* Language toggle - compact pill buttons */
+.lang-toggle{display:flex;gap:4px}
+.lang-btn{padding:4px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.lang-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+.lang-btn.active{background:rgba(255,209,102,.15);border-color:rgba(255,209,102,.35);color:#ffd166}
+
+/* Atmosphere panel header */
+.atm-panel-header{display:flex;align-items:center;gap:12px;padding:0 44px 14px 0;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);grid-column:1/-1}
+.atm-panel-title{font-family:var(--theme-display);font-size:16px;font-weight:700;color:#fff}
+.atm-panel-header .lang-toggle{margin-left:auto}
+.atm-panel-header .atm-close-placeholder{display:none}
 
 /* Stats summary cards */
 .pt-stat-card{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.15);display:flex;flex-direction:column;gap:2px}
@@ -525,25 +524,13 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         <span class="pt-arrow">→</span>
       </button>
 
-      <!-- Featured highlights -->
-      <div class="home-features">
-        <div class="feature-item" id="feat-leaderboard">
-          <span class="feature-icon">🏆</span>
-          <span class="feature-text">Global leaderboard</span>
+        <!-- Feature tags -->
+        <div class="home-features">
+          <span class="feature-tag"><span class="ft-icon">🏆</span> <span class="feature-text">Global leaderboard</span></span>
+          <span class="feature-tag"><span class="ft-icon">🧠</span> <span class="feature-text">Self-play trained AI</span></span>
+          <span class="feature-tag"><span class="ft-icon">💾</span> <span class="feature-text">Save &amp; resume games</span></span>
+          <span class="feature-tag"><span class="ft-icon">🎨</span> <span class="feature-text">12 album-inspired themes</span></span>
         </div>
-        <div class="feature-item" id="feat-ai">
-          <span class="feature-icon">🧠</span>
-          <span class="feature-text">Self-play trained AI</span>
-        </div>
-        <div class="feature-item" id="feat-save">
-          <span class="feature-icon">💾</span>
-          <span class="feature-text">Save &amp; resume games</span>
-        </div>
-        <div class="feature-item" id="feat-themes">
-          <span class="feature-icon">🎨</span>
-          <span class="feature-text">12 album-inspired themes</span>
-        </div>
-      </div>
   </div>
 
   <!-- ============ AI AUTO PLAY ARENA ============ -->
@@ -781,13 +768,14 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 </button>
 <div class="atmosphere-backdrop" id="atmosphere-backdrop" aria-hidden="true"></div>
 <section class="atmosphere-panel" id="atmosphere-panel" role="dialog" aria-modal="true" aria-label="Appearance and sound preferences">
-  <button class="atmosphere-close" id="btn-atmosphere-close" type="button" aria-label="Close preferences">×</button>
-  <div class="preference-card">
-    <div class="preference-heading"><span class="pref-icon">🌐</span> Language <small id="lang-label">English / 中文</small></div>
+  <div class="atm-panel-header">
+    <span class="atm-close-placeholder" aria-hidden="true"></span>
+    <span class="atm-panel-title" id="atm-title">✦ Atmosphere</span>
     <div class="lang-toggle">
-      <button class="lang-btn active" data-lang="en" id="lang-en">English</button>
+      <button class="lang-btn active" data-lang="en" id="lang-en">EN</button>
       <button class="lang-btn" data-lang="zh" id="lang-zh">中文</button>
     </div>
+    <button class="atmosphere-close" id="btn-atmosphere-close" type="button" aria-label="Close preferences">×</button>
   </div>
   <div class="preference-card">
     <div class="preference-heading"><span class="pref-icon">🎨</span> Album eras <small>12 palettes</small></div>
@@ -1155,7 +1143,6 @@ document.addEventListener('DOMContentLoaded',function(){
   initTheme();
   initVolume();
   initLang();
-  initFeatures();
 });
 
 /* ====================================================================
@@ -4191,37 +4178,20 @@ function applyI18n(){
   });
   const atmStrong=$('btn-atmosphere');if(atmStrong)atmStrong.querySelector('strong')&&(atmStrong.querySelector('strong').textContent=t('atmosphere.label'));
   const atmSmall=$('btn-atmosphere');if(atmSmall)atmSmall.querySelector('small')&&(atmSmall.querySelector('small').textContent=t('atmosphere.desc'));
+  const atmTitle=$('atm-title');if(atmTitle)atmTitle.textContent='✦ '+t('atmosphere.label');
   const langLabel=$('lang-label');if(langLabel)langLabel.textContent=t('lang.label');
   const lbTitle=$('lb-title');if(lbTitle)lbTitle.textContent=t('lb.title');
   const lbGlobalT=$('.lb-panel .lb-section-title');if(lbGlobalT)lbGlobalT.textContent=t('lb.global');
   const lbPersonalT=$('.lb-panel + .lb-panel .lb-section-title');if(lbPersonalT)lbPersonalT.textContent=t('lb.personal');
   const lbNote=$('lb-personal-note');if(lbNote&&!currentUser)lbNote.textContent=t('lb.loginNote');
   const lbClose=$('lb-close');if(lbClose)lbClose.textContent=t('lb.close');
-  const albumSmall=document.querySelector('.preference-card:nth-child(3) .preference-heading small');if(albumSmall)albumSmall.textContent='12 palettes';
+  const albumSmall=document.querySelector('.preference-card:first-child .preference-heading small');if(albumSmall)albumSmall.textContent='12 palettes';
 }
 function initLang(){
   document.querySelectorAll('.lang-btn').forEach(function(btn){
     btn.addEventListener('click',function(){setLang(btn.dataset.lang)});
   });
   setLang(currentLang);
-}
-
-/* feature item click handlers */
-function initFeatures(){
-  const lbBtn=$('feat-leaderboard');
-  const aiBtn=$('feat-ai');
-  const saveBtn=$('feat-save');
-  const themesBtn=$('feat-themes');
-  if(lbBtn)lbBtn.addEventListener('click',function(){
-    if(currentUser){showLeaderboard();}
-    else{show('auth-screen')}
-  });
-  if(aiBtn)aiBtn.addEventListener('click',function(){show('playtest-screen');renderPlaytestPanel()});
-  if(saveBtn)saveBtn.addEventListener('click',function(){show('auth-screen')});
-  if(themesBtn)themesBtn.addEventListener('click',function(){
-    const panel=$('atmosphere-panel'),trigger=$('btn-atmosphere'),backdrop=$('atmosphere-backdrop');
-    if(panel)panel.classList.add('open');if(backdrop)backdrop.classList.add('open');if(trigger)trigger.setAttribute('aria-expanded','true');
-  });
 }
 
 /* keyboard */
