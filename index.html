@@ -406,7 +406,7 @@ box-sizing:border-box;
 .merge-spark{position:absolute;z-index:6;pointer-events:none;width:11px;height:11px;background:var(--c-accent-h);box-shadow:0 0 12px var(--c-glow);animation:mergeSpark .9s cubic-bezier(.15,.7,.3,1) forwards}.merge-spark.heart{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}.merge-spark.heart::before,.merge-spark.heart::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:inherit}.merge-spark.heart::before{left:-4px}.merge-spark.heart::after{top:-4px}.merge-spark.star{clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%)}.merge-spark.paper{width:11px;height:7px;border-radius:1px;transform:skewX(-18deg)}.merge-spark.wave{width:13px;height:6px;border:2px solid var(--c-accent-h);border-top:0;background:transparent;border-radius:0 0 12px 12px}.merge-spark.glitch{width:13px;height:3px;border-radius:0}.merge-spark.leaf{width:8px;height:13px;border-radius:100% 0 100% 0;transform:rotate(35deg)}@keyframes mergeSpark{from{opacity:1;translate:0 0;scale:1;rotate:var(--spark-rotate)}to{opacity:0;translate:var(--spark-x) var(--spark-y);scale:.2;rotate:calc(var(--spark-rotate) + 120deg)}}
 
 .sides{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-.sides .btn{min-width:76px;padding:8px 11px;font-size:13px}#b-restart{min-width:108px}
+.sides .btn{min-width:76px;padding:8px 11px;font-size:13px}#b-restart{min-width:108px}#b-game-menu{min-width:96px}
 .sides .utility-trigger{min-width:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.13)}
 .sides .utility-trigger:hover{background:rgba(255,255,255,.22)}
 
@@ -421,8 +421,9 @@ box-sizing:border-box;
 .ai-note{margin-top:7px!important;font-size:11px!important;color:rgba(255,255,255,.55)!important}
 .tool-status{min-height:18px;color:#ffd985;font-size:12px;text-align:center}
 .game-menu-actions{display:grid;gap:8px;margin:16px 0 10px}
-.game-menu-actions .btn{padding:11px 12px;text-align:left}
-.game-menu-actions .btn span{display:block;margin-top:2px;font-size:10px;font-weight:500;color:rgba(255,255,255,.62)}
+.game-menu-actions .btn{padding:12px;text-align:left;line-height:1.35}
+.game-menu-actions .btn .menu-action-title{display:block;margin:0 0 3px;font-size:14px;font-weight:700;color:#fff}
+.game-menu-actions .btn span:not(.menu-action-title){display:block;font-size:11px;font-weight:500;color:rgba(255,255,255,.62)}
 #board.tool-selecting .cell{cursor:pointer;box-shadow:0 0 0 2px rgba(255,255,255,.42)}
 #board.tool-selecting .cell:hover{filter:brightness(1.15);transform:scale(1.04)}
 #board .cell.tool-selected{box-shadow:0 0 0 4px #ffd166,0 0 18px rgba(255,209,102,.9);z-index:4}
