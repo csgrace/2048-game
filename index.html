@@ -104,7 +104,7 @@ width:calc(50% - 9px);min-width:250px;padding:28px 16px;text-align:center;
     .atmosphere-panel{font-family:'Segoe UI',Arial,sans-serif}.atmosphere-panel .preference-heading,.atmosphere-panel input,.atmosphere-panel select,.atmosphere-panel button{font-family:'Segoe UI',Arial,sans-serif}.music-card{grid-column:1/-1;min-height:0}.music-card audio{display:block;width:100%;height:34px;margin-top:8px}.music-track-name{color:#ffd166;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.music-note{margin-top:6px;color:rgba(255,255,255,.56);font-size:10px;line-height:1.45}
     .theme-choice{position:relative;min-width:0;height:42px;padding:5px 7px;border:1px solid rgba(255,255,255,.24);border-radius:9px;cursor:pointer;transition:box-shadow .18s,filter .18s;background:var(--theme-swatch);box-shadow:inset 0 1px 2px rgba(255,255,255,.4);color:rgba(255,255,255,.96);font-size:9px;font-weight:700;line-height:1.1;text-shadow:0 1px 2px rgba(0,0,0,.78);overflow-wrap:anywhere;contain:layout paint}
     .theme-choice[data-theme-value="taylor-swift"]{font-family:'Caveat',cursive}.theme-choice[data-theme-value="fearless"],.theme-choice[data-theme-value="showgirl"]{font-family:'Cinzel',serif}.theme-choice[data-theme-value="speak-now"],.theme-choice[data-theme-value="lover"]{font-family:'DM Serif Display',Georgia,serif}.theme-choice[data-theme-value="red"]{font-family:'Special Elite',serif}.theme-choice[data-theme-value="1989"]{font-family:'Libre Franklin','Segoe UI',sans-serif}.theme-choice[data-theme-value="reputation"]{font-family:'Black Ops One',system-ui,sans-serif}.theme-choice[data-theme-value="folklore"]{font-family:'EB Garamond',Georgia,serif}.theme-choice[data-theme-value="evermore"]{font-family:'Libre Baskerville',Georgia,serif}.theme-choice[data-theme-value="midnights"]{font-family:'Unbounded',system-ui,sans-serif}.theme-choice[data-theme-value="ttpd"]{font-family:'Playfair Display',Georgia,serif}
-.theme-choice:hover{filter:brightness(1.14)}.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 5px 14px var(--c-glow)}
+.theme-choice[data-theme-value="taylor-swift"],.theme-choice[data-theme-value="1989"],.theme-choice[data-theme-value="lover"]{color:#3a2a1a;text-shadow:0 1px 2px rgba(255,255,255,.6)}.theme-choice[data-theme-value="evermore"],.theme-choice[data-theme-value="folklore"]{color:#fff}.theme-choice:hover{filter:brightness(1.14)}.theme-choice.active{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c-accent),0 5px 14px var(--c-glow)}
 .theme-choice::after{content:attr(aria-label);position:absolute;z-index:4;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);padding:4px 7px;border-radius:6px;background:rgba(8,12,28,.92);color:#fff;font-size:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}.theme-choice:hover::after{opacity:1}
 .volume-control{display:flex;align-items:center;gap:10px;height:54px}.volume-control input{appearance:none;width:100%;height:7px;border-radius:99px;background:linear-gradient(90deg,#ffd166 var(--volume-progress,20%),rgba(255,255,255,.18) var(--volume-progress,20%));outline:none;cursor:pointer}.volume-control input::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}.volume-control input::-moz-range-thumb{width:12px;height:12px;border:2px solid #fff;border-radius:50%;background:#ffd166;box-shadow:0 2px 7px rgba(0,0,0,.35)}#vol-label{min-width:32px;color:#ffd166;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
 #entry-screen .ai-entry,#entry-screen .pt-entry{max-width:680px}
@@ -271,17 +271,12 @@ box-sizing:border-box;
 .lang-btn:hover{background:rgba(255,255,255,.12);color:#fff}
 .lang-btn.active{background:rgba(255,209,102,.15);border-color:rgba(255,209,102,.35);color:#ffd166}
 
-/* Merged sound & music card + divider */
-.sound-music-card{height:100%;display:flex;flex-direction:column}
-.music-divider{height:1px;background:rgba(255,255,255,.08);margin:12px 0;flex-shrink:0}
-.sound-music-card .music-note{margin-top:auto}
-.atmosphere-panel.open{align-items:stretch}
-
 /* Atmosphere panel header */
-.atm-panel-header{display:flex;align-items:center;gap:12px;padding:0 44px 14px 0;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);grid-column:1/-1}
+.atm-panel-header{display:flex;align-items:center;justify-content:space-between;padding:0 0 14px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);grid-column:1/-1}
 .atm-panel-title{font-family:var(--theme-display);font-size:16px;font-weight:700;color:#fff}
-.atm-panel-header .lang-toggle{margin-left:auto}
-.atm-panel-header .atm-close-placeholder{display:none}
+/* Inline lang buttons in Sound&Music heading */
+.atm-lang-inline{display:inline-flex;gap:4px;margin-left:auto;vertical-align:middle;align-items:center}
+.atm-lang-inline .lang-btn{padding:2px 10px;font-size:10px;font-weight:600}
 
 /* Stats summary cards */
 .pt-stat-card{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.15);display:flex;flex-direction:column;gap:2px}
@@ -509,9 +504,18 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
   <!-- ============ ENTRY ============ -->
   <div class="screen active" id="entry-screen">
-    <div class="title-big">2048</div>
-    <div class="subtitle">Choose how you want to play</div>
-    <div class="card-pick">
+<div class="title-big">2048</div>
+<div class="subtitle">Choose how you want to play</div>
+
+        <!-- Feature tags -->
+        <div class="home-features">
+          <span class="feature-tag"><span class="ft-icon">🏆</span> <span class="feature-text">Global leaderboard</span></span>
+          <span class="feature-tag"><span class="ft-icon">🧠</span> <span class="feature-text">Self-play trained AI</span></span>
+          <span class="feature-tag"><span class="ft-icon">💾</span> <span class="feature-text">Save &amp; resume games</span></span>
+          <span class="feature-tag"><span class="ft-icon">🎨</span> <span class="feature-text">12 album-inspired themes</span></span>
+        </div>
+
+<div class="card-pick">
       <button class="pick" id="btn-user">
         <span class="icon">👤</span>User Mode
         <small>Save · Leaderboard · Resume</small>
@@ -530,13 +534,6 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         <span class="pt-arrow">→</span>
       </button>
 
-        <!-- Feature tags -->
-        <div class="home-features">
-          <span class="feature-tag"><span class="ft-icon">🏆</span> <span class="feature-text">Global leaderboard</span></span>
-          <span class="feature-tag"><span class="ft-icon">🧠</span> <span class="feature-text">Self-play trained AI</span></span>
-          <span class="feature-tag"><span class="ft-icon">💾</span> <span class="feature-text">Save &amp; resume games</span></span>
-          <span class="feature-tag"><span class="ft-icon">🎨</span> <span class="feature-text">12 album-inspired themes</span></span>
-        </div>
   </div>
 
   <!-- ============ AI AUTO PLAY ARENA ============ -->
@@ -800,10 +797,11 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       <button class="theme-choice" type="button" data-theme-value="showgirl" role="radio" aria-label="The Life of a Showgirl" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#3b1732,#ed875e)"><span>The Life of a Showgirl</span></button>
     </div>
   </div>
-  <div class="preference-card sound-music-card">
-    <div class="preference-heading"><span class="pref-icon">🔊</span> Sound &amp; music <small>local background track</small></div>
+  <div class="preference-card">
+    <div class="preference-heading"><span class="pref-icon">🔊</span> Sound &amp; music <small>local background track</small><span class="atm-lang-inline"><button class="lang-btn active" data-lang="en" id="lang-en">EN</button><button class="lang-btn" data-lang="zh" id="lang-zh">中文</button></span></div>
     <div class="volume-control"><input type="range" id="vol-slider" min="0" max="100" value="20" aria-label="Sound and music volume"><span id="vol-label">20%</span></div>
-    <div class="music-divider"></div>
+  </div>
+  <div class="preference-card music-card">
     <div class="preference-heading"><span class="pref-icon">🎵</span> Music <small>album-matched local tracks</small></div>
     <div class="music-track-name" id="music-track-name">Our Song · Taylor Swift</div>
     <audio id="bg-music" controls loop preload="metadata" aria-label="Background music player"></audio>
@@ -4189,8 +4187,7 @@ function applyI18n(){
   const lbGlobalT=$('.lb-panel .lb-section-title');if(lbGlobalT)lbGlobalT.textContent=t('lb.global');
   const lbPersonalT=$('.lb-panel + .lb-panel .lb-section-title');if(lbPersonalT)lbPersonalT.textContent=t('lb.personal');
   const lbNote=$('lb-personal-note');if(lbNote&&!currentUser)lbNote.textContent=t('lb.loginNote');
-  const lbClose=$('lb-close');if(lbClose)lbClose.textContent=t('lb.close');
-  const albumSmall=document.querySelector('.preference-card:first-child .preference-heading small');if(albumSmall)albumSmall.textContent='12 palettes';
+const lbClose=$('lb-close');if(lbClose)lbClose.textContent=t('lb.close');
 }
 function initLang(){
   document.querySelectorAll('.lang-btn').forEach(function(btn){
