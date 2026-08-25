@@ -67,7 +67,7 @@ body::before{
 .screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:620px;animation:fadeIn .4s ease}
 #entry-screen{max-width:900px}
 /* Keep AI workspaces comfortably sized and visually consistent. */
-#playtest-screen,#game-screen.ai-training-mode{max-width:820px}
+#playtest-screen{max-width:1100px}
 .screen.active{display:flex}
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
@@ -222,63 +222,43 @@ transition:all .25s ease;
 .pt-entry .pt-arrow{display:none}
 }
 
-/* ================================================================== training panel (game screen) */
-#training-panel{
-  width:100%;margin:10px auto 0;padding:12px 14px;
-  background:rgba(72,61,139,.18);backdrop-filter:blur(8px);
-  border-radius:var(--radius);border:1px solid rgba(147,112,219,.25);
-}
-.training-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;color:rgba(255,255,255,.85)}
-.training-actions{display:flex;gap:8px}
-.btn.sm{padding:6px 14px;font-size:13px}
-.btn.sm:disabled{opacity:.4;cursor:not-allowed}
-.btn.sm.training{background:linear-gradient(135deg,#7c3aed,#6d28d9);cursor:not-allowed;opacity:.7}
-.btn.sm.training:hover{background:linear-gradient(135deg,#7c3aed,#6d28d9);transform:none}
-/* Training stat cards */
-.train-stat{flex:1;min-width:80px;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:2px}
-.ts-label{font-size:9px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px}
-.ts-value{font-size:15px;font-weight:700;color:#ffd166}
-
-/* ================================================================== AI training mode: hide game controls */
-.ai-training-mode .sides,
-.ai-training-mode .arrows,
-.ai-training-mode #b-tools{display:none}
-.ai-training-mode .board-wrap{display:none}
-.ai-training-mode #training-panel{grid-column:1/-1;width:100%;max-width:820px;margin:0 auto;padding:18px 20px}
-.ai-training-mode .training-head{font-size:16px}
-.ai-training-mode .btn.sm{padding:8px 18px;font-size:14px}
-.training-details{margin-top:14px;padding:14px 16px;border:1px solid rgba(147,112,219,.22);border-radius:12px;background:rgba(0,0,0,.16)}
-.training-details h3{margin:0 0 8px;color:#ffd166;font-size:14px;letter-spacing:.4px}
-.training-details p{margin:4px 0;font-size:12px;line-height:1.65;color:rgba(255,255,255,.62)}
-@keyframes pulse-bar{0%,100%{transform:translateX(-30%);opacity:.6}50%{transform:translateX(120%);opacity:1}}
-.ai-training-mode .top-bar{display:none}
-.ai-training-mode{align-items:center;justify-content:center;flex-direction:column;display:flex}
+/* ================================================================== AI Auto Play Arena */
 #stat-ai{display:none}
-.ai-training-mode #stat-ai{display:inline-flex;align-items:center;font-weight:600;letter-spacing:1px}
-.ai-training-mode #who-label,.ai-training-mode #stat-mode{display:none}
-/* showcase mini-board */
-#showcase{display:none;align-items:stretch;gap:12px;margin-top:8px}
-.ai-training-mode #showcase{display:flex}
-#showcase-board{width:190px;height:190px;flex:none;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:5px;padding:6px;background:rgba(0,0,0,.3);border-radius:12px}
-.sc-tile{display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;border-radius:6px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.35);transition:background .12s,transform .12s}
-.sc-tile[data-v="2"]{background:#eee4da;color:#776e65}
-.sc-tile[data-v="4"]{background:#ede0c8;color:#776e65}
-.sc-tile[data-v="8"]{background:#f2b179;color:#f9f6f2}
-.sc-tile[data-v="16"]{background:#f59563;color:#f9f6f2}
-.sc-tile[data-v="32"]{background:#f67c5f;color:#f9f6f2}
-.sc-tile[data-v="64"]{background:#f65e3b;color:#f9f6f2}
-.sc-tile[data-v="128"]{background:#edcf72;color:#f9f6f2;font-size:12px}
-.sc-tile[data-v="256"]{background:#edcc61;color:#f9f6f2;font-size:12px}
-.sc-tile[data-v="512"]{background:#edc850;color:#f9f6f2;font-size:12px}
-.sc-tile[data-v="1024"]{background:#edc53f;color:#f9f6f2;font-size:11px}
-.sc-tile[data-v="2048"]{background:#edc22e;color:#f9f6f2;font-size:11px}
-#showcase-side{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;font-size:12px;color:rgba(255,255,255,.7)}
-#showcase-side .sl-big{font-size:15px;font-weight:700;color:#ffd166;letter-spacing:.5px}
-#showside-score,#showside-moves{color:#fff}
-.sc-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:auto}
-.sc-bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd166,#06d6a0);transition:width .2s}
-.sc-help{font-size:11px;line-height:1.7;color:rgba(255,255,255,.55);max-width:320px}
-.sc-help strong{color:#ffd166;font-size:12px}
+
+/* Strategy toggle */
+#pt-strategy-toggle:hover{background:rgba(147,112,219,.15)!important;border-color:rgba(147,112,219,.35)!important}
+#pt-strategy-details code{background:rgba(147,112,219,.15)!important;color:#c4b5fd!important}
+
+/* Stats summary cards */
+.pt-stat-card{flex:1;min-width:90px;padding:8px 10px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.15);display:flex;flex-direction:column;gap:2px}
+.pt-stat-label{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px}
+.pt-stat-value{font-size:15px;font-weight:700;color:#14b8a6}
+.pt-stat-value.win{color:#6bcb77}
+.pt-stat-value.lose{color:#f87171}
+
+/* Records table */
+#playtest-records th,#playtest-records td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.05);text-align:left}
+#playtest-records tbody tr:hover{background:rgba(20,184,166,.06)}
+#playtest-records tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
+#playtest-records tbody tr:nth-child(even):hover{background:rgba(20,184,166,.06)}
+#playtest-records td{color:rgba(255,255,255,.7)}
+#playtest-records td.col-time{color:rgba(255,255,255,.45);font-size:11px}
+#playtest-records td.col-mode{font-weight:600}
+#playtest-records td.col-score{font-weight:700;color:#ffd166}
+#playtest-records td.col-max{color:#14b8a6;font-weight:600}
+.badge-mode{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:600}
+.badge-mode.guest{background:rgba(107,203,119,.15);color:#6bcb77}
+.badge-mode.user{background:rgba(99,179,237,.15);color:#63b3ed}
+.badge-mode.batch{background:rgba(255,209,102,.15);color:#ffd166}
+.badge-result{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:600}
+.badge-result.win{background:rgba(107,203,119,.2);color:#6bcb77}
+.badge-result.lose{background:rgba(248,113,113,.2);color:#f87171}
+
+/* Scrollbar styling */
+#playtest-records::-webkit-scrollbar{width:6px}
+#playtest-records::-webkit-scrollbar-track{background:rgba(0,0,0,.2);border-radius:3px}
+#playtest-records::-webkit-scrollbar-thumb{background:rgba(20,184,166,.4);border-radius:3px}
+#playtest-records::-webkit-scrollbar-thumb:hover{background:rgba(20,184,166,.6)}
 
 /* ================================================================== settings grid */
 .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px;margin:12px 0}
@@ -470,19 +450,11 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         <small>Jump in · No saves · Free play</small>
       </button>
     </div>
-    <button class="ai-entry" id="btn-ai-training">
-      <span class="ai-icon">🧠</span>
-      <span class="ai-text">
-        <strong>AI Training Lab</strong>
-        <small>Self-play reinforcement learning · train the neural network</small>
-      </span>
-      <span class="ai-arrow">→</span>
-    </button>
-    <button class="pt-entry" id="btn-playtest">
-        <span class="pt-icon">🏆</span>
+    <button class="pt-entry" id="btn-playtest" style="margin-top:18px">
+        <span class="pt-icon">🤖</span>
         <span class="pt-text">
-          <strong>AI Playtest Arena</strong>
-          <small>Batch auto-play · Win rate stats · Version comparison</small>
+          <strong>AI Auto Play Arena</strong>
+          <small>Training strategy · All AI auto-play records · Mode · User · Score · Max Tile · Time</small>
         </span>
         <span class="pt-arrow">→</span>
       </button>
@@ -492,8 +464,8 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
   <div class="screen" id="playtest-screen">
     <button class="back-btn" id="btn-playtest-back">← Back</button>
     <div class="glass" style="width:100%;max-width:1100px;padding:22px 20px 26px;box-sizing:border-box;overflow:hidden">
-      <div class="title-big" style="font-size:26px;text-align:center;margin-bottom:2px">🏆 AI Playtest Arena</div>
-      <div class="subtitle" style="text-align:center;margin-bottom:18px;font-size:13px">Batch auto-play · Live board preview · Win-rate stats</div>
+      <div class="title-big" style="font-size:26px;text-align:center;margin-bottom:2px">🤖 AI Auto Play Arena</div>
+      <div class="subtitle" style="text-align:center;margin-bottom:18px;font-size:13px">Training strategy · Batch auto-play · Complete auto-play records</div>
 
       <!-- Weight info bar -->
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.18);margin-bottom:14px">
@@ -520,6 +492,27 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         </table>
         Plus <b style="color:rgba(255,255,255,.85)">adam_t</b> (Adam optimizer timestep).<br>
         <span style="font-size:10.5px;color:rgba(255,255,255,.4)">Training = self-play games + TD(λ) updates to all W/b matrices. Higher version = more games = stronger AI.</span>
+      </div>
+
+      <!-- Training Strategy (collapsible) -->
+      <div style="margin-bottom:14px">
+        <button id="pt-strategy-toggle" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border-radius:10px;background:rgba(147,112,219,.08);border:1px solid rgba(147,112,219,.2);color:#a78bfa;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s">
+          <span>🧠</span><span>Training Strategy</span><span id="pt-strategy-arrow" style="margin-left:auto;font-size:12px;opacity:.6">▾</span>
+        </button>
+        <div id="pt-strategy-details" style="display:none;margin-top:8px;padding:14px 16px;border-radius:12px;background:rgba(0,0,0,.2);border:1px solid rgba(147,112,219,.15);font-size:12px;color:rgba(255,255,255,.65);line-height:1.7">
+          <div style="font-weight:600;color:#a78bfa;margin-bottom:6px;font-size:13px">Architecture &amp; Training Pipeline</div>
+          The AI uses a <b style="color:rgba(255,255,255,.85)">4-layer MLP value network</b> (256→96→48→16→1) that estimates board state quality.<br>
+          <b style="color:rgba(255,255,255,.85)">Board encoding</b>: one-hot log₂ values, 16 channels × 4×4 grid = 256 inputs.<br><br>
+          <b>Self-play TD(λ) Training:</b>
+          <ol style="margin:4px 0 4px;padding-left:20px">
+            <li><strong>Teacher Search</strong> — Deterministic Expectimax labels moves; chance nodes model tile spawns (2 at 90%, 4 at 10%)</li>
+            <li><strong>Policy-Value Training</strong> — PyTorch model learns 4 move logits + normalized value, with Huber loss, gradient clipping, decaying LR</li>
+            <li><strong>Unified Scale</strong> — Value target is <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px">tanh(heuristic / 800)</code>; same bounded interpretation in-browser</li>
+            <li><strong>Fixed-seed Checkpoints</strong> — Every epoch tested against 50 fixed seeds; only the best becomes the deployed weights</li>
+            <li><strong>Auto Deploy</strong> — Actions commits validated weights so page refreshes load the latest model</li>
+          </ol>
+          All AI auto-play games (from Guest mode, User mode, or batch tests) are recorded below with mode, player, steps, score, max tile, and time.
+        </div>
       </div>
 
       <!-- Controls row -->
@@ -581,6 +574,35 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
       <!-- Inline log -->
       <div id="playtest-batch-log" style="display:none;margin-top:8px;font-size:11px;color:rgba(255,255,255,.4);max-height:60px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
+
+      <!-- AI Auto Play Records (all-time) -->
+      <div id="pt-auto-play-records" style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:14px;font-weight:700;color:#14b8a6">📋 AI Auto Play Records</span>
+          <span style="font-size:10.5px;color:rgba(255,255,255,.35)" id="pt-records-count">0 records</span>
+        </div>
+        <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <!-- version stats summary -->
+        </div>
+        <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
+          <table id="playtest-records" style="width:100%;border-collapse:collapse;font-size:11.5px">
+            <thead style="position:sticky;top:0;background:rgba(20,20,36,.95);z-index:1">
+              <tr style="color:rgba(255,255,255,.5);text-align:left">
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Time</th>
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Mode</th>
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">User</th>
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Score</th>
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Steps</th>
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Max Tile</th>
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Duration</th>
+                <th style="padding:6px 8px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Ver</th>
+              </tr>
+            </thead>
+            <tbody id="playtest-records-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1783,11 +1805,11 @@ function move(dir,fromAI=false){
       if(mergedCopy.length>0&&window.__petMergeReact)window.__petMergeReact();
       inputLocked=false;
 if(reachedTarget){
-won=true;SFX.win();stopAiAutoPlay();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;
+won=true;SFX.win();const wasAutoPlay=aiAutoPlay;stopAiAutoPlay();let info=`score: ${score} · moves: ${steps}`;if(aiTrainGames>0)info+=` · AI: ${aiTrainGames}g`;
 const maxTile=Math.max(...board.flat());
 recordGameResult(score,steps,maxTile,true);
 if(batchPlaytestMode){recordAiPlaytest('win');advanceBatchPlaytest();}
-else{showOverlay('🎉 You Win!',info);schedulePostGameLeaderboard();}
+else{if(wasAutoPlay||cheated)recordAiPlaytest('win');showOverlay('🎉 You Win!',info);schedulePostGameLeaderboard();}
 }else if(!hasMoves()){
 over=true;SFX.lose();stopTimer();
 recordScore();
@@ -2715,9 +2737,9 @@ redrawTrainingCharts();
 }
 
 /* ====================================================================
-AI Playtest Records — track AI auto-play results per weight version
+AI Auto Play Records — track all AI auto-play results with mode & user
 ==================================================================== */
-const LS_PLAYTEST='g2048_ai_playtest_v1';
+const LS_PLAYTEST='g2048_ai_playtest_v2';
 function loadPlaytests(){return load(LS_PLAYTEST,[])}
 function savePlaytests(r){save(LS_PLAYTEST,r)}
 function getCurrentWeightVersion(){
@@ -2726,6 +2748,30 @@ if(typeof loadedWeightVersion==='number'&&loadedWeightVersion>0)return 'v'+loade
 return aiTrainGames>0?('v'+aiTrainGames):'unknown';
 }
 function recordAiPlaytest(result){
+// Record batch playtest mode always; single AI auto-play only when aiAutoPlay was active
+if(batchPlaytestMode){
+// batch mode: record with arena/batch metadata
+let maxTile=0;
+for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
+const rec={
+ts:Date.now(),
+version:getCurrentWeightVersion(),
+result:result,
+score:score,
+maxTile:maxTile,
+steps:steps,
+durationMs:elapsedMs,
+boardSize:SIZE,
+mode:'Arena',
+user:'Batch Test'
+};
+const records=loadPlaytests();
+records.push(rec);
+if(records.length>500)records=records.slice(-500);
+savePlaytests(records);
+renderPlaytestPanel();
+return;
+}
 if(!aiAutoPlay&&!cheated)return;
 let maxTile=0;
 for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)maxTile=Math.max(maxTile,board[r][c]);
@@ -2737,7 +2783,9 @@ score:score,
 maxTile:maxTile,
 steps:steps,
 durationMs:elapsedMs,
-boardSize:SIZE
+boardSize:SIZE,
+mode:currentUser?'User':'Guest',
+user:currentUser||'Guest'
 };
 const records=loadPlaytests();
 records.push(rec);
@@ -2756,22 +2804,26 @@ return h+'h '+m+'m';
 function renderPlaytestPanel(){
 const records=loadPlaytests();
 const statsEl=$('playtest-stats');
-const recsEl=$('playtest-records');
-if(!statsEl||!recsEl)return;
+const recsBodyEl=$('playtest-records-body');
+const countEl=$('pt-records-count');
+if(!statsEl||!recsBodyEl)return;
+
+// Update count
+if(countEl)countEl.textContent=records.length+' record'+(records.length!==1?'s':'');
 
 if(!records.length){
-statsEl.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4)">No playtest records yet. Use AI Auto Play or batch auto-play to record game results.</span>';
-recsEl.innerHTML='';
+statsEl.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4)">No AI auto-play records yet. Use 🤖 AI Auto Play in Guest/User mode or batch test to record results here.</span>';
+recsBodyEl.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.3);font-size:12px">No records yet — start an AI auto-play game to see results here.</td></tr>';
 return;
 }
 
-// Group by version
+// Group by version for summary
 const byVersion={};
 records.forEach(function(r){
 const v=r.version||'unknown';
 if(!byVersion[v])byVersion[v]={total:0,wins:0,fails:0,bestScore:0,bestTile:0,avgScore:0,scores:[]};
 byVersion[v].total++;
-if(r.result==='win')byVersion[v].wins++;else byVersion[v].fails++;
+if(r.result==='win')byVersion[v].wins++; else byVersion[v].fails++;
 byVersion[v].bestScore=Math.max(byVersion[v].bestScore,r.score);
 byVersion[v].bestTile=Math.max(byVersion[v].bestTile,r.maxTile);
 byVersion[v].scores.push(r.score);
@@ -2792,23 +2844,27 @@ html+='</div>';
 });
 statsEl.innerHTML=html;
 
-// Recent records (last 20)
-const recent=records.slice(-20).reverse();
-let recHtml='';
-recent.forEach(function(r,i){
-const idx=records.length-i;
-const isWin=r.result==='win';
-const bg=isWin?'rgba(107,203,119,.06)':'rgba(255,107,107,.06)';
-const border=isWin?'rgba(107,203,119,.15)':'rgba(255,107,107,.15)';
-const icon=isWin?'✅':'❌';
-const date=new Date(r.ts);
-const timeStr=date.toLocaleDateString()+' '+date.toLocaleTimeString().slice(0,5);
-recHtml+='<div style="padding:6px 10px;margin-bottom:4px;border-radius:6px;background:'+bg+';border:1px solid '+border+';display:flex;justify-content:space-between;align-items:center">';
-recHtml+='<span>'+icon+' <strong style="color:'+(isWin?'#6bcb77':'#ff6b6b')+'">'+(isWin?'Win':'Fail')+'</strong> <span style="color:rgba(255,255,255,.4);font-size:11px">'+r.version+'</span></span>';
-recHtml+='<span style="color:rgba(255,255,255,.6);font-size:11px">Score '+r.score+' · Max '+r.maxTile+' · '+r.steps+' moves · '+fmtPlayTime(r.durationMs)+'</span>';
-recHtml+='</div>';
+// Build records table (newest first)
+const sorted=[...records].reverse();
+let tbodyHtml='';
+sorted.forEach(function(r){
+const d=new Date(r.ts);
+const tsStr=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' '+d.toLocaleDateString([],{month:'short',day:'numeric'});
+const modeColor=r.mode==='User'?'#ffd166':r.mode==='Guest'?'#14b8a6':'#a78bfa';
+const modeLabel=r.mode==='User'?'👤 User':r.mode==='Guest'?'🎮 Guest':'🏆 Arena';
+const resultIcon=r.result==='win'?'✅':'❌';
+tbodyHtml+='<tr style="border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.7)">';
+tbodyHtml+='<td style="padding:5px 8px;white-space:nowrap;font-size:10.5px;color:rgba(255,255,255,.45)">'+tsStr+'</td>';
+tbodyHtml+='<td style="padding:5px 8px;color:'+modeColor+';font-weight:600">'+modeLabel+'</td>';
+tbodyHtml+='<td style="padding:5px 8px;font-size:10.5px">'+(r.user||'—')+'</td>';
+tbodyHtml+='<td style="padding:5px 8px;font-weight:600">'+resultIcon+' '+r.score.toLocaleString()+'</td>';
+tbodyHtml+='<td style="padding:5px 8px">'+r.steps+'</td>';
+tbodyHtml+='<td style="padding:5px 8px;font-weight:600;color:#ffd166">'+r.maxTile+'</td>';
+tbodyHtml+='<td style="padding:5px 8px;font-size:10.5px">'+fmtPlayTime(r.durationMs||0)+'</td>';
+tbodyHtml+='<td style="padding:5px 8px;font-size:10.5px;color:rgba(255,255,255,.4)">'+(r.version||'—')+'</td>';
+tbodyHtml+='</tr>';
 });
-recsEl.innerHTML=recHtml;
+recsBodyEl.innerHTML=tbodyHtml;
 }
 
 /* Update weight info bar on arena page */
@@ -3706,11 +3762,18 @@ closeTokenModal();
    ==================================================================== */
 bind('btn-user',()=>{SFX.button();show('auth-screen')});
 bind('btn-guest',()=>{SFX.button();currentUser=null;showSettings()});
-bind('btn-ai-training',()=>{SFX.button();gameReturnScreen='entry-screen';currentUser=null;show('game-screen');$('game-screen').classList.add('ai-training-mode');init(4);enterTrainingMode();});
 bind('btn-playtest',()=>{SFX.button();show('playtest-screen');renderPlaytestPanel();updateWeightInfoBar();buildPtBoard();checkExistingPlaytestProgress();startBackendStatusPolling();});
 bind('btn-playtest-back',()=>{SFX.button();closeTokenModal();stopBackendStatusPolling();stopPollingPlaytestProgress();show('entry-screen')});
 bind('btn-refresh-backend',()=>{SFX.button();fetchBackendStatus();refreshPlaytestResultsOnly();});
 bind('btn-refresh-pt-backend',()=>{SFX.button();fetchBackendStatus();refreshPlaytestResultsOnly();updateWeightInfoBar();});
+bind('pt-strategy-toggle',()=>{
+const detail=$('pt-strategy-details');const arrow=$('pt-strategy-arrow');
+if(detail&&arrow){
+const isOpen=detail.style.display!=='none';
+detail.style.display=isOpen?'none':'block';
+arrow.textContent=isOpen?'▾':'▴';
+}
+});
 bind('btn-auth-back',()=>{SFX.button();show('entry-screen')});
 
 bind('btn-settings-back',()=>{SFX.button();
