@@ -271,6 +271,12 @@ box-sizing:border-box;
 .lang-btn:hover{background:rgba(255,255,255,.12);color:#fff}
 .lang-btn.active{background:rgba(255,209,102,.15);border-color:rgba(255,209,102,.35);color:#ffd166}
 
+/* Merged sound & music card + divider */
+.sound-music-card{height:100%;display:flex;flex-direction:column}
+.music-divider{height:1px;background:rgba(255,255,255,.08);margin:12px 0;flex-shrink:0}
+.sound-music-card .music-note{margin-top:auto}
+.atmosphere-panel.open{align-items:stretch}
+
 /* Atmosphere panel header */
 .atm-panel-header{display:flex;align-items:center;gap:12px;padding:0 44px 14px 0;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);grid-column:1/-1}
 .atm-panel-title{font-family:var(--theme-display);font-size:16px;font-weight:700;color:#fff}
@@ -794,11 +800,10 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       <button class="theme-choice" type="button" data-theme-value="showgirl" role="radio" aria-label="The Life of a Showgirl" aria-checked="false" style="--theme-swatch:linear-gradient(135deg,#3b1732,#ed875e)"><span>The Life of a Showgirl</span></button>
     </div>
   </div>
-  <div class="preference-card">
+  <div class="preference-card sound-music-card">
     <div class="preference-heading"><span class="pref-icon">🔊</span> Sound &amp; music <small>local background track</small></div>
     <div class="volume-control"><input type="range" id="vol-slider" min="0" max="100" value="20" aria-label="Sound and music volume"><span id="vol-label">20%</span></div>
-  </div>
-  <div class="preference-card music-card">
+    <div class="music-divider"></div>
     <div class="preference-heading"><span class="pref-icon">🎵</span> Music <small>album-matched local tracks</small></div>
     <div class="music-track-name" id="music-track-name">Our Song · Taylor Swift</div>
     <audio id="bg-music" controls loop preload="metadata" aria-label="Background music player"></audio>
