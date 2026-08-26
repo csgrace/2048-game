@@ -900,10 +900,11 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         <div id="stat-as" style="font-size:28px;font-weight:700;color:#1abc9c;margin-top:4px">0</div>
       </div>
     </div>
-    <div style="background:rgba(143,122,102,.06);border:1px solid rgba(143,122,102,.12);border-radius:10px;padding:12px 14px;margin-bottom:12px">
-      <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Score Distribution</div>
-      <div id="stat-dist" style="display:flex;gap:4px;align-items:flex-end;height:40px"></div>
-    </div>
+<div style="background:rgba(143,122,102,.06);border:1px solid rgba(143,122,102,.12);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+<div data-i18n="stats.distributionTitle" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Score Distribution</div>
+<div id="stat-dist-description" data-i18n="stats.distributionDesc" style="font-size:11px;color:#777;line-height:1.45;margin-bottom:10px">Each bar shows how many of your latest 50 completed games fall within that score range.</div>
+<div id="stat-dist" style="display:flex;gap:4px;align-items:flex-end;height:64px"></div>
+</div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button id="stats-reset" style="background:transparent;color:#e74c3c;border:1px solid rgba(231,76,60,.3);font-weight:600;padding:8px 16px;font-size:13px;border-radius:8px;cursor:pointer">Reset Stats</button>
       <button class="modal-close" id="stats-close" style="position:static;margin:0">Close</button>
@@ -1077,7 +1078,8 @@ const SHOWCASE_TICK_MS=500;                  // showcase auto-play interval
 const SHOWCASE_WIN_RESET_MS=1200;            // delay after winning showcase game
 const SHOWCASE_OVER_RESET_MS=800;            // delay after game over in showcase
 const AI_RETRY_DELAY_MS=70;                  // AI move retry when input locked
-const AI_AUTO_PLAY_DELAY_MS=220;             // delay between AI auto-play moves
+const AI_AUTO_PLAY_DELAY_MS=220;             // delay between visible AI auto-play moves
+const AI_BACKGROUND_DELAY_MS=35;             // compact scheduling while the tab is hidden
 const PLAYTEST_POLL_START_DELAY_MS=25000;    // delay before polling playtest progress
 const PET_BUBBLE_DUR_MS=1600;                // pet speech bubble duration
 const PET_BLINK_THRESHOLD=150;               // frames between宠物 blinks
@@ -1710,11 +1712,13 @@ function clearPendingGameTimers(){
   inputLocked=false;
 }
 function queueGameAction(callback,delay=170){
-  const timerId=setTimeout(()=>{
+// During AI auto play in a hidden tab, avoid waiting for presentation-only animation.
+const effectiveDelay=aiAutoPlay&&document.hidden?Math.min(delay,AI_BACKGROUND_DELAY_MS):delay;
+const timerId=setTimeout(()=>{
     pendingGameTimers.delete(timerId);
     callback();
-  },delay);
-  pendingGameTimers.add(timerId);
+},effectiveDelay);
+pendingGameTimers.add(timerId);
 }
 
 /* ------------------------------------------------------------------ game logic */
@@ -2201,7 +2205,7 @@ if(inputLocked){aiTimer=setTimeout(scheduleAiMove,AI_RETRY_DELAY_MS);return}
 const direction=aiBestMove();
 if(!direction){stopAiAutoPlay();return}
 move(direction,true);
-aiTimer=setTimeout(scheduleAiMove,AI_AUTO_PLAY_DELAY_MS);
+aiTimer=setTimeout(scheduleAiMove,document.hidden?AI_BACKGROUND_DELAY_MS:AI_AUTO_PLAY_DELAY_MS);
 }
 function startAiAutoPlay(){
 if(SIZE!==4){$('tool-status').textContent='AI Auto Play is available on 4×4 only.';return}
@@ -2212,6 +2216,13 @@ cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
 function stopAiAutoPlay(){
 aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}const boardEl=$('board');if(boardEl)boardEl.classList.remove('ai-fast');if($('ai-auto'))updateAiControls();
 }
+// Browsers may throttle background timers. Run the smallest safe scheduling path while
+// hidden, then immediately resume the queued AI step when the tab becomes visible again.
+document.addEventListener('visibilitychange',()=>{
+if(document.hidden||!aiAutoPlay||over||won)return;
+if(aiTimer){clearTimeout(aiTimer);aiTimer=null}
+scheduleAiMove();
+});
 
 /* Reset any AI-training-mode UI state so normal play can proceed */
 function resetTrainingUI(){
@@ -3981,20 +3992,29 @@ function showStatsPanel(){
   $('stat-tm').textContent=s.totalMoves;
   $('stat-mt').textContent=s.maxTile||2;
   $('stat-as').textContent=s.gamesPlayed>0?Math.round(s.scores.reduce((a,b)=>a+b,0)/s.gamesPlayed):0;
-  // Score distribution
-  const dist=$('stat-dist');
-  dist.innerHTML='';
-  const bins=[0,500,1000,2000,4000,8000,16000,32000];
-  const counts=new Array(bins.length).fill(0);
-  for(const sc of s.scores){for(let i=bins.length-1;i>=0;i--){if(sc>=bins[i]){counts[i]++;break}}}
-  const maxCount=Math.max(...counts,1);
-  for(let i=0;i<bins.length;i++){
-    const h=Math.max(4,counts[i]/maxCount*40);
-    const bar=document.createElement('div');
-    bar.style.cssText=`flex:1;height:${h}px;background:linear-gradient(to top,#ffd166,#e67e22);border-radius:2px 2px 0 0;min-width:6px`;
-    bar.title=bins[i]>=1000?`${bins[i]/1000}k+: ${counts[i]}`:`${bins[i]}+: ${counts[i]}`;
-    dist.appendChild(bar);
-  }
+// Score distribution: each bucket counts completed games whose final score falls in its range.
+const dist=$('stat-dist');
+dist.innerHTML='';
+const bins=[0,500,1000,2000,4000,8000,16000,32000];
+const counts=new Array(bins.length).fill(0);
+for(const sc of s.scores){for(let i=bins.length-1;i>=0;i--){if(sc>=bins[i]){counts[i]++;break}}}
+const maxCount=Math.max(...counts,1);
+const formatScore=value=>value>=1000?`${value/1000}k`:String(value);
+for(let i=0;i<bins.length;i++){
+const upper=i===bins.length-1?null:bins[i+1]-1;
+const range=upper===null?`${formatScore(bins[i])}+`:`${formatScore(bins[i])}–${formatScore(upper)}`;
+const column=document.createElement('div');
+column.style.cssText='flex:1;min-width:0;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px';
+const count=document.createElement('span');
+count.textContent=counts[i];count.style.cssText='font-size:10px;font-weight:700;color:#a66d12;line-height:1';
+const bar=document.createElement('div');
+const h=counts[i]===0?3:Math.max(7,counts[i]/maxCount*34);
+bar.style.cssText=`width:100%;max-width:24px;height:${h}px;background:linear-gradient(to top,#ffd166,#e67e22);border-radius:3px 3px 0 0`;
+const label=document.createElement('span');
+label.textContent=range;label.style.cssText='font-size:8px;color:#888;white-space:nowrap;line-height:1';
+column.title=`${range}: ${counts[i]} ${currentLang==='zh'?'局':'games'}`;
+column.append(count,bar,label);dist.appendChild(column);
+}
   $('stats-modal').classList.add('show');
 }
 function resetStats(){if(confirm('Reset all game statistics?')){localStorage.removeItem(STATS_KEY);showStatsPanel()}}
@@ -4097,7 +4117,9 @@ const I18N={
 'pref.music':'Music',
 'pref.musicSub':'album-matched local tracks',
     'pref.musicNote':'Choose an album theme above to switch to its matching local track.',
-    'lb.title':'🏆 High Scores',
+    'stats.distributionTitle':'Score Distribution',
+'stats.distributionDesc':'Each bar shows how many of your latest 50 completed games fall within that score range.',
+'lb.title':'🏆 High Scores',
     'lb.global':'All Players · Scroll to view all',
     'lb.personal':'My Game History',
     'lb.loginNote':'Log in to view your personal game history.',
@@ -4209,7 +4231,9 @@ const I18N={
 'pref.music':'音乐',
 'pref.musicSub':'专辑匹配的本地音轨',
     'pref.musicNote':'选择上方的专辑主题可切换至对应的本地音乐。',
-    'lb.title':'🏆 最高分',
+    'stats.distributionTitle':'得分分布',
+'stats.distributionDesc':'每根柱子表示最近 50 局已完成游戏中，最终得分落在该区间内的局数；柱顶数字为局数。',
+'lb.title':'🏆 最高分',
     'lb.global':'所有玩家 · 向下滚动查看全部',
     'lb.personal':'我的游戏历史',
     'lb.loginNote':'登录后查看你的个人游戏历史。',
