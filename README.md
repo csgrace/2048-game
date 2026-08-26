@@ -9,6 +9,8 @@
 >
 > A complete implementation of the 2048 number-puzzle game with multi-user support, per-grid leaderboards, save/load functionality, and a browser AI powered by deterministic Expectimax search.
 
+![2048 feature overview](2048-feature-overview.png)
+
 ---
 
 ## Overview
@@ -115,7 +117,7 @@ This project implements the classic **2048 number-puzzle game** as the capstone 
 |   |-- ai-brain.js              # Experimental policy-value network definition
 |   |-- ai-weights.json          # Experimental policy-value checkpoint metadata and weights
 |-- index.html                   # Static HTML5 version (GitHub Pages); live AI uses Expectimax + handcrafted evaluation
-|-- 2048功能介绍_中文.png          # Chinese feature overview poster (1600×900)
+|-- 2048-feature-overview.png      # English feature overview poster (1600×900)
 |-- data/                        # Runtime saves (auto-created)
 |-- README.md
 ```
