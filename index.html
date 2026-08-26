@@ -566,7 +566,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
   <!-- ============ AI AUTO PLAY ARENA ============ -->
   <div class="screen" id="playtest-screen">
-    <button class="back-btn" id="btn-playtest-back">← Back</button>
+    <button class="back-btn" id="btn-playtest-back" data-i18n="common.back">← Back</button>
       <div class="glass arena-glass">
       <div class="title-big" data-i18n="arena.title.static" style="font-size:28px;text-align:center;margin-bottom:4px">🤖 AI Auto Play Arena</div>
       <div class="subtitle" data-i18n="arena.subtitle" style="text-align:center;margin-bottom:24px;font-size:13px">Training Strategy &amp; Complete Auto-Play Records</div>
@@ -632,7 +632,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
   <!-- ============ AUTH ============ -->
   <div class="screen" id="auth-screen">
-    <button class="back-btn" id="btn-auth-back">← Back</button>
+    <button class="back-btn" id="btn-auth-back" data-i18n="common.back">← Back</button>
     <div class="glass auth-box">
 <div class="title-big" data-i18n="auth.title" style="font-size:32px;text-align:center;margin-bottom:4px">User Mode</div>
 <div class="subtitle" data-i18n="auth.subtitle" style="text-align:center;margin-bottom:16px">Log in or register</div>
@@ -650,7 +650,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
   <!-- ============ SETTINGS ============ -->
   <div class="screen" id="settings-screen">
-    <button class="back-btn" id="btn-settings-back">← Back</button>
+    <button class="back-btn" id="btn-settings-back" data-i18n="common.back">← Back</button>
     <div class="glass" style="width:100%;max-width:480px">
 <div class="title-big" data-i18n="settings.title" style="font-size:28px;text-align:center;margin-bottom:4px">Game Settings</div>
 <div class="subtitle" data-i18n="settings.subtitle" style="text-align:center;margin-bottom:20px">Configure your board</div>
@@ -681,7 +681,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 
   <!-- ============ GAME ============ -->
   <div class="screen" id="game-screen">
-    <button class="back-btn" id="b-exit">← Back</button>
+    <button class="back-btn" id="b-exit" data-i18n="common.back">← Back</button>
     <div class="top-bar">
       <span class="who" id="who-label"></span>
       <span class="stat" id="stat-mode"></span>
@@ -692,7 +692,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
     </div>
     <div class="board-wrap">
       <div id="board"></div>
-      <div id="overlay"><div id="ov-card"><h2 id="ov-title"></h2><div id="ov-sub"></div><button id="ov-btn">Play Again</button><button id="ov-stats-btn" style="background:transparent;color:#ffd166;border:1px solid rgba(255,209,102,.4);font-weight:600;padding:8px 20px;font-size:13px;border-radius:8px;cursor:pointer;margin-top:4px">📊 Statistics</button></div></div>
+      <div id="overlay"><div id="ov-card"><h2 id="ov-title"></h2><div id="ov-sub"></div><button id="ov-btn" data-i18n="game.playAgain">Play Again</button><button id="ov-stats-btn" data-i18n="stats.open" style="background:transparent;color:#ffd166;border:1px solid rgba(255,209,102,.4);font-weight:600;padding:8px 20px;font-size:13px;border-radius:8px;cursor:pointer;margin-top:4px">📊 Statistics</button></div></div>
     </div>
     <div id="training-panel" hidden>
       <div class="training-head">
@@ -872,41 +872,41 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 <!-- statistics modal -->
 <div class="modal" id="stats-modal">
   <div class="modal-box" style="min-width:400px;max-width:480px">
-    <h2>📊 Game Statistics</h2>
+    <h2 data-i18n="stats.title">📊 Game Statistics</h2>
     <div id="stats-content" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">
       <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Games Played</div>
+        <div data-i18n="stats.gamesPlayed" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Games Played</div>
         <div id="stat-gp" style="font-size:28px;font-weight:700;color:#ffd166;margin-top:4px">0</div>
       </div>
       <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Win Rate</div>
+        <div data-i18n="stats.winRate" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Win Rate</div>
         <div id="stat-wr" style="font-size:28px;font-weight:700;color:#6bcb77;margin-top:4px">0%</div>
       </div>
       <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Best Score</div>
+        <div data-i18n="stats.bestScore" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Best Score</div>
         <div id="stat-bs" style="font-size:28px;font-weight:700;color:#e67e22;margin-top:4px">0</div>
       </div>
       <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Total Moves</div>
+        <div data-i18n="stats.totalMoves" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Total Moves</div>
         <div id="stat-tm" style="font-size:28px;font-weight:700;color:#3498db;margin-top:4px">0</div>
       </div>
       <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Max Tile</div>
+        <div data-i18n="stats.maxTile" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Max Tile</div>
         <div id="stat-mt" style="font-size:28px;font-weight:700;color:#9b59b6;margin-top:4px">2</div>
       </div>
       <div style="background:rgba(143,122,102,.08);border:1px solid rgba(143,122,102,.15);border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Avg Score</div>
+        <div data-i18n="stats.avgScore" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px">Avg Score</div>
         <div id="stat-as" style="font-size:28px;font-weight:700;color:#1abc9c;margin-top:4px">0</div>
       </div>
     </div>
 <div style="background:rgba(143,122,102,.06);border:1px solid rgba(143,122,102,.12);border-radius:10px;padding:12px 14px;margin-bottom:12px">
-<div data-i18n="stats.distributionTitle" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Score Distribution</div>
-<div id="stat-dist-description" data-i18n="stats.distributionDesc" style="font-size:11px;color:#777;line-height:1.45;margin-bottom:10px">Each bar shows how many of your latest 50 completed games fall within that score range.</div>
+<div data-i18n="stats.maxTileDistributionTitle" style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Max Tile Distribution</div>
+<div id="stat-dist-description" data-i18n="stats.maxTileDistributionDesc" style="font-size:11px;color:#777;line-height:1.45;margin-bottom:10px">Each bar shows how many of your latest 50 completed games ended with that exact maximum tile. The number above a bar is the number of games.</div>
 <div id="stat-dist" style="display:flex;gap:4px;align-items:flex-end;height:64px"></div>
 </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button id="stats-reset" style="background:transparent;color:#e74c3c;border:1px solid rgba(231,76,60,.3);font-weight:600;padding:8px 16px;font-size:13px;border-radius:8px;cursor:pointer">Reset Stats</button>
-      <button class="modal-close" id="stats-close" style="position:static;margin:0">Close</button>
+      <button id="stats-reset" data-i18n="stats.reset" style="background:transparent;color:#e74c3c;border:1px solid rgba(231,76,60,.3);font-weight:600;padding:8px 16px;font-size:13px;border-radius:8px;cursor:pointer">Reset Stats</button>
+      <button class="modal-close" id="stats-close" data-i18n="stats.close" style="position:static;margin:0">Close</button>
     </div>
   </div>
 </div>
@@ -961,21 +961,21 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
 <!-- Compact practice-tools menu; scores after using a tool are not submitted to the public board. -->
 <div class="modal" id="tools-modal" role="dialog" aria-modal="true" aria-labelledby="tools-title">
   <div class="tool-box">
-    <h2 id="tools-title">Practice Tools</h2>
-    <p>Choose an action, then select tiles on the board. Practice games are kept off the public leaderboard.</p>
-    <div class="tool-actions">
-      <button class="btn" id="tool-swap">⇄ Swap two tiles</button>
-      <button class="btn" id="tool-delete">⌫ Delete a tile</button>
-    </div>
-    <hr class="tool-divider">
-    <p class="ai-note">Local 4×4 AI · no external model or API</p>
-    <div class="tool-actions">
-      <button class="btn" id="ai-suggest">💡 AI Suggest</button>
-      <button class="btn" id="ai-auto">🤖 AI Auto Play</button>
-      <button class="btn wide" id="ai-stop" hidden>■ Stop Auto Play</button>
-    </div>
-    <div class="tool-status" id="tool-status"></div>
-    <button class="modal-close" id="tools-close">Close</button>
+<h2 id="tools-title" data-i18n="tools.title">Practice Tools</h2>
+<p data-i18n="tools.desc">Choose an action, then select tiles on the board. Practice games are kept off the public leaderboard.</p>
+<div class="tool-actions">
+<button class="btn" id="tool-swap" data-i18n="tools.swap">⇄ Swap two tiles</button>
+<button class="btn" id="tool-delete" data-i18n="tools.delete">⌫ Delete a tile</button>
+</div>
+<hr class="tool-divider">
+<p class="ai-note" data-i18n="tools.aiNote">Local 4×4 AI · no external model or API</p>
+<div class="tool-actions">
+<button class="btn" id="ai-suggest" data-i18n="tools.suggest">💡 AI Suggest</button>
+<button class="btn" id="ai-auto" data-i18n="tools.autoPlay">🤖 AI Auto Play</button>
+<button class="btn wide" id="ai-stop" data-i18n="tools.stopAutoPlay" hidden>■ Stop Auto Play</button>
+</div>
+<div class="tool-status" id="tool-status"></div>
+<button class="modal-close" id="tools-close" data-i18n="common.close">Close</button>
   </div>
 </div>
 
@@ -3908,11 +3908,11 @@ function establishSession(data){
 bind('btn-login',async()=>{
   SFX.button();
   const btn=$('btn-login');
-  if(btn){btn.textContent='Logging in...';btn.disabled=true;}
+  if(btn){btn.textContent=t('auth.loggingIn');btn.disabled=true;}
   const username=$('auth-user').value.trim(),password=$('auth-pass').value;
   if(!username||!password){
-    $('auth-status').textContent='Enter username and password';
-    if(btn){btn.textContent='Login';btn.disabled=false;}
+    $('auth-status').textContent=t('auth.enterCredentials');
+    if(btn){btn.textContent=t('auth.login');btn.disabled=false;}
     return;
   }
   try{
@@ -3921,17 +3921,17 @@ bind('btn-login',async()=>{
   }catch(error){
     $('auth-status').textContent=error.message;
   }
-  if(btn){btn.textContent='Login';btn.disabled=false;}
+  if(btn){btn.textContent=t('auth.login');btn.disabled=false;}
 });
 
 bind('btn-register',async()=>{
   SFX.button();
   const btn=$('btn-register');
-  if(btn){btn.textContent='Registering...';btn.disabled=true;}
+  if(btn){btn.textContent=t('auth.registering');btn.disabled=true;}
   const username=$('auth-user').value.trim(),password=$('auth-pass').value;
   if(!username||!password){
-    $('auth-status').textContent='Enter username and password';
-    if(btn){btn.textContent='Register';btn.disabled=false;}
+    $('auth-status').textContent=t('auth.enterCredentials');
+    if(btn){btn.textContent=t('auth.register');btn.disabled=false;}
     return;
   }
   try{
@@ -3940,7 +3940,7 @@ bind('btn-register',async()=>{
   }catch(error){
     $('auth-status').textContent=error.message;
   }
-  if(btn){btn.textContent='Register';btn.disabled=false;}
+  if(btn){btn.textContent=t('auth.register');btn.disabled=false;}
 });
 
 /* ====================================================================
@@ -4004,7 +4004,7 @@ bind('help-modal',(e)=>{if(e.target.id==='help-modal')$('help-modal').classList.
 
 /* ------------------------------------------------------------------ game statistics */
 const STATS_KEY='g2048_stats_v1';
-function loadStats(){try{const s=localStorage.getItem(STATS_KEY);return s?JSON.parse(s):{gamesPlayed:0,wins:0,bestScore:0,totalMoves:0,maxTile:0,scores:[]}}catch(e){return{gamesPlayed:0,wins:0,bestScore:0,totalMoves:0,maxTile:0,scores:[]}}}
+function loadStats(){try{const raw=localStorage.getItem(STATS_KEY);const s=raw?JSON.parse(raw):null;return s?{...s,scores:Array.isArray(s.scores)?s.scores:[],maxTiles:Array.isArray(s.maxTiles)?s.maxTiles:[]}: {gamesPlayed:0,wins:0,bestScore:0,totalMoves:0,maxTile:0,scores:[],maxTiles:[]}}catch(e){return{gamesPlayed:0,wins:0,bestScore:0,totalMoves:0,maxTile:0,scores:[],maxTiles:[]}}}
 function saveStats(s){try{localStorage.setItem(STATS_KEY,JSON.stringify(s))}catch(e){}}
 function recordGameResult(score,moves,maxTile,isWin){
   const s=loadStats();
@@ -4014,7 +4014,9 @@ function recordGameResult(score,moves,maxTile,isWin){
   s.totalMoves+=moves;
   if(maxTile>s.maxTile)s.maxTile=maxTile;
   s.scores.push(score);
+  s.maxTiles.push(maxTile);
   if(s.scores.length>50)s.scores=s.scores.slice(-50);
+  if(s.maxTiles.length>50)s.maxTiles=s.maxTiles.slice(-50);
   saveStats(s);
 }
 function showStatsPanel(){
@@ -4025,32 +4027,29 @@ function showStatsPanel(){
   $('stat-tm').textContent=s.totalMoves;
   $('stat-mt').textContent=s.maxTile||2;
   $('stat-as').textContent=s.gamesPlayed>0?Math.round(s.scores.reduce((a,b)=>a+b,0)/s.gamesPlayed):0;
-// Score distribution: each bucket counts completed games whose final score falls in its range.
+// Max-tile distribution from the latest 50 completed games. Each game belongs to exactly one bar.
 const dist=$('stat-dist');
 dist.innerHTML='';
-const bins=[0,500,1000,2000,4000,8000,16000,32000];
-const counts=new Array(bins.length).fill(0);
-for(const sc of s.scores){for(let i=bins.length-1;i>=0;i--){if(sc>=bins[i]){counts[i]++;break}}}
+const tiles=[2,4,8,16,32,64,128,256,512,1024,2048,4096];
+const counts=tiles.map(tile=>s.maxTiles.filter(maxTile=>maxTile===tile).length);
 const maxCount=Math.max(...counts,1);
-const formatScore=value=>value>=1000?`${value/1000}k`:String(value);
-for(let i=0;i<bins.length;i++){
-const upper=i===bins.length-1?null:bins[i+1]-1;
-const range=upper===null?`${formatScore(bins[i])}+`:`${formatScore(bins[i])}–${formatScore(upper)}`;
+for(let i=0;i<tiles.length;i++){
+const tile=tiles[i];
 const column=document.createElement('div');
 column.style.cssText='flex:1;min-width:0;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px';
 const count=document.createElement('span');
 count.textContent=counts[i];count.style.cssText='font-size:10px;font-weight:700;color:#a66d12;line-height:1';
 const bar=document.createElement('div');
 const h=counts[i]===0?3:Math.max(7,counts[i]/maxCount*34);
-bar.style.cssText=`width:100%;max-width:24px;height:${h}px;background:linear-gradient(to top,#ffd166,#e67e22);border-radius:3px 3px 0 0`;
+bar.style.cssText=`width:100%;max-width:28px;height:${h}px;background:linear-gradient(to top,#ffd166,#e67e22);border-radius:3px 3px 0 0`;
 const label=document.createElement('span');
-label.textContent=range;label.style.cssText='font-size:8px;color:#888;white-space:nowrap;line-height:1';
-column.title=`${range}: ${counts[i]} ${currentLang==='zh'?'局':'games'}`;
+label.textContent=tile;label.style.cssText='font-size:9px;color:#888;white-space:nowrap;line-height:1';
+column.title=`${tile}: ${counts[i]} ${currentLang==='zh'?'局':'games'}`;
 column.append(count,bar,label);dist.appendChild(column);
 }
   $('stats-modal').classList.add('show');
 }
-function resetStats(){if(confirm('Reset all game statistics?')){localStorage.removeItem(STATS_KEY);showStatsPanel()}}
+function resetStats(){if(confirm(t('stats.resetConfirm'))){localStorage.removeItem(STATS_KEY);showStatsPanel()}}
 
 /* help modal */
 function showHelpModal(){SFX.button();$('help-modal').classList.add('show')}
@@ -4129,6 +4128,8 @@ function initTheme(){
 const I18N={
   en:{
     'app.subtitle':'Choose how you want to play',
+'common.back':'← Back',
+'common.close':'Close',
 'home.kicker':'A quiet game of strategy',
 'home.subtitle':'A classic puzzle, reimagined with smart play, personal themes, and a little more atmosphere.',
     'mode.user.title':'User Mode',
@@ -4150,8 +4151,27 @@ const I18N={
 'pref.music':'Music',
 'pref.musicSub':'album-matched local tracks',
     'pref.musicNote':'Choose an album theme above to switch to its matching local track.',
-    'stats.distributionTitle':'Score Distribution',
-'stats.distributionDesc':'Each bar shows how many of your latest 50 completed games fall within that score range.',
+    'stats.title':'📊 Game Statistics',
+'stats.gamesPlayed':'Games Played',
+'stats.winRate':'Win Rate',
+'stats.bestScore':'Best Score',
+'stats.totalMoves':'Total Moves',
+'stats.maxTile':'Max Tile',
+'stats.avgScore':'Avg Score',
+'stats.maxTileDistributionTitle':'Max Tile Distribution',
+'stats.maxTileDistributionDesc':'Each bar shows how many of your latest 50 completed games ended with that exact maximum tile. The number above a bar is the number of games.',
+'stats.reset':'Reset Stats',
+'stats.close':'Close',
+'stats.resetConfirm':'Reset all game statistics?',
+'stats.open':'📊 Statistics',
+ 'tools.title':'Practice Tools',
+ 'tools.desc':'Choose an action, then select tiles on the board. Practice games are kept off the public leaderboard.',
+ 'tools.swap':'⇄ Swap two tiles',
+ 'tools.delete':'⌫ Delete a tile',
+ 'tools.aiNote':'Local 4×4 AI · no external model or API',
+ 'tools.suggest':'💡 AI Suggest',
+ 'tools.autoPlay':'🤖 AI Auto Play',
+ 'tools.stopAutoPlay':'■ Stop Auto Play',
 'lb.title':'🏆 High Scores',
     'lb.global':'All Players · Scroll to view all',
     'lb.personal':'My Game History',
@@ -4189,6 +4209,7 @@ const I18N={
 'game.restart':'↺ Restart',
 'game.practice':'✦ Practice',
 'game.more':'☰ More',
+'game.playAgain':'Play Again',
     'auth.title':'User Mode',
     'auth.subtitle':'Log in or register',
     'auth.username':'Username',
@@ -4197,6 +4218,9 @@ const I18N={
     'auth.register':'Register',
 'auth.usernamePlaceholder':'Enter username',
 'auth.passwordPlaceholder':'Enter password',
+'auth.loggingIn':'Logging in...',
+'auth.registering':'Registering...',
+'auth.enterCredentials':'Enter username and password',
     'strategy.title':'🧠 Training Strategy',
     'strategy.heading':'Architecture & Training Pipeline',
     'strategy.intro':'The AI uses a 4-layer MLP value network (256 → 96 → 48 → 16 → 1) that estimates board state quality through self-play reinforcement learning.',
@@ -4243,6 +4267,8 @@ const I18N={
 },
   zh:{
     'app.subtitle':'选择你想要的游戏模式',
+'common.back':'← 返回',
+'common.close':'关闭',
 'home.kicker':'一场安静的策略游戏',
 'home.subtitle':'经典的数字谜题，融入智能对弈、个性主题和更具氛围感的体验。',
     'mode.user.title':'用户模式',
@@ -4264,8 +4290,27 @@ const I18N={
 'pref.music':'音乐',
 'pref.musicSub':'专辑匹配的本地音轨',
     'pref.musicNote':'选择上方的专辑主题可切换至对应的本地音乐。',
-    'stats.distributionTitle':'得分分布',
-'stats.distributionDesc':'每根柱子表示最近 50 局已完成游戏中，最终得分落在该区间内的局数；柱顶数字为局数。',
+    'stats.title':'📊 游戏统计',
+'stats.gamesPlayed':'已完成局数',
+'stats.winRate':'胜率',
+'stats.bestScore':'最高分',
+'stats.totalMoves':'总步数',
+'stats.maxTile':'最大方块',
+'stats.avgScore':'平均分',
+'stats.maxTileDistributionTitle':'最大方块分布',
+'stats.maxTileDistributionDesc':'每根柱子表示最近 50 局已完成游戏中，最终最大方块恰好为该数值的局数；每局游戏只计入一根柱子，柱顶数字为局数。',
+'stats.reset':'重置统计',
+'stats.close':'关闭',
+'stats.resetConfirm':'要重置所有游戏统计数据吗？',
+'stats.open':'📊 查看统计',
+ 'tools.title':'练习工具',
+ 'tools.desc':'选择一个操作后，再点击棋盘上的方块。使用练习工具的游戏不会进入公开排行榜。',
+ 'tools.swap':'⇄ 交换两个方块',
+ 'tools.delete':'⌫ 删除一个方块',
+ 'tools.aiNote':'本地 4×4 AI · 不使用外部模型或 API',
+ 'tools.suggest':'💡 AI 建议',
+ 'tools.autoPlay':'🤖 AI 自动对战',
+ 'tools.stopAutoPlay':'■ 停止自动对战',
 'lb.title':'🏆 最高分',
     'lb.global':'所有玩家 · 向下滚动查看全部',
     'lb.personal':'我的游戏历史',
@@ -4303,6 +4348,7 @@ const I18N={
 'game.restart':'↺ 重新开始',
 'game.practice':'✦ 练习',
 'game.more':'☰ 更多',
+'game.playAgain':'再来一局',
     'auth.title':'用户模式',
     'auth.subtitle':'登录或注册',
     'auth.username':'用户名',
@@ -4311,6 +4357,9 @@ const I18N={
     'auth.register':'注册',
 'auth.usernamePlaceholder':'请输入用户名',
 'auth.passwordPlaceholder':'请输入密码',
+'auth.loggingIn':'正在登录…',
+'auth.registering':'正在注册…',
+'auth.enterCredentials':'请输入用户名和密码',
     'strategy.title':'🧠 训练策略',
     'strategy.heading':'架构与训练流程',
     'strategy.intro':'AI 使用一个 4 层 MLP 价值网络 (256 → 96 → 48 → 16 → 1)，通过自对弈强化学习来评估棋盘状态质量。',
