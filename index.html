@@ -1549,7 +1549,8 @@ let cheated=false;
 let toolMode=null;
 let selectedToolTileId=null;
 let aiAutoPlay=false;
-let aiTimer=null; // 'up' | 'down-60' | 'down-120' | 'down-300'
+let aiTimer=null; // legacy fallback for environments without Web Worker support
+let aiSchedulerWorker=null;
 const undoStack=[];
 const MAX_UNDO=MAX_UNDO_STACK;
 let currentUser=null;     // null = guest
@@ -1711,12 +1712,13 @@ function clearPendingGameTimers(){
   inputLocked=false;
 }
 function queueGameAction(callback,delay=170){
-// During AI auto play in a hidden tab, avoid waiting for presentation-only animation.
-const effectiveDelay=aiAutoPlay&&document.hidden?Math.min(delay,AI_BACKGROUND_DELAY_MS):delay;
+// In a hidden tab, presentation is irrelevant. Finish the board transaction immediately
+// so the Worker scheduler never waits on a browser-throttled page timer.
+if(aiAutoPlay&&document.hidden){queueMicrotask(callback);return;}
 const timerId=setTimeout(()=>{
-    pendingGameTimers.delete(timerId);
-    callback();
-},effectiveDelay);
+pendingGameTimers.delete(timerId);
+callback();
+},delay);
 pendingGameTimers.add(timerId);
 }
 
@@ -2231,30 +2233,39 @@ function aiSuggest(){
 function updateAiControls(){
   $('ai-auto').hidden=aiAutoPlay;$('ai-stop').hidden=!aiAutoPlay;
 }
-function scheduleAiMove(){
+function runAiAutoPlayStep(){
 if(!aiAutoPlay)return;
 if(over||won){stopAiAutoPlay();return}
-if(inputLocked){aiTimer=setTimeout(scheduleAiMove,AI_RETRY_DELAY_MS);return}
+if(inputLocked)return;
 const direction=aiBestMove();
 if(!direction){stopAiAutoPlay();return}
 move(direction,true);
-aiTimer=setTimeout(scheduleAiMove,document.hidden?AI_BACKGROUND_DELAY_MS:AI_AUTO_PLAY_DELAY_MS);
+}
+function startAiScheduler(){
+if(typeof Worker==='undefined'){
+  const tick=()=>{runAiAutoPlayStep();if(aiAutoPlay)aiTimer=setTimeout(tick,document.hidden?AI_BACKGROUND_DELAY_MS:AI_AUTO_PLAY_DELAY_MS)};
+  tick();return;
+}
+const source=`let timer;onmessage=e=>{clearInterval(timer);timer=setInterval(()=>postMessage('tick'),e.data)};`;
+aiSchedulerWorker=new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));
+aiSchedulerWorker.onmessage=()=>runAiAutoPlayStep();
+aiSchedulerWorker.postMessage(document.hidden?AI_BACKGROUND_DELAY_MS:AI_AUTO_PLAY_DELAY_MS);
 }
 function startAiAutoPlay(){
 if(SIZE!==4){$('tool-status').textContent='AI Auto Play is available on 4×4 only.';return}
 cancelToolSelection();$('tools-modal').classList.remove('show');
 $('board').classList.add('ai-fast');
-cheated=true;aiAutoPlay=true;updateAiControls();scheduleAiMove();
+cheated=true;aiAutoPlay=true;updateAiControls();startAiScheduler();
 }
 function stopAiAutoPlay(){
-aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}const boardEl=$('board');if(boardEl)boardEl.classList.remove('ai-fast');if($('ai-auto'))updateAiControls();
+aiAutoPlay=false;if(aiTimer){clearTimeout(aiTimer);aiTimer=null}if(aiSchedulerWorker){aiSchedulerWorker.terminate();aiSchedulerWorker=null}const boardEl=$('board');if(boardEl)boardEl.classList.remove('ai-fast');if($('ai-auto'))updateAiControls();
 }
-// Browsers may throttle background timers. Run the smallest safe scheduling path while
-// hidden, then immediately resume the queued AI step when the tab becomes visible again.
+// A dedicated Worker is less aggressively throttled than page timers. When the tab
+// becomes visible, restore the viewer-friendly tick rate and execute a step at once.
 document.addEventListener('visibilitychange',()=>{
-if(document.hidden||!aiAutoPlay||over||won)return;
-if(aiTimer){clearTimeout(aiTimer);aiTimer=null}
-scheduleAiMove();
+if(!aiAutoPlay||over||won)return;
+if(aiSchedulerWorker){aiSchedulerWorker.postMessage(document.hidden?AI_BACKGROUND_DELAY_MS:AI_AUTO_PLAY_DELAY_MS)}
+if(!document.hidden)runAiAutoPlayStep();
 });
 
 /* Reset any AI-training-mode UI state so normal play can proceed */
