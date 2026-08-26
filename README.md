@@ -7,13 +7,13 @@
 
 > **CS109 Java Programming - Course Project**
 >
-> A complete implementation of the 2048 number-puzzle game with multi-user support, per-grid leaderboards, save/load functionality, and an AI opponent powered by reinforcement learning.
+> A complete implementation of the 2048 number-puzzle game with multi-user support, per-grid leaderboards, save/load functionality, and a browser AI powered by deterministic Expectimax search.
 
 ---
 
 ## Overview
 
-This project implements the classic **2048 number-puzzle game** as the capstone of CS109 Java Programming at SUSTech. The game features a Java Swing desktop client with PostgreSQL backend support, as well as a pure HTML5 web version deployable to any static host. An AI player powered by Expectimax search and neural network-based reinforcement learning is included for automated gameplay.
+This project implements the classic **2048 number-puzzle game** as the capstone of CS109 Java Programming at SUSTech. The game features a Java Swing desktop client with PostgreSQL backend support, as well as a pure HTML5 web version deployable to any static host. The browser AI uses iterative-deepening Expectimax search, alpha-beta pruning, caching, and a handcrafted board evaluator for automated gameplay. The repository also contains experimental policy-value network weights and training workflow artifacts; their outputs are not used for live move selection.
 
 ---
 
@@ -27,7 +27,7 @@ This project implements the classic **2048 number-puzzle game** as the capstone 
 | **Gameplay** | ✅ | Keyboard and button controls, win/lose detection, 30-step undo |
 | **GUI** | ✅ | Gradient backdrop with glass-morphism design, arrow pad controls |
 | **Advanced** | ✅ | WebAudio sound, per-grid leaderboards, count-up/count-down timers |
-| **AI Player** | ✅ | Expectimax search with neural network evaluation, self-play training |
+| **AI Player** | ✅ | 4×4 live auto-play using iterative-deepening Expectimax, alpha-beta pruning, caching, and handcrafted board evaluation; experimental policy-value training artifacts are included separately |
 
 ---
 
@@ -112,10 +112,10 @@ This project implements the classic **2048 number-puzzle game** as the capstone 
 |       |-- DatabaseManager.java # PostgreSQL: users, scores, saves
 |-- sql/init.sql                 # Database schema (v2 with grid_size column)
 |-- js/
-|   |-- ai-brain.js              # Neural network for AI evaluation
-|   |-- ai-trainer-worker.js     # Self-play training worker
-|   |-- ai-weights.json          # Trained model weights
-|-- index.html                   # Static HTML5 version (GitHub Pages)
+|   |-- ai-brain.js              # Experimental policy-value network definition
+|   |-- ai-weights.json          # Experimental policy-value checkpoint metadata and weights
+|-- index.html                   # Static HTML5 version (GitHub Pages); live AI uses Expectimax + handcrafted evaluation
+|-- 2048功能介绍_中文.png          # Chinese feature overview poster (1600×900)
 |-- data/                        # Runtime saves (auto-created)
 |-- README.md
 ```
@@ -180,5 +180,5 @@ psql -U postgres -d game2048 -f sql/init.sql
 | **Leaderboards** | Separate score tracking per grid size |
 | **Undo** | 30-step move history with full state restoration |
 | **Timers** | Count-up (stopwatch) and count-down (60s/2min/5min) modes |
-| **AI Player** | Expectimax search + neural network for intelligent gameplay |
+| **AI Player** | Live 4×4 auto-play uses iterative-deepening Expectimax with alpha-beta pruning, caching, and handcrafted board evaluation; experimental policy-value weights are stored separately |
 | **Cross-platform** | Desktop (Swing) and web (HTML5) versions |

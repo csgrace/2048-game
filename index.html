@@ -579,22 +579,22 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
         <div id="pt-strategy-details" style="display:none" class="arena-section-body">
           <div class="arena-section-title" data-i18n="arena.architecture">Architecture &amp; Training Pipeline</div>
 
-          <p data-i18n="arena.intro">The AI uses a <b>4-layer MLP value network</b> (256 → 96 → 48 → 16 → 1) that estimates board state quality through self-play reinforcement learning.</p>
+          <p data-i18n="arena.intro">The project includes an <b>experimental 4-layer policy-value MLP</b> (256 → 96 → 48 → 16, with value and policy heads) for offline training. Live browser play currently uses deterministic search and a handcrafted board evaluator.</p>
 
           <div class="arena-subtitle" data-i18n="arena.encodingTitle">Board Encoding</div>
           <p data-i18n="arena.encoding">Each 4×4 grid cell is encoded as a 16-dimensional one-hot vector based on log₂(tile value), producing 256 input features that capture the full board state.</p>
 
-          <div class="arena-subtitle" data-i18n="arena.algorithmTitle">Training Algorithm — Self-Play TD(λ)</div>
+          <div class="arena-subtitle" data-i18n="arena.algorithmTitle">Training Artifacts &amp; Validation</div>
           <ol class="arena-list">
-            <li data-i18n="arena.step1"><strong>Teacher Search:</strong> A deterministic Expectimax algorithm (depth 3–4) with chance nodes models tile spawns (2 at 90%, 4 at 10%) to generate move labels for training data.</li>
-            <li data-i18n="arena.step2"><strong>Policy-Value Network Training:</strong> A PyTorch model learns both a policy head (4 move logits) and a value head (normalized state value). Uses Huber loss, gradient clipping (max norm 1.0), and a decaying learning rate schedule.</li>
-            <li data-i18n="arena.step3"><strong>Unified Value Scaling:</strong> The value target is <code>tanh(heuristic_score / 800)</code>, providing a bounded [−1, 1] interpretation that works consistently across training and in-browser inference.</li>
-            <li data-i18n="arena.step4"><strong>Expected Tile API:</strong> The trained MLP serves as the evaluation function for the browser-based AI, which uses a depth-3 Expectimax search with the MLP replacing the handcrafted heuristic for move selection.</li>
-            <li data-i18n="arena.step5"><strong>Fixed-Seed Validation:</strong> Every epoch is tested against 50 fixed random seeds; only the best-performing checkpoint becomes the deployed weights, ensuring consistent improvement.</li>
+            <li data-i18n="arena.step1"><strong>Teacher Search:</strong> The training workflow defaults to deterministic Expectimax at depth 3. Chance nodes model tile spawns (2 at 90%, 4 at 10%), and the depth can be configured when a run starts.</li>
+            <li data-i18n="arena.step2"><strong>Policy-Value Weights:</strong> The published checkpoint contains a 4-logit policy head and a normalized value head. The checked-in workflow references separate trainer scripts, so optimizer, loss, clipping, and schedule claims are intentionally not shown here.</li>
+            <li data-i18n="arena.step3"><strong>Value Scaling:</strong> The published weight metadata records the target normalization as <code>tanh(heuristic / 800)</code>.</li>
+            <li data-i18n="arena.step4"><strong>Live Move Selection:</strong> The browser currently selects moves with Expectimax, alpha-beta pruning, caching, and a handcrafted evaluator (space, structure, smoothness, merges, and corner position). The experimental MLP is loaded for training metadata but does not replace that evaluator in live play.</li>
+            <li data-i18n="arena.step5"><strong>Fixed-Seed Checks:</strong> The workflow schedules a 50-game validation interval and a final 100-game fixed-seed evaluation before recording a candidate result.</li>
           </ol>
 
           <div class="arena-subtitle" data-i18n="arena.inferenceTitle">Inference in Browser</div>
-          <p data-i18n="arena.inference">During auto-play, the JavaScript engine runs Expectimax search (depth 2–3) using the deserialized MLP weights. At each leaf node, the board is evaluated by the neural network to score positions, enabling the AI to reach 2048+ tiles consistently.</p>
+          <p data-i18n="arena.inference">During auto-play, the JavaScript engine uses iterative-deepening Expectimax (depth 1–6) with a dynamic 150–800 ms decision budget. Leaf states are scored by the handcrafted evaluator, not the experimental neural-network output.</p>
 
           <div class="arena-note" data-i18n="arena.note">All AI auto-play games — from Guest mode, User mode — are recorded below with mode, player, steps, score, max tile, and time.</div>
         </div>
@@ -767,12 +767,12 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
       <section class="training-details" aria-label="Training logic explanation">
         <h3>Training Process</h3>
 <p>① <strong>Click Train</strong>: Frontend triggers the reproducible v1 Actions workflow on cloud runners.</p>
-<p>② <strong>Teacher Search</strong>: Deterministic Expectimax labels legal moves while chance nodes model 2 (90%) and 4 (10%) tiles.</p>
-<p>③ <strong>Policy-Value Training</strong>: A Python/PyTorch model learns four move logits and a normalized value target, using Huber loss, gradient clipping, and a decaying learning rate.</p>
-<p>④ <strong>Unified Scale</strong>: The value target is <code>tanh(heuristic / 800)</code>; the webpage uses the same bounded interpretation, without arbitrary output multipliers.</p>
-<p>⑤ <strong>Fixed-seed Checkpoint</strong>: Every epoch is measured against the same 50 seeds; only the best validation checkpoint becomes <code>js/ai-weights.json</code>.</p>
-<p>⑥ <strong>Auto Deploy</strong>: Actions commits the published v1 weights and progress after validation so page refreshes load the selected checkpoint.</p>
-<p>⑦ <strong>Versioned Runs</strong>: v1 starts from a fixed seed and does not inherit unstable legacy weights.</p>
+<p>② <strong>Teacher Search</strong>: The workflow defaults to deterministic depth-3 Expectimax; chance nodes model 2 (90%) and 4 (10%) tiles.</p>
+<p>③ <strong>Policy-Value Weights</strong>: The checkpoint stores four policy logits and a normalized value head. Trainer implementation details are not claimed here because the workflow references separate trainer scripts.</p>
+<p>④ <strong>Value Scale</strong>: Published metadata records <code>tanh(heuristic / 800)</code> as the value-target normalization.</p>
+<p>⑤ <strong>Fixed-seed Checks</strong>: The workflow schedules a 50-game validation interval and a final 100-game fixed-seed evaluation.</p>
+<p>⑥ <strong>Live Browser AI</strong>: Auto-play currently uses iterative-deepening Expectimax, alpha-beta pruning, caching, and a handcrafted board evaluator; it does not use the experimental MLP output for move selection.</p>
+<p>⑦ <strong>Versioned Artifacts</strong>: Published weights and progress are versioned so the training status can be inspected after a run.</p>
       </section>
     </div>
     <nav class="sides" aria-label="Game controls">
@@ -4221,19 +4221,19 @@ const I18N={
 'auth.loggingIn':'Logging in...',
 'auth.registering':'Registering...',
 'auth.enterCredentials':'Enter username and password',
-    'strategy.title':'🧠 Training Strategy',
-    'strategy.heading':'Architecture & Training Pipeline',
-    'strategy.intro':'The AI uses a 4-layer MLP value network (256 → 96 → 48 → 16 → 1) that estimates board state quality through self-play reinforcement learning.',
-    'strategy.encoding':'Board Encoding',
-    'strategy.encodingDesc':'Each 4×4 grid cell is encoded as a 16-dimensional one-hot vector based on log₂(tile value), producing 256 input features that capture the full board state.',
-    'strategy.algorithm':'Training Algorithm — Self-Play TD(λ)',
-    'strategy.step1':'Teacher Search: A deterministic Expectimax algorithm (depth 3–4) with chance nodes models tile spawns (2 at 90%, 4 at 10%) to generate move labels for training data.',
-    'strategy.step2':'Policy-Value Network Training: A PyTorch model learns both a policy head (4 move logits) and a value head (normalized state value). Uses Huber loss, gradient clipping (max norm 1.0), and a decaying learning rate schedule.',
-    'strategy.step3':'Unified Value Scaling: The value target is tanh(heuristic_score / 800), providing a bounded [−1, 1] interpretation that works consistently across training and in-browser inference.',
-    'strategy.step4':'Expected Tile API: The trained MLP serves as the evaluation function for the browser-based AI, which uses a depth-3 Expectimax search with the MLP replacing the handcrafted heuristic for move selection.',
-    'strategy.step5':'Fixed-Seed Validation: Every epoch is tested against 50 fixed random seeds; only the best-performing checkpoint becomes the deployed weights, ensuring consistent improvement.',
-    'strategy.inference':'Inference in Browser',
-    'strategy.inferenceDesc':'During auto-play, the JavaScript engine runs Expectimax search (depth 2–3) using the deserialized MLP weights. At each leaf node, the board is evaluated by the neural network to score positions, enabling the AI to reach 2048+ tiles consistently.',
+'strategy.title':'🧠 Training Strategy',
+'strategy.heading':'Architecture & Training Pipeline',
+'strategy.intro':'The project includes an experimental 4-layer policy-value MLP (256 → 96 → 48 → 16, with value and policy heads) for offline training. Live browser play uses deterministic search and a handcrafted board evaluator.',
+'strategy.encoding':'Board Encoding',
+'strategy.encodingDesc':'Each 4×4 grid cell is encoded as a 16-dimensional one-hot vector based on log₂(tile value), producing 256 input features that capture the full board state.',
+'strategy.algorithm':'Training Artifacts & Validation',
+'strategy.step1':'Teacher Search: The training workflow defaults to deterministic Expectimax at depth 3. Chance nodes model tile spawns (2 at 90%, 4 at 10%), and the depth can be configured when a run starts.',
+'strategy.step2':'Policy-Value Weights: The published checkpoint contains a 4-logit policy head and a normalized value head. The checked-in workflow references separate trainer scripts, so optimizer, loss, clipping, and schedule claims are intentionally not shown here.',
+'strategy.step3':'Value Scaling: Published weight metadata records tanh(heuristic / 800) as the target normalization.',
+'strategy.step4':'Live Move Selection: The browser uses Expectimax, alpha-beta pruning, caching, and a handcrafted evaluator. The experimental MLP does not replace that evaluator in live play.',
+'strategy.step5':'Fixed-Seed Checks: The workflow schedules a 50-game validation interval and a final 100-game fixed-seed evaluation.',
+'strategy.inference':'Inference in Browser',
+'strategy.inferenceDesc':'Auto-play uses iterative-deepening Expectimax (depth 1–6) with a dynamic 150–800 ms decision budget. Leaf states are scored by the handcrafted evaluator, not the experimental neural-network output.',
     'strategy.note':'All AI auto-play games — from Guest mode, User mode — are recorded below with mode, player, steps, score, max tile, and time.',
 'records.title':'📋 AI Auto Play Records',
 'records.count':'records',
@@ -4251,17 +4251,17 @@ const I18N={
 'arena.subtitle':'Training Strategy & Complete Auto-Play Records',
 'arena.strategyToggle':'Training Strategy',
 'arena.architecture':'Architecture & Training Pipeline',
-'arena.intro':'The AI uses a <b>4-layer MLP value network</b> (256 → 96 → 48 → 16 → 1) that estimates board state quality through self-play reinforcement learning.',
+'arena.intro':'The project includes an <b>experimental 4-layer policy-value MLP</b> (256 → 96 → 48 → 16, with value and policy heads) for offline training. Live browser play currently uses deterministic search and a handcrafted board evaluator.',
 'arena.encodingTitle':'Board Encoding',
 'arena.encoding':'Each 4×4 grid cell is encoded as a 16-dimensional one-hot vector based on log₂(tile value), producing 256 input features that capture the full board state.',
-'arena.algorithmTitle':'Training Algorithm — Self-Play TD(λ)',
-'arena.step1':'<strong>Teacher Search:</strong> A deterministic Expectimax algorithm (depth 3–4) with chance nodes models tile spawns (2 at 90%, 4 at 10%) to generate move labels for training data.',
-'arena.step2':'<strong>Policy-Value Network Training:</strong> A PyTorch model learns both a policy head (4 move logits) and a value head (normalized state value). Uses Huber loss, gradient clipping (max norm 1.0), and a decaying learning rate schedule.',
-'arena.step3':'<strong>Unified Value Scaling:</strong> The value target is <code>tanh(heuristic_score / 800)</code>, providing a bounded [−1, 1] interpretation that works consistently across training and in-browser inference.',
-'arena.step4':'<strong>Expected Tile API:</strong> The trained MLP serves as the evaluation function for the browser-based AI, which uses a depth-3 Expectimax search with the MLP replacing the handcrafted heuristic for move selection.',
-'arena.step5':'<strong>Fixed-Seed Validation:</strong> Every epoch is tested against 50 fixed random seeds; only the best-performing checkpoint becomes the deployed weights, ensuring consistent improvement.',
+'arena.algorithmTitle':'Training Artifacts & Validation',
+'arena.step1':'<strong>Teacher Search:</strong> The training workflow defaults to deterministic Expectimax at depth 3. Chance nodes model tile spawns (2 at 90%, 4 at 10%), and the depth can be configured when a run starts.',
+'arena.step2':'<strong>Policy-Value Weights:</strong> The published checkpoint contains a 4-logit policy head and a normalized value head. The checked-in workflow references separate trainer scripts, so optimizer, loss, clipping, and schedule claims are intentionally not shown here.',
+'arena.step3':'<strong>Value Scaling:</strong> The published weight metadata records the target normalization as <code>tanh(heuristic / 800)</code>.',
+'arena.step4':'<strong>Live Move Selection:</strong> The browser currently selects moves with Expectimax, alpha-beta pruning, caching, and a handcrafted evaluator (space, structure, smoothness, merges, and corner position). The experimental MLP is loaded for training metadata but does not replace that evaluator in live play.',
+'arena.step5':'<strong>Fixed-Seed Checks:</strong> The workflow schedules a 50-game validation interval and a final 100-game fixed-seed evaluation before recording a candidate result.',
 'arena.inferenceTitle':'Inference in Browser',
-'arena.inference':'During auto-play, the JavaScript engine runs Expectimax search (depth 2–3) using the deserialized MLP weights. At each leaf node, the board is evaluated by the neural network to score positions, enabling the AI to reach 2048+ tiles consistently.',
+'arena.inference':'During auto-play, the JavaScript engine uses iterative-deepening Expectimax (depth 1–6) with a dynamic 150–800 ms decision budget. Leaf states are scored by the handcrafted evaluator, not the experimental neural-network output.',
 'arena.note':'All AI auto-play games — from Guest mode, User mode — are recorded below with mode, player, steps, score, max tile, and time.',
 'music.note':'Choose an album theme above to switch to its matching local track.',
 },
@@ -4362,17 +4362,17 @@ const I18N={
 'auth.enterCredentials':'请输入用户名和密码',
     'strategy.title':'🧠 训练策略',
     'strategy.heading':'架构与训练流程',
-    'strategy.intro':'AI 使用一个 4 层 MLP 价值网络 (256 → 96 → 48 → 16 → 1)，通过自对弈强化学习来评估棋盘状态质量。',
+    'strategy.intro':'项目包含一个用于离线训练的实验性 4 层策略-价值 MLP（256 → 96 → 48 → 16，并带有价值头和策略头）。浏览器中的实时对战使用确定性搜索和手工棋盘评估器。',
     'strategy.encoding':'棋盘编码',
     'strategy.encodingDesc':'每个 4×4 网格单元基于 log₂(方块值) 编码为 16 维 one-hot 向量，产生 256 个输入特征来捕获完整棋盘状态。',
-    'strategy.algorithm':'训练算法 — 自对弈 TD(λ)',
-    'strategy.step1':'教师搜索：确定性 Expectimax 算法（深度 3-4）使用机会节点模拟方块生成（2 占 90%，4 占 10%）来生成训练数据的移动标签。',
-    'strategy.step2':'策略-价值网络训练：PyTorch 模型同时学习策略头（4 个移动 logit）和价值头（归一化状态值）。使用 Huber 损失、梯度裁剪（最大范数 1.0）和衰减学习率调度。',
-    'strategy.step3':'统一价值缩放：价值目标为 tanh(启发式分数 / 800)，提供有界 [−1, 1] 解释，在训练和浏览器推理中保持一致。',
-    'strategy.step4':'期望方块 API：训练好的 MLP 作为浏览器 AI 的评估函数，使用深度 3 的 Expectimax 搜索，MLP 替代手工设计的启发式进行移动选择。',
-    'strategy.step5':'固定种子验证：每个 epoch 都使用 50 个固定随机种子进行测试；只有表现最佳的检查点成为部署的权重，确保持续改进。',
+    'strategy.algorithm':'训练产物与验证',
+    'strategy.step1':'教师搜索：训练工作流默认使用深度 3 的确定性 Expectimax。机会节点模拟方块生成（2 占 90%，4 占 10%），启动训练时可配置搜索深度。',
+    'strategy.step2':'策略-价值权重：已发布的检查点包含 4 个 logit 的策略头和归一化价值头。仓库内工作流引用独立训练脚本，因此这里不再声明无法由当前源码核实的优化器、损失、裁剪或学习率调度细节。',
+    'strategy.step3':'价值缩放：已发布权重的元数据记录 tanh(启发式分数 / 800) 为目标归一化方式。',
+    'strategy.step4':'实时走子：浏览器使用 Expectimax、Alpha-Beta 剪枝、缓存与手工评估器。实验性 MLP 不会在实时对战中替代该评估器。',
+    'strategy.step5':'固定种子检查：工作流安排每 50 局进行一次验证，并进行最终 100 局固定种子评估。',
     'strategy.inference':'浏览器推理',
-    'strategy.inferenceDesc':'在自动对战期间，JavaScript 引擎使用反序列化的 MLP 权重运行 Expectimax 搜索（深度 2-3）。在每个叶节点，棋盘由神经网络评估以打分位置，使 AI 能够持续达到 2048+ 方块。',
+    'strategy.inferenceDesc':'自动对战使用迭代加深的 Expectimax（深度 1–6）和动态 150–800 ms 决策预算。叶节点由手工评估器打分，而非实验性神经网络输出。',
     'strategy.note':'所有 AI 自动对战游戏——来自游客模式、用户模式——都会在下表中记录，包括模式、玩家、步数、分数、最大方块和时间。',
     'records.title':'📋 AI 自动对战记录',
 'records.count':'条记录',
@@ -4390,17 +4390,17 @@ const I18N={
     'arena.subtitle':'训练策略与完整自动对战记录',
     'arena.strategyToggle':'训练策略',
     'arena.architecture':'架构与训练流程',
-    'arena.intro':'AI 使用一个 4 层 MLP 价值网络 (256 → 96 → 48 → 16 → 1)，通过自对弈强化学习来评估棋盘状态质量。',
+    'arena.intro':'项目包含一个用于离线训练的<b>实验性 4 层策略-价值 MLP</b>（256 → 96 → 48 → 16，并带有价值头和策略头）。浏览器中的实时对战目前使用确定性搜索和手工棋盘评估器。',
     'arena.encodingTitle':'棋盘编码',
     'arena.encoding':'每个 4×4 网格单元基于 log₂(方块值) 编码为 16 维 one-hot 向量，产生 256 个输入特征来捕获完整棋盘状态。',
-    'arena.algorithmTitle':'训练算法 — 自对弈 TD(λ)',
-    'arena.step1':'教师搜索：确定性 Expectimax 算法（深度 3-4）使用机会节点模拟方块生成（2 占 90%，4 占 10%）来生成训练数据的移动标签。',
-    'arena.step2':'策略-价值网络训练：PyTorch 模型同时学习策略头（4 个移动 logit）和价值头（归一化状态值）。使用 Huber 损失、梯度裁剪（最大范数 1.0）和衰减学习率调度。',
-    'arena.step3':'统一价值缩放：价值目标为 tanh(启发式分数 / 800)，提供有界 [−1, 1] 解释，在训练和浏览器推理中保持一致。',
-    'arena.step4':'期望方块 API：训练好的 MLP 作为浏览器 AI 的评估函数，使用深度 3 的 Expectimax 搜索，MLP 替代手工设计的启发式进行移动选择。',
-    'arena.step5':'固定种子验证：每个 epoch 都使用 50 个固定随机种子进行测试；只有表现最佳的检查点成为部署的权重，确保持续改进。',
+    'arena.algorithmTitle':'训练产物与验证',
+    'arena.step1':'<strong>教师搜索：</strong>训练工作流默认使用深度 3 的确定性 Expectimax。机会节点模拟方块生成（2 占 90%，4 占 10%），启动训练时可配置搜索深度。',
+    'arena.step2':'<strong>策略-价值权重：</strong>已发布的检查点包含 4 个 logit 的策略头和归一化价值头。仓库内工作流引用了独立训练脚本，因此这里不再声明无法由当前源码核实的优化器、损失、裁剪或学习率调度细节。',
+    'arena.step3':'<strong>价值缩放：</strong>已发布权重的元数据记录目标归一化为 <code>tanh(启发式分数 / 800)</code>。',
+    'arena.step4':'<strong>实时走子：</strong>浏览器当前使用 Expectimax、Alpha-Beta 剪枝、缓存与手工评估器（空格、结构、平滑度、可合并数和角落位置）选择走法。实验性 MLP 会被加载以读取训练元数据，但实时对战中不会替代该评估器。',
+    'arena.step5':'<strong>固定种子检查：</strong>工作流安排每 50 局进行一次验证，并在记录候选结果前进行最终 100 局固定种子评估。',
     'arena.inferenceTitle':'浏览器推理',
-    'arena.inference':'在自动对战期间，JavaScript 引擎使用反序列化的 MLP 权重运行 Expectimax 搜索（深度 2-3）。在每个叶节点，棋盘由神经网络评估以打分位置，使 AI 能够持续达到 2048+ 方块。',
+    'arena.inference':'自动对战时，JavaScript 引擎使用迭代加深的 Expectimax（深度 1–6）和动态 150–800 ms 决策预算。叶节点由手工评估器打分，而非实验性神经网络输出。',
     'arena.note':'所有 AI 自动对战游戏——来自游客模式、用户模式——都会在下表中记录，包括模式、玩家、步数、分数、最大方块和时间。',
     'music.note':'选择上方的专辑主题可切换至对应的本地轨道。',
   }
