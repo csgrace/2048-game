@@ -606,9 +606,9 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
     <span style="font-size:15px;font-weight:700;color:#14b8a6" data-i18n="records.title">📋 AI Auto Play Records</span>
     <span style="font-size:10.5px;color:rgba(255,255,255,.35)" id="pt-records-count">0 records</span>
   </div>
-        <div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-          <!-- version stats summary -->
-        </div>
+<div id="playtest-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+<!-- aggregate auto-play summary -->
+</div>
         <div class="records-scroll" style="overflow-x:auto;max-height:400px;overflow-y:auto">
           <table id="playtest-records" style="width:100%;border-collapse:collapse;font-size:11.5px">
             <thead style="position:sticky;top:0;background:rgba(20,20,36,.95);z-index:1">
@@ -619,8 +619,7 @@ border-radius:8px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;trans
                 <th data-i18n="records.th.score" style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Score</th>
                 <th data-i18n="records.th.steps" style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Steps</th>
                 <th data-i18n="records.th.maxtile" style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Max Tile</th>
-                <th data-i18n="records.th.duration" style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Duration</th>
-                <th data-i18n="records.th.ver" style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Ver</th>
+<th data-i18n="records.th.duration" style="padding:7px 10px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.1)">Duration</th>
               </tr>
             </thead>
             <tbody id="playtest-records-body">
@@ -2906,43 +2905,33 @@ if(countEl)countEl.textContent=records.length+' '+t('records.count');
 
 if(!records.length){
 statsEl.innerHTML='<span style="font-size:12px;color:rgba(255,255,255,.4)">'+t('records.empty1')+'</span>';
-recsBodyEl.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(255,255,255,.3);font-size:12px">'+t('records.empty2')+'</td></tr>';
+recsBodyEl.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:rgba(255,255,255,.3);font-size:12px">'+t('records.empty2')+'</td></tr>';
 return;
 }
 
-// Group by version for summary
-const byVersion={};
+// One aggregate summary: records are no longer split by model version.
+const summary={total:records.length,wins:0,fails:0,bestScore:0,bestTile:0};
 records.forEach(function(r){
-const v=r.version||'unknown';
-if(!byVersion[v])byVersion[v]={total:0,wins:0,fails:0,bestScore:0,bestTile:0,avgScore:0,scores:[]};
-byVersion[v].total++;
-if(r.result==='win')byVersion[v].wins++; else byVersion[v].fails++;
-byVersion[v].bestScore=Math.max(byVersion[v].bestScore,r.score);
-byVersion[v].bestTile=Math.max(byVersion[v].bestTile,r.maxTile);
-byVersion[v].scores.push(r.score);
+if(r.result==='win')summary.wins++;else summary.fails++;
+summary.bestScore=Math.max(summary.bestScore,r.score);
+summary.bestTile=Math.max(summary.bestTile,r.maxTile);
 });
-
-// Build stats cards
-let html='';
-Object.keys(byVersion).forEach(function(v){
-const s=byVersion[v];
-s.avgScore=Math.round(s.scores.reduce(function(a,b){return a+b},0)/s.scores.length);
-const rate=s.total>0?Math.round(s.wins/s.total*100):0;
+const rate=Math.round(summary.wins/summary.total*100);
 const rateColor=rate>=60?'#6bcb77':rate>=30?'#ffd166':'#ff6b6b';
-html+='<div style="padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);min-width:120px;flex:1">';
-html+='<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px">'+v+' · '+s.total+' games</div>';
-html+='<div style="font-size:16px;font-weight:700;color:'+rateColor+'">'+rate+'%</div>';
-html+='<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">✅'+s.wins+' ❌'+s.fails+' · Best '+s.bestScore+' · Max tile '+s.bestTile+'</div>';
-html+='</div>';
-});
-statsEl.innerHTML=html;
+statsEl.innerHTML='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;padding:9px 11px;border-radius:8px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);font-size:11px">'
++'<span style="color:rgba(255,255,255,.6)">'+summary.total+' '+t('records.count')+'</span>'
++'<strong style="font-size:15px;color:'+rateColor+'">'+rate+'%</strong>'
++'<span style="color:rgba(255,255,255,.55)">✅ '+summary.wins+' · ❌ '+summary.fails+'</span>'
++'<span style="color:#ffd166">Best '+summary.bestScore.toLocaleString()+'</span>'
++'<span style="color:#14b8a6">Max tile '+summary.bestTile+'</span></div>';
 
 // Build records table (newest first)
 const sorted=[...records].reverse();
 let tbodyHtml='';
 sorted.forEach(function(r){
 const d=new Date(r.ts);
-const tsStr=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' '+d.toLocaleDateString([],{month:'short',day:'numeric'});
+const timeStr=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+const tsStr=currentLang==='zh'?`${d.getMonth()+1}月${d.getDate()}日 ${timeStr}`:`${d.toLocaleDateString([],{month:'short',day:'numeric'})} ${timeStr}`;
 const modeColor=r.mode==='User'?'#ffd166':r.mode==='Guest'?'#14b8a6':'#a78bfa';
 const modeLabel=r.mode==='User'?'👤 User':r.mode==='Guest'?'🎮 Guest':'🏆 Arena';
 const resultIcon=r.result==='win'?'✅':'❌';
@@ -2954,7 +2943,6 @@ tbodyHtml+='<td style="padding:5px 8px;font-weight:600">'+resultIcon+' '+r.score
 tbodyHtml+='<td style="padding:5px 8px">'+r.steps+'</td>';
 tbodyHtml+='<td style="padding:5px 8px;font-weight:600;color:#ffd166">'+r.maxTile+'</td>';
 tbodyHtml+='<td style="padding:5px 8px;font-size:10.5px">'+fmtPlayTime(r.durationMs||0)+'</td>';
-tbodyHtml+='<td style="padding:5px 8px;font-size:10.5px;color:rgba(255,255,255,.4)">'+(r.version||'—')+'</td>';
 tbodyHtml+='</tr>';
 });
 recsBodyEl.innerHTML=tbodyHtml;
