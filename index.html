@@ -1759,22 +1759,56 @@ function init(size){
 
 function snapshot(){return{board:board.map(r=>[...r]),tileId:tileId.map(r=>[...r]),score,steps,elapsedMs,cheated}}
 function captureReplayFrame(){
-  if(isReplaying)return;
-  replayFrames.push({board:board.map(row=>[...row]),score,steps});
-  if(replayFrames.length>600)replayFrames.shift();
+if(isReplaying)return;
+// Preserve tile identities: replay can then move existing DOM tiles instead of rebuilding every board.
+replayFrames.push({board:board.map(row=>[...row]),tileId:tileId.map(row=>[...row]),score,steps});
+if(replayFrames.length>600)replayFrames.shift();
 }
-function renderReplayFrame(frame){
-  board=frame.board.map(row=>[...row]);score=frame.score;steps=frame.steps;buildBoardDOM();
-  const boardEl=$('board');if(boardEl){boardEl.classList.remove('replaying');void boardEl.offsetWidth;boardEl.classList.add('replaying');}
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(board[r][c]){const id=nextTileId++;tileId[r][c]=id;tileMap[id]={el:makeTile(board[r][c],r,c,false,id),value:board[r][c],row:r,col:c};}
-  render();
+function renderReplayFrame(frame,isFirstFrame=false){
+board=frame.board.map(row=>[...row]);score=frame.score;steps=frame.steps;
+const frameIds=new Set(frame.tileId.flat().filter(Boolean));
+if(isFirstFrame){
+  buildBoardDOM();tileId=frame.tileId.map(row=>[...row]);
+  const maxId=Math.max(0,...frameIds);nextTileId=maxId+1;
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(board[r][c]){
+    const id=tileId[r][c];tileMap[id]={el:makeTile(board[r][c],r,c,false,id),value:board[r][c],row:r,col:c};
+  }
+  render();return;
+}
+// Keep current elements alive across frames. Updating row/col and rendering triggers the normal slide transition.
+const previousTiles=tileMap;
+tileId=frame.tileId.map(row=>[...row]);
+const destinations=[];
+for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+const id=tileId[r][c];if(!id)continue;
+destinations.push({id,value:board[r][c],row:r,col:c});
+if(previousTiles[id]){previousTiles[id].row=r;previousTiles[id].col=c;}
+else{previousTiles[id]={el:makeTile(board[r][c],r,c,true,id),value:board[r][c],row:r,col:c};}
+}
+// A consumed tile follows its matching doubled-value survivor into the merge destination.
+for(const id in previousTiles){
+if(frameIds.has(Number(id)))continue;
+const tile=previousTiles[id];
+const target=destinations.filter(d=>d.value===tile.value*2).sort((a,b)=>Math.abs(a.row-tile.row)+Math.abs(a.col-tile.col)-Math.abs(b.row-tile.row)-Math.abs(b.col-tile.col))[0];
+if(target){tile.row=target.row;tile.col=target.col;}
+}
+render();
+// Apply merged values and remove consumed tiles only after their slide has been visible.
+setTimeout(()=>{
+for(const id in previousTiles){
+const tile=previousTiles[id];
+if(!frameIds.has(Number(id))){tile.el.remove();delete previousTiles[id];continue;}
+const value=board[tile.row][tile.col];
+if(tile.value!==value){tile.value=value;applyTileStyle(tile.el,value);tile.el.classList.remove('merging');void tile.el.offsetWidth;tile.el.classList.add('merging');}
+}
+},165);
 }
 function replayGame(){
-  if(isReplaying||replayFrames.length<2)return;
-  isReplaying=true;stopTimer();clearPendingGameTimers();let index=0;
-  const button=$('b-replay');if(button){button.disabled=true;button.textContent='↻ Replaying';}
-  renderReplayFrame(replayFrames[index]);
-  replayTimer=setInterval(()=>{index++;if(index>=replayFrames.length){clearInterval(replayTimer);replayTimer=null;isReplaying=false;if(button){button.disabled=false;button.textContent='▶ Replay';}startTimer(elapsedMs);return;}renderReplayFrame(replayFrames[index]);},420);
+if(isReplaying||replayFrames.length<2)return;
+isReplaying=true;stopTimer();clearPendingGameTimers();let index=0;
+const button=$('b-replay');if(button){button.disabled=true;button.textContent='↻ Replaying';}
+renderReplayFrame(replayFrames[index],true);
+replayTimer=setInterval(()=>{index++;if(index>=replayFrames.length){clearInterval(replayTimer);replayTimer=null;isReplaying=false;if(button){button.disabled=false;button.textContent='▶ Replay';}startTimer(elapsedMs);return;}renderReplayFrame(replayFrames[index]);},420);
 }
 
 /* slide a single row-left, tracking tile IDs + merges. returns {line,ids,merged} */
