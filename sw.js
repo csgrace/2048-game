@@ -1,4 +1,4 @@
-const CACHE_NAME = '2048-game-v7';
+const CACHE_NAME = '2048-game-v8';
 // Keep installation light on mobile; album tracks load only when a user plays them.
 const ASSETS = [
   './',
