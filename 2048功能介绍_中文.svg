@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">2048 功能介绍</title>
+  <desc id="desc">一张介绍 2048 网页功能的中文插画海报</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17172d"/>
+      <stop offset="0.48" stop-color="#312554"/>
+      <stop offset="1" stop-color="#111d39"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffe58a"/><stop offset="1" stop-color="#f7a945"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#71e5e2"/><stop offset="1" stop-color="#459ee9"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#070713" flood-opacity=".38"/>
+    </filter>
+    <pattern id="dots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="2" fill="#fff" opacity=".10"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#dots)" opacity=".38"/>
+  <circle cx="135" cy="120" r="260" fill="#7657d6" opacity=".20"/>
+  <circle cx="1510" cy="810" r="360" fill="#0fbfc1" opacity=".13"/>
+  <path d="M1080 0C1260 130 1420 150 1600 110V0Z" fill="#fff" opacity=".04"/>
+
+  <g transform="translate(100 90)">
+    <text x="0" y="0" fill="#a9f4ee" font-size="29" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-weight="700" letter-spacing="5">把数字叠成大大的快乐</text>
+    <text x="0" y="105" fill="#fff9e9" font-size="108" font-family="Georgia, Microsoft YaHei, serif" font-weight="800">2048</text>
+    <text x="285" y="103" fill="#ffe083" font-size="45" font-family="Microsoft YaHei, Noto Sans SC, sans-serif" font-weight="800">不只是合并方块</text>
+    <text x="3" y="158" fill="#d9d7ec" font-size="27" font-family="Microsoft YaHei, Noto Sans SC, sans-serif">动动脑，听听歌，让 AI 当你的数字搭子。</text>
+  </g>
+
+  <g transform="translate(110 300)" filter="url(#shadow)">
+    <rect width="550" height="500" rx="36" fill="#f5eedf"/>
+    <rect x="22" y="22" width="506" height="456" rx="27" fill="#bba990"/>
+    <g fill="#d4c4ad">
+      <rect x="43" y="43" width="104" height="104" rx="15"/><rect x="165" y="43" width="104" height="104" rx="15"/><rect x="287" y="43" width="104" height="104" rx="15"/><rect x="409" y="43" width="104" height="104" rx="15"/>
+      <rect x="43" y="165" width="104" height="104" rx="15"/><rect x="165" y="165" width="104" height="104" rx="15"/><rect x="287" y="165" width="104" height="104" rx="15"/><rect x="409" y="165" width="104" height="104" rx="15"/>
+      <rect x="43" y="287" width="104" height="104" rx="15"/><rect x="165" y="287" width="104" height="104" rx="15"/><rect x="287" y="287" width="104" height="104" rx="15"/><rect x="409" y="287" width="104" height="104" rx="15"/>
+      <rect x="43" y="409" width="104" height="50" rx="15"/><rect x="165" y="409" width="104" height="50" rx="15"/><rect x="287" y="409" width="104" height="50" rx="15"/><rect x="409" y="409" width="104" height="50" rx="15"/>
+    </g>
+    <g font-family="Arial, Microsoft YaHei, sans-serif" font-weight="800" text-anchor="middle">
+      <rect x="43" y="43" width="104" height="104" rx="15" fill="#eee0c9"/><text x="95" y="110" font-size="39" fill="#766e65">2</text>
+      <rect x="165" y="43" width="104" height="104" rx="15" fill="#edcc62"/><text x="217" y="110" font-size="39" fill="#fff9e8">128</text>
+      <rect x="287" y="43" width="104" height="104" rx="15" fill="#f5b251"/><text x="339" y="110" font-size="39" fill="#fff9e8">512</text>
+      <rect x="409" y="43" width="104" height="104" rx="15" fill="#f7785b"/><text x="461" y="110" font-size="31" fill="#fff9e8">1024</text>
+      <rect x="43" y="165" width="104" height="104" rx="15" fill="#f59563"/><text x="95" y="232" font-size="37" fill="#fff9e8">256</text>
+      <rect x="165" y="165" width="226" height="226" rx="20" fill="url(#gold)"/><text x="278" y="300" font-size="65" fill="#fffdf2">2048</text>
+      <rect x="409" y="287" width="104" height="104" rx="15" fill="#eee0c9"/><text x="461" y="354" font-size="39" fill="#766e65">4</text>
+    </g>
+    <g transform="translate(80 425)">
+      <rect width="390" height="35" rx="17" fill="#594d76"/><rect width="280" height="35" rx="17" fill="#74dfd9"/>
+      <text x="195" y="25" text-anchor="middle" font-size="18" font-family="Microsoft YaHei, sans-serif" fill="#fff" font-weight="700">下一块大数字，正在路上！</text>
+    </g>
+  </g>
+
+  <g transform="translate(735 285)" font-family="Microsoft YaHei, Noto Sans SC, sans-serif">
+    <g filter="url(#shadow)">
+      <rect width="340" height="218" rx="28" fill="#292846" stroke="#5e5b91" stroke-width="2"/>
+      <circle cx="53" cy="54" r="28" fill="url(#cyan)"/><text x="53" y="64" text-anchor="middle" font-size="30">🤖</text>
+      <text x="99" y="56" fill="#fff" font-size="28" font-weight="800">AI 智能陪玩</text>
+      <text x="32" y="113" fill="#c9c8de" font-size="19">• AI 建议下一步方向</text>
+      <text x="32" y="151" fill="#c9c8de" font-size="19">• 自动对战，围观策略</text>
+      <text x="32" y="189" fill="#ffe18b" font-size="17" font-weight="700">数字难题？交给它想一会儿</text>
+    </g>
+    <g transform="translate(370 0)" filter="url(#shadow)">
+      <rect width="340" height="218" rx="28" fill="#292846" stroke="#5e5b91" stroke-width="2"/>
+      <circle cx="53" cy="54" r="28" fill="#ffbd61"/><text x="53" y="64" text-anchor="middle" font-size="29">🏆</text>
+      <text x="99" y="56" fill="#fff" font-size="28" font-weight="800">成绩有回音</text>
+      <text x="32" y="113" fill="#c9c8de" font-size="19">• 全球排行榜与个人战绩</text>
+      <text x="32" y="151" fill="#c9c8de" font-size="19">• 分数、步数、最大方块</text>
+      <text x="32" y="189" fill="#ffe18b" font-size="17" font-weight="700">每一次合并都值得纪念</text>
+    </g>
+    <g transform="translate(0 250)" filter="url(#shadow)">
+      <rect width="340" height="218" rx="28" fill="#292846" stroke="#5e5b91" stroke-width="2"/>
+      <circle cx="53" cy="54" r="28" fill="#df7fca"/><text x="53" y="64" text-anchor="middle" font-size="28">🎨</text>
+      <text x="99" y="56" fill="#fff" font-size="28" font-weight="800">12 款主题 + 音乐</text>
+      <text x="32" y="113" fill="#c9c8de" font-size="19">• 专辑灵感的配色氛围</text>
+      <text x="32" y="151" fill="#c9c8de" font-size="19">• 音效和本地背景音乐</text>
+      <text x="32" y="189" fill="#ffe18b" font-size="17" font-weight="700">给数字游戏加一点浪漫</text>
+    </g>
+    <g transform="translate(370 250)" filter="url(#shadow)">
+      <rect width="340" height="218" rx="28" fill="#292846" stroke="#5e5b91" stroke-width="2"/>
+      <circle cx="53" cy="54" r="28" fill="#75c98f"/><text x="53" y="64" text-anchor="middle" font-size="28">📊</text>
+      <text x="99" y="56" fill="#fff" font-size="28" font-weight="800">轻松又有记录</text>
+      <text x="32" y="113" fill="#c9c8de" font-size="19">• 保存 / 继续上次游戏</text>
+      <text x="32" y="151" fill="#c9c8de" font-size="19">• 游戏统计与最大方块分布</text>
+      <text x="32" y="189" fill="#ffe18b" font-size="17" font-weight="700">今天的 2，也会长成明天的 2048</text>
+    </g>
+  </g>
+
+  <g transform="translate(100 842)" font-family="Microsoft YaHei, Noto Sans SC, sans-serif">
+    <text x="0" y="0" fill="#e7e5f5" font-size="21">游客即玩 · 登录可保存 · 键盘 / 触屏都顺手</text>
+    <text x="1400" y="0" text-anchor="end" fill="#86e3de" font-size="20" font-weight="700">2048 · 合着合着就上头了</text>
+  </g>
+</svg>
